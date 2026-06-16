@@ -12,6 +12,7 @@ from .schemas import ValidateGherkinOutput
 # Keywords that define steps
 STEP_KEYWORDS = {"Given", "When", "Then", "And", "But"}
 
+
 def validate_gherkin(content: str) -> ValidateGherkinOutput:
     """
     Validate a Gherkin feature file string.
@@ -47,13 +48,10 @@ def validate_gherkin(content: str) -> ValidateGherkinOutput:
         for keyword in STEP_KEYWORDS:
             if stripped.startswith(keyword):
                 # Extract the part after the keyword
-                after_keyword = stripped[len(keyword):].strip()
+                after_keyword = stripped[len(keyword) :].strip()
                 # If there is no text after the keyword, it's an incomplete step
                 if not after_keyword:
                     errors.append(f"Step incomplete: '{stripped}'")
                 break  # Only check the first matching keyword
 
-    return ValidateGherkinOutput(
-        valid=len(errors) == 0,
-        errors=errors
-    )
+    return ValidateGherkinOutput(valid=len(errors) == 0, errors=errors)

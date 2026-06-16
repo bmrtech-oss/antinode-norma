@@ -20,9 +20,10 @@ LLM_CONFIG = {
     "model": os.getenv("LLM_MODEL", "claude-3-5-sonnet-20241022"),
     "temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
     "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "1024")),
-    "url": os.getenv("LLM_URL")
+    "url": os.getenv("LLM_URL"),
 }
 llm_call = create_llm_callable(LLM_CONFIG)
+
 
 def get_step_definitions(keyword: str = None):
     # Simple implementation – can be extended to read from file system
@@ -32,13 +33,16 @@ def get_step_definitions(keyword: str = None):
         "Then a password reset email is sent",
         "Given a valid reset token exists",
         "When the user submits a new password",
-        "Then the password is updated"
+        "Then the password is updated",
     ]
     if keyword:
         steps = [s for s in steps if s.lower().startswith(keyword.lower())]
     return steps
 
-async def run_agent_from_raw(raw_story: str, quality_only: bool = False) -> Dict[str, Any]:
+
+async def run_agent_from_raw(
+    raw_story: str, quality_only: bool = False
+) -> Dict[str, Any]:
     """Run the Norma agent from raw story text."""
     # Parse
     story = parse_story(raw_story, llm_call)
@@ -49,26 +53,23 @@ async def run_agent_from_raw(raw_story: str, quality_only: bool = False) -> Dict
             "quality_score": report.quality_score,
             "passes_invest": report.passes_invest,
             "issues": report.issues,
-            "suggestions": report.suggestions
+            "suggestions": report.suggestions,
         }
     if not report.passes_invest:
         return {
             "error": "Quality check failed – story does not meet INVEST criteria",
             "issues": report.issues,
-            "suggestions": report.suggestions
+            "suggestions": report.suggestions,
         }
     # Generate
     step_defs = get_step_definitions()
     gherkin = generate_gherkin(story, step_defs, llm_call)
     validation = validate_gherkin(gherkin)
     if not validation.valid:
-        return {
-            "error": "Gherkin validation failed",
-            "errors": validation.errors
-        }
+        return {"error": "Gherkin validation failed", "errors": validation.errors}
     # Write file
     output_dir = os.getenv("NORMA_OUTPUT_DIR", "features")
-    safe_action = story.action.lower().replace(' ', '_')
+    safe_action = story.action.lower().replace(" ", "_")
     file_path = os.path.join(output_dir, f"{safe_action}.feature")
     write_feature_file(file_path, gherkin)
     return {"feature_path": file_path, "validation_passed": True}

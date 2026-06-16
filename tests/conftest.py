@@ -13,6 +13,7 @@ load_dotenv()
 # Sample stories as fixtures
 # ------------------------------
 
+
 @pytest.fixture
 def sample_story_pass() -> str:
     return (
@@ -24,9 +25,11 @@ def sample_story_pass() -> str:
         "- The system should expire the reset link after 30 minutes."
     )
 
+
 @pytest.fixture
 def sample_story_fail() -> str:
     return "User wants to reset password."
+
 
 @pytest.fixture
 def parsed_story_pass() -> UserStory:
@@ -39,13 +42,15 @@ def parsed_story_pass() -> UserStory:
             "The system should send a password reset link to the user's registered email.",
             "The user should be able to click the link and set a new password.",
             "The system should display an error message when an invalid token is used.",
-            "The system should expire the reset link after 30 minutes."
-        ]
+            "The system should expire the reset link after 30 minutes.",
+        ],
     )
+
 
 # ------------------------------
 # Mock LLM for parser tests
 # ------------------------------
+
 
 @pytest.fixture
 def mock_llm_call():
@@ -54,11 +59,14 @@ def mock_llm_call():
             '{"role": "tester", "action": "test action", "benefit": "test benefit", '
             '"acceptance_criteria": ["criterion one", "criterion two"]}'
         )
+
     return _mock
+
 
 # ------------------------------
 # Temporary directory for file output
 # ------------------------------
+
 
 @pytest.fixture
 def tmp_features(tmp_path):
@@ -67,17 +75,20 @@ def tmp_features(tmp_path):
     features.mkdir()
     return features
 
+
 # ------------------------------
 # Skip markers for missing credentials
 # ------------------------------
 
+
 def has_openrouter_key() -> bool:
     return bool(os.getenv("OPENROUTER_API_KEY"))
+
 
 def has_jira_creds() -> bool:
     return bool(os.getenv("JIRA_SERVER") and os.getenv("JIRA_TOKEN"))
 
+
 pytest.mark.integration = pytest.mark.skipif(
-    not has_openrouter_key(),
-    reason="OPENROUTER_API_KEY not set"
+    not has_openrouter_key(), reason="OPENROUTER_API_KEY not set"
 )
