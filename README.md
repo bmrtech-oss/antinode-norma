@@ -1,5 +1,10 @@
 # Antinode Norma
 
+[![CI](https://github.com/antinodelabs/antinode-norma/actions/workflows/ci.yml/badge.svg)](https://github.com/antinodelabs/antinode-norma/actions/workflows/ci.yml)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://python.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![MCP](https://img.shields.io/badge/MCP-compatible-9B59B6)](https://github.com/modelcontextprotocol)
+
 BDD feature file generator with an INVEST quality gate.  
 Transform raw user stories into validated Gherkin `.feature` files.  
 Built with a data-centric, functional philosophy – inspired by Rich Hickey.
