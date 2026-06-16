@@ -217,6 +217,11 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Preserve GitHub Actions workflows when .github/ is ignored
+!.github/
+!.github/workflows/
+!.github/workflows/**
+
 # Docker
 # Local Docker Compose overrides should not be committed
 docker-compose.override.yml
