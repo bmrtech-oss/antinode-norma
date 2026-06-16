@@ -1,0 +1,1 @@
+"""Core pure logic for Antinode Norma."""

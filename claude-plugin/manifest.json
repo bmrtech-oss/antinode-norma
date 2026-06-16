@@ -1,0 +1,31 @@
+{
+  "manifest_version": "0.3",
+  "name": "antinode-norma",
+  "version": "0.1.0",
+  "description": "BDD feature generator with INVEST quality gate. Transform user stories into validated Gherkin specs.",
+  "author": {
+    "name": "Antinode Labs",
+    "email": "info@antinodelabs.com"
+  },
+  "license": "MIT",
+  "server": {
+    "type": "node",
+    "entry_point": "index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/index.js"],
+      "env": {
+        "LLM_PROVIDER": "openrouter",
+        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
+        "LLM_MODEL": "openai/gpt-oss-120b:free",
+        "LLM_BASE_URL": "https://openrouter.ai/api/v1",
+        "LLM_TEMPERATURE": "0.2",
+        "LLM_MAX_TOKENS": "1024"
+      }
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=0.1.0",
+    "platforms": ["darwin", "win32"]
+  }
+}

@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Docker
+# Local Docker Compose overrides should not be committed
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
+# Docker build cache and volumes
+.dockervolume/
+*.dccompose
