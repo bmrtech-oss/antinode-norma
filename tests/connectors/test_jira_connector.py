@@ -4,16 +4,22 @@ import os
 import pytest
 from unittest.mock import Mock, patch
 
-@pytest.mark.skipif(not os.getenv("JIRA_SERVER") or not os.getenv("JIRA_TOKEN"), reason="JIRA credentials not set")
+
+@pytest.mark.skipif(
+    not os.getenv("JIRA_SERVER") or not os.getenv("JIRA_TOKEN"),
+    reason="JIRA credentials not set",
+)
 def test_jira_connector_integration():
     # This is a real integration test – requires real JIRA credentials.
     # For safety, we just check that the module can be imported and basic functions exist.
     from antinode_norma.connectors import jira_connector
+
     assert hasattr(jira_connector, "main")
     # We do not run main because it would connect to real JIRA and possibly call MCP.
     pass
 
-@patch('antinode_norma.connectors.jira_connector.JIRA')
+
+@patch("antinode_norma.connectors.jira_connector.JIRA")
 def test_jira_connector_uses_label_filter(MockJIRA):
     # Mock the client and search_issues
     mock_jira = Mock()

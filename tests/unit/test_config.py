@@ -3,6 +3,7 @@
 import os
 from dotenv import load_dotenv
 
+
 def test_env_loading():
     """Test that .env file is loaded (if present)."""
     load_dotenv()

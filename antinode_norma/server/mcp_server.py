@@ -22,11 +22,12 @@ LLM_CONFIG = {
     "model": os.getenv("LLM_MODEL", "claude-3-5-sonnet-20241022"),
     "temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
     "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "1024")),
-    "url": os.getenv("LLM_URL")
+    "url": os.getenv("LLM_URL"),
 }
 llm_call = create_llm_callable(LLM_CONFIG)
 
 stories: Dict[str, UserStory] = {}
+
 
 async def main():
     server = Server("antinode-norma")
@@ -44,12 +45,15 @@ async def main():
                         "role": {"type": "string"},
                         "action": {"type": "string"},
                         "benefit": {"type": "string"},
-                        "acceptance_criteria": {"type": "array", "items": {"type": "string"}},
+                        "acceptance_criteria": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
                         "dependencies": {"type": "array", "items": {"type": "string"}},
-                        "estimated_points": {"type": "integer"}
+                        "estimated_points": {"type": "integer"},
                     },
-                    "required": ["role", "action", "benefit", "acceptance_criteria"]
-                }
+                    "required": ["role", "action", "benefit", "acceptance_criteria"],
+                },
             ),
             types.Tool(
                 name="improve_story",
@@ -58,10 +62,10 @@ async def main():
                     "type": "object",
                     "properties": {
                         "story_id": {"type": "string"},
-                        "suggestions": {"type": "array", "items": {"type": "string"}}
+                        "suggestions": {"type": "array", "items": {"type": "string"}},
                     },
-                    "required": ["story_id", "suggestions"]
-                }
+                    "required": ["story_id", "suggestions"],
+                },
             ),
             types.Tool(
                 name="generate_feature",
@@ -70,11 +74,14 @@ async def main():
                     "type": "object",
                     "properties": {
                         "story_id": {"type": "string"},
-                        "step_definitions": {"type": "array", "items": {"type": "string"}}
+                        "step_definitions": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
                     },
-                    "required": ["story_id"]
-                }
-            )
+                    "required": ["story_id"],
+                },
+            ),
         ]
 
     @server.call_tool()
@@ -93,7 +100,7 @@ async def main():
                 "quality_score": report.quality_score,
                 "passes_invest": report.passes_invest,
                 "issues": report.issues,
-                "suggestions": report.suggestions
+                "suggestions": report.suggestions,
             }
             return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
 
@@ -101,7 +108,9 @@ async def main():
             story_id = arguments.get("story_id")
             suggestions = arguments.get("suggestions", [])
             if story_id not in stories:
-                return [types.TextContent(type="text", text=f"Story {story_id} not found")]
+                return [
+                    types.TextContent(type="text", text=f"Story {story_id} not found")
+                ]
             original = stories[story_id]
             prompt = f"""Improve this story based on suggestions:
 {original.json(indent=2)}
@@ -113,6 +122,7 @@ Return improved JSON matching the same schema."""
             elif "```" in improved_json:
                 improved_json = improved_json.split("```")[1].split("```")[0]
             import json
+
             improved_data = json.loads(improved_json)
             improved_story = UserStory(**improved_data)
             improved_story.story_id = story_id
@@ -123,13 +133,19 @@ Return improved JSON matching the same schema."""
             story_id = arguments.get("story_id")
             step_defs = arguments.get("step_definitions", [])
             if story_id not in stories:
-                return [types.TextContent(type="text", text=f"Story {story_id} not found")]
+                return [
+                    types.TextContent(type="text", text=f"Story {story_id} not found")
+                ]
             story = stories[story_id]
             gherkin = generate_gherkin(story, step_defs, llm_call)
             validation = validate_gherkin(gherkin)
             if not validation.valid:
-                return [types.TextContent(type="text", text=f"Validation failed: {validation.errors}")]
-            safe_action = story.action.lower().replace(' ', '_')
+                return [
+                    types.TextContent(
+                        type="text", text=f"Validation failed: {validation.errors}"
+                    )
+                ]
+            safe_action = story.action.lower().replace(" ", "_")
             output_dir = os.getenv("NORMA_OUTPUT_DIR", "features")
             file_path = os.path.join(output_dir, f"{safe_action}.feature")
             write_feature_file(file_path, gherkin)
@@ -143,11 +159,9 @@ Return improved JSON matching the same schema."""
         await server.run(
             read_stream,
             write_stream,
-            InitializationOptions(
-                server_name="antinode-norma",
-                server_version="0.1.0"
-            )
+            InitializationOptions(server_name="antinode-norma", server_version="0.1.0"),
         )
+
 
 if __name__ == "__main__":
     asyncio.run(main())

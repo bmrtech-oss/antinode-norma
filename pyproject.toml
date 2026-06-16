@@ -21,5 +21,24 @@ dependencies = [
     "click>=8.1.0",
 ]
 
+[tool.black]
+line-length = 100
+target-version = ['py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
 [project.scripts]
 anorm = "antinode_norma.cli:main"
