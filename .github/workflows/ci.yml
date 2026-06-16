@@ -40,10 +40,6 @@ jobs:
         run: |
           black --check antinode_norma/ tests/
 
-      - name: Type check with mypy
-        run: |
-          mypy antinode_norma/ --ignore-missing-imports || true
-
       - name: Run unit tests (no integration)
         run: |
           pytest -m "not integration" --cov=antinode_norma --cov-report=xml --cov-report=term
@@ -57,9 +53,10 @@ jobs:
           fail_ci_if_error: false
 
   integration:
-    name: Integration tests (if secrets available)
+    name: Integration tests
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && secrets.OPENROUTER_API_KEY != ''
+    # Run only on push events (not PRs) to avoid exposing secrets to forks
+    if: github.event_name == 'push'
     needs: test
 
     steps:
@@ -78,13 +75,16 @@ jobs:
           pip install -e .
           pip install -r requirements-dev.txt
 
-      - name: Run integration tests (requires secrets)
+      - name: Run integration tests
+        # Only run if OPENROUTER_API_KEY secret is set
+        if: env.OPENROUTER_API_KEY != ''
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           pytest -m integration --cov=antinode_norma --cov-report=xml --cov-report=term
 
       - name: Upload coverage (integration) to Codecov
+        if: env.OPENROUTER_API_KEY != '' && github.event_name == 'push'
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

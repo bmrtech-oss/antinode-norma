@@ -332,20 +332,6 @@ If you want to include a multi-container setup (e.g., with JIRA mock or database
 
 ---
 
-## Summary
-
-- **Do we *need* a Dockerfile?** No, the project works fine without it.
-- **Should we include one?** Yes, it's a nice addition for CI/CD and users who prefer containers.
-- **Where to place it?** In the project root.
-
----
-
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. For major changes, open an issue first.
-
----
-
 ## License
 
 This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
