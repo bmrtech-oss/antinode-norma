@@ -1,6 +1,6 @@
 # Antinode Norma
 
-[![CI](https://github.com/antinodelabs/antinode-norma/actions/workflows/ci.yml/badge.svg)](https://github.com/antinodelabs/antinode-norma/actions/workflows/ci.yml)
+[![CI](https://github.com/bmrtech-oss/antinode-norma/actions/workflows/ci.yml/badge.svg)](https://github.com/bmrtech-oss/antinode-norma/actions/workflows/ci.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP](https://img.shields.io/badge/MCP-compatible-9B59B6)](https://github.com/modelcontextprotocol)
