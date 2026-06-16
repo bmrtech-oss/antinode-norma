@@ -54,13 +54,32 @@ def generate(story_text, file, output_dir, quality_only):
 
 
 @cli.command()
+@click.argument("goal")
+def agent(goal):
+    """Run the autonomous BDD agent with a high‑level goal."""
+    from .agent import BDDAgent
+    from .agent_tools import AGENT_TOOLS
+    from .utils.llm_factory import create_llm_callable
+    import os
+    import json
+
+    llm_config = {
+        "provider": os.getenv("LLM_PROVIDER", "openrouter"),
+        "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY"),
+    }
+    agent = BDDAgent(llm_config, AGENT_TOOLS)
+    result = agent.run(goal)
+    click.echo(json.dumps(result, indent=2))
+
+
+@cli.command()
 @click.option("--transport", default="stdio", help="MCP transport (stdio or sse)")
 def serve(transport):
     """Start the Norma MCP server."""
     from antinode_norma.server.mcp_server import main as mcp_main
 
     click.echo(f"Starting Norma MCP server on {transport}...")
-    mcp_main()
+    asyncio.run(mcp_main())
 
 
 def main():
