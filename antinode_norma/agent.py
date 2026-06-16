@@ -7,6 +7,7 @@ from .utils.llm_factory import create_llm_callable
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class AgentState:
     goal: str
@@ -22,8 +23,11 @@ class AgentState:
     errors: int = 0
     last_action: Optional[str] = None
 
+
 class BDDAgent:
-    def __init__(self, llm_config: Dict[str, Any], tool_registry: Dict[str, Any], max_iterations: int = 10):
+    def __init__(
+        self, llm_config: Dict[str, Any], tool_registry: Dict[str, Any], max_iterations: int = 10
+    ):
         self.llm = create_llm_callable(llm_config)
         self.tools = tool_registry
         self.max_iterations = max_iterations
@@ -54,11 +58,18 @@ class BDDAgent:
                 self.state.errors = 0
             if self.state.errors >= 3:
                 self.state.done = True
-                self.state.history.append({"action": {"type": "finish"}, "result": "Too many consecutive errors, aborting."})
+                self.state.history.append(
+                    {
+                        "action": {"type": "finish"},
+                        "result": "Too many consecutive errors, aborting.",
+                    }
+                )
                 break
         if not self.state.done:
             self.state.done = True
-            self.state.history.append({"action": {"type": "finish"}, "result": "Max iterations reached."})
+            self.state.history.append(
+                {"action": {"type": "finish"}, "result": "Max iterations reached."}
+            )
         return self._final_state()
 
     def _plan(self) -> Dict:
@@ -68,13 +79,13 @@ class BDDAgent:
         try:
             return json.loads(response)
         except json.JSONDecodeError:
-            match = re.search(r'```json\s*([\s\S]*?)\s*```', response)
+            match = re.search(r"```json\s*([\s\S]*?)\s*```", response)
             if match:
                 try:
                     return json.loads(match.group(1))
                 except json.JSONDecodeError:
                     pass
-            match = re.search(r'\{[\s\S]*\}', response)
+            match = re.search(r"\{[\s\S]*\}", response)
             if match:
                 try:
                     return json.loads(match.group())
@@ -118,18 +129,26 @@ class BDDAgent:
             "feature_path": self.state.feature_path,
             "test_results": self.state.test_results,
             "pr_url": self.state.pr_url,
-            "history": self.state.history
+            "history": self.state.history,
         }
 
     def _build_planner_prompt(self) -> str:
-        tools_desc = "\n".join([
-            f"- {name}: {self.tools[name].__doc__ or 'No description provided.'}"
-            for name in self.tools
-        ])
-        history = "\n".join([
-            f"Step {i+1}: {h['action'].get('tool', 'unknown')} -> {str(h['result'])[:200]}"
-            for i, h in enumerate(self.state.history)
-        ]) if self.state.history else "No actions taken yet."
+        tools_desc = "\n".join(
+            [
+                f"- {name}: {self.tools[name].__doc__ or 'No description provided.'}"
+                for name in self.tools
+            ]
+        )
+        history = (
+            "\n".join(
+                [
+                    f"Step {i+1}: {h['action'].get('tool', 'unknown')} -> {str(h['result'])[:200]}"
+                    for i, h in enumerate(self.state.history)
+                ]
+            )
+            if self.state.history
+            else "No actions taken yet."
+        )
 
         return f"""
 You are a BDD automation assistant. Your goal: {self.state.goal}

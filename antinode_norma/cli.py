@@ -52,6 +52,7 @@ def generate(story_text, file, output_dir, quality_only):
 
     asyncio.run(run())
 
+
 @cli.command()
 @click.argument("goal")
 def agent(goal):
@@ -61,6 +62,7 @@ def agent(goal):
     from .utils.llm_factory import create_llm_callable
     import os
     import json
+
     llm_config = {
         "provider": os.getenv("LLM_PROVIDER", "openrouter"),
         "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY"),
@@ -69,17 +71,20 @@ def agent(goal):
     result = agent.run(goal)
     click.echo(json.dumps(result, indent=2))
 
+
 @cli.command()
 @click.option("--transport", default="stdio", help="MCP transport (stdio or sse)")
 def serve(transport):
     """Start the Norma MCP server."""
     from antinode_norma.server.mcp_server import main as mcp_main
+
     click.echo(f"Starting Norma MCP server on {transport}...")
     asyncio.run(mcp_main())
 
 
 def main():
     cli()
+
 
 if __name__ == "__main__":
     cli()

@@ -30,12 +30,14 @@ from ..agent_tools import (
 # LLM Configuration
 LLM_CONFIG = {
     "provider": os.getenv("LLM_PROVIDER", "openrouter"),
-    "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENAI_API_KEY"),
+    "api_key": os.getenv("OPENROUTER_API_KEY")
+    or os.getenv("ANTHROPIC_API_KEY")
+    or os.getenv("OPENAI_API_KEY"),
     "model": os.getenv("LLM_MODEL", "openai/gpt-oss-120b:free"),
     "base_url": os.getenv("LLM_BASE_URL", "https://openrouter.ai/api/v1"),
     "temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
     "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "1024")),
-    "url": os.getenv("LLM_URL")
+    "url": os.getenv("LLM_URL"),
 }
 llm_call = create_llm_callable(LLM_CONFIG)
 
@@ -58,6 +60,7 @@ AGENT_TOOLS = {
 # Tool Handlers (common logic)
 # ------------------------------
 
+
 async def handle_submit_story(arguments: dict) -> list[types.TextContent]:
     try:
         story = UserStory(**arguments)
@@ -72,9 +75,10 @@ async def handle_submit_story(arguments: dict) -> list[types.TextContent]:
         "quality_score": report.quality_score,
         "passes_invest": report.passes_invest,
         "issues": report.issues,
-        "suggestions": report.suggestions
+        "suggestions": report.suggestions,
     }
     return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
+
 
 async def handle_improve_story(arguments: dict) -> list[types.TextContent]:
     story_id = arguments.get("story_id")
@@ -97,6 +101,7 @@ Return improved JSON matching the same schema."""
     stories[story_id] = improved_story
     return [types.TextContent(type="text", text=improved_json)]
 
+
 async def handle_generate_feature(arguments: dict) -> list[types.TextContent]:
     story_id = arguments.get("story_id")
     step_defs = arguments.get("step_definitions", [])
@@ -107,12 +112,13 @@ async def handle_generate_feature(arguments: dict) -> list[types.TextContent]:
     validation = validate_gherkin(gherkin)
     if not validation.valid:
         return [types.TextContent(type="text", text=f"Validation failed: {validation.errors}")]
-    safe_action = story.action.lower().replace(' ', '_')
+    safe_action = story.action.lower().replace(" ", "_")
     output_dir = os.getenv("NORMA_OUTPUT_DIR", "features")
     file_path = os.path.join(output_dir, f"{safe_action}.feature")
     write_feature_file(file_path, gherkin)
     result = {"feature_file_path": file_path, "validation_passed": True}
     return [types.TextContent(type="text", text=json.dumps(result))]
+
 
 async def handle_run_bdd_agent(arguments: dict) -> list[types.TextContent]:
     goal = arguments.get("goal", "")
@@ -120,9 +126,11 @@ async def handle_run_bdd_agent(arguments: dict) -> list[types.TextContent]:
     result = agent.run(goal)
     return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
 
+
 # ------------------------------
 # MCP Server Setup (using @server.list_tools() and @server.call_tool())
 # ------------------------------
+
 
 async def main():
     server = Server("antinode-norma")
@@ -142,10 +150,10 @@ async def main():
                         "benefit": {"type": "string"},
                         "acceptance_criteria": {"type": "array", "items": {"type": "string"}},
                         "dependencies": {"type": "array", "items": {"type": "string"}},
-                        "estimated_points": {"type": "integer"}
+                        "estimated_points": {"type": "integer"},
                     },
-                    "required": ["role", "action", "benefit", "acceptance_criteria"]
-                }
+                    "required": ["role", "action", "benefit", "acceptance_criteria"],
+                },
             ),
             types.Tool(
                 name="improve_story",
@@ -154,10 +162,10 @@ async def main():
                     "type": "object",
                     "properties": {
                         "story_id": {"type": "string"},
-                        "suggestions": {"type": "array", "items": {"type": "string"}}
+                        "suggestions": {"type": "array", "items": {"type": "string"}},
                     },
-                    "required": ["story_id", "suggestions"]
-                }
+                    "required": ["story_id", "suggestions"],
+                },
             ),
             types.Tool(
                 name="generate_feature",
@@ -166,21 +174,19 @@ async def main():
                     "type": "object",
                     "properties": {
                         "story_id": {"type": "string"},
-                        "step_definitions": {"type": "array", "items": {"type": "string"}}
+                        "step_definitions": {"type": "array", "items": {"type": "string"}},
                     },
-                    "required": ["story_id"]
-                }
+                    "required": ["story_id"],
+                },
             ),
             types.Tool(
                 name="run_bdd_agent",
                 description="Run the autonomous BDD agent with a high‑level goal.",
                 inputSchema={
                     "type": "object",
-                    "properties": {
-                        "goal": {"type": "string"}
-                    },
-                    "required": ["goal"]
-                }
+                    "properties": {"goal": {"type": "string"}},
+                    "required": ["goal"],
+                },
             ),
         ]
 
@@ -204,11 +210,10 @@ async def main():
             read_stream,
             write_stream,
             InitializationOptions(
-                server_name="antinode-norma",
-                server_version="0.1.0",
-                capabilities=capabilities
-            )
+                server_name="antinode-norma", server_version="0.1.0", capabilities=capabilities
+            ),
         )
+
 
 if __name__ == "__main__":
     asyncio.run(main())
