@@ -1,0 +1,9 @@
+{
+  "name": "antinode-norma-plugin",
+  "version": "0.1.0",
+  "description": "BDD feature generator with INVEST quality gate – Claude Desktop plugin",
+  "type": "module",
+  "main": "index.js",
+  "author": "Antinode Labs",
+  "license": "MIT"
+}
