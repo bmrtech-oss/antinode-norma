@@ -4,6 +4,7 @@
 
 from antinode_norma.core.validator import validate_gherkin
 
+
 def test_validate_gherkin_passes():
     """Test that a well-formed Gherkin file passes validation."""
     content = """Feature: Login
@@ -15,6 +16,7 @@ def test_validate_gherkin_passes():
     assert result.valid is True
     assert result.errors == []
 
+
 def test_validate_gherkin_missing_feature():
     """Test that validation fails when Feature: is missing."""
     content = """Scenario: test
@@ -22,6 +24,7 @@ def test_validate_gherkin_missing_feature():
     result = validate_gherkin(content)
     assert result.valid is False
     assert "Missing 'Feature:' line" in result.errors
+
 
 def test_validate_gherkin_missing_scenario():
     """Test that validation fails when Scenario: is missing."""
@@ -31,6 +34,7 @@ def test_validate_gherkin_missing_scenario():
     assert result.valid is False
     # The validator returns a combined message for missing Scenario/Scenario Outline
     assert "Missing 'Scenario:' or 'Scenario Outline:'" in result.errors
+
 
 def test_validate_gherkin_incomplete_step():
     """Test that validation fails when a step has no text after the keyword."""
@@ -42,6 +46,7 @@ def test_validate_gherkin_incomplete_step():
     assert len(result.errors) > 0
     assert "Step incomplete" in result.errors[0]
 
+
 def test_validate_gherkin_incomplete_step_with_and():
     """Test incomplete step with And keyword."""
     content = """Feature: test
@@ -51,6 +56,7 @@ def test_validate_gherkin_incomplete_step_with_and():
     result = validate_gherkin(content)
     assert result.valid is False
     assert "Step incomplete: 'And'" in result.errors
+
 
 def test_validate_gherkin_valid_scenario_outline():
     """Test that Scenario Outline with Examples passes validation."""

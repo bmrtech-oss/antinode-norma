@@ -1,5 +1,10 @@
 # Antinode Norma
 
+[![CI](https://github.com/antinodelabs/antinode-norma/actions/workflows/ci.yml/badge.svg)](https://github.com/antinodelabs/antinode-norma/actions/workflows/ci.yml)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://python.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![MCP](https://img.shields.io/badge/MCP-compatible-9B59B6)](https://github.com/modelcontextprotocol)
+
 BDD feature file generator with an INVEST quality gate.  
 Transform raw user stories into validated Gherkin `.feature` files.  
 Built with a data-centric, functional philosophy – inspired by Rich Hickey.
@@ -324,20 +329,6 @@ docker run --rm antinode-norma pytest -m "not integration"
 ## Docker Compose (Optional)
 
 If you want to include a multi-container setup (e.g., with JIRA mock or database), you can add a `docker-compose.yml`. For this project, a simple Dockerfile suffices.
-
----
-
-## Summary
-
-- **Do we *need* a Dockerfile?** No, the project works fine without it.
-- **Should we include one?** Yes, it's a nice addition for CI/CD and users who prefer containers.
-- **Where to place it?** In the project root.
-
----
-
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. For major changes, open an issue first.
 
 ---
 

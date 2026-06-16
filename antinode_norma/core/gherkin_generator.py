@@ -1,7 +1,10 @@
 from typing import Callable, List
 from .schemas import UserStory
 
-def generate_gherkin(story: UserStory, step_definitions: List[str], llm_call: Callable[[str], str]) -> str:
+
+def generate_gherkin(
+    story: UserStory, step_definitions: List[str], llm_call: Callable[[str], str]
+) -> str:
     prompt = f"""You are a BDD expert. Write a Gherkin .feature file for the following user story.
 
 User story:

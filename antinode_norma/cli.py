@@ -11,10 +11,12 @@ from antinode_norma.runner import run_agent_from_raw
 
 load_dotenv()
 
+
 @click.group()
 def cli():
     """Antinode Norma – Transform user stories into Gherkin feature files."""
     pass
+
 
 @cli.command()
 @click.argument("story_text", required=False)
@@ -50,13 +52,20 @@ def generate(story_text, file, output_dir, quality_only):
 
     asyncio.run(run())
 
+
 @cli.command()
 @click.option("--transport", default="stdio", help="MCP transport (stdio or sse)")
 def serve(transport):
     """Start the Norma MCP server."""
     from antinode_norma.server.mcp_server import main as mcp_main
+
     click.echo(f"Starting Norma MCP server on {transport}...")
     mcp_main()
+
+
+def main():
+    cli()
+
 
 if __name__ == "__main__":
     cli()

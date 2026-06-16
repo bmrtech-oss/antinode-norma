@@ -2,10 +2,16 @@
 
 import pytest
 from antinode_norma.core.quality import (
-    is_independent, is_negotiable, is_valuable,
-    is_estimable, is_small, is_testable, compute_quality
+    is_independent,
+    is_negotiable,
+    is_valuable,
+    is_estimable,
+    is_small,
+    is_testable,
+    compute_quality,
 )
 from antinode_norma.core.schemas import UserStory
+
 
 class TestInvestChecks:
     def test_is_independent(self):
@@ -18,7 +24,12 @@ class TestInvestChecks:
         assert is_independent(story) is False
 
     def test_is_negotiable(self):
-        story = UserStory(role="u", action="a", benefit="b", acceptance_criteria=["should update SQL database"])
+        story = UserStory(
+            role="u",
+            action="a",
+            benefit="b",
+            acceptance_criteria=["should update SQL database"],
+        )
         assert is_negotiable(story) == "needs_review"
         story.acceptance_criteria = ["should display the result"]
         assert is_negotiable(story) is True
@@ -36,7 +47,12 @@ class TestInvestChecks:
         assert is_estimable(story) is False
 
     def test_is_small(self):
-        story = UserStory(role="u", action="a", benefit="b", acceptance_criteria=["c1", "c2", "c3", "c4", "c5"])
+        story = UserStory(
+            role="u",
+            action="a",
+            benefit="b",
+            acceptance_criteria=["c1", "c2", "c3", "c4", "c5"],
+        )
         assert is_small(story) is True
         story.acceptance_criteria = ["c1", "c2", "c3", "c4", "c5", "c6"]
         assert is_small(story) is False
@@ -46,15 +62,19 @@ class TestInvestChecks:
         assert is_small(story) is False
 
     def test_is_testable(self):
-        story = UserStory(role="u", action="a", benefit="b", acceptance_criteria=["should return 200"])
+        story = UserStory(
+            role="u", action="a", benefit="b", acceptance_criteria=["should return 200"]
+        )
         assert is_testable(story) is True
         story.acceptance_criteria = ["click the button"]
         assert is_testable(story) is False
 
     def test_compute_quality(self):
         story = UserStory(
-            role="u", action="a", benefit="benefit",
-            acceptance_criteria=["should display X", "should return Y"]
+            role="u",
+            action="a",
+            benefit="benefit",
+            acceptance_criteria=["should display X", "should return Y"],
         )
         report = compute_quality(story)
         assert report.passes_invest is True
