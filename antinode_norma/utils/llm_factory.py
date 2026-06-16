@@ -9,9 +9,7 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
     if provider == "anthropic":
         from anthropic import Anthropic
 
-        client = Anthropic(
-            api_key=config.get("api_key") or os.getenv("ANTHROPIC_API_KEY")
-        )
+        client = Anthropic(api_key=config.get("api_key") or os.getenv("ANTHROPIC_API_KEY"))
         model = config.get("model", "claude-3-5-sonnet-20241022")
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)

@@ -5,9 +5,7 @@ import pytest
 from antinode_norma.utils.llm_factory import create_llm_callable
 
 
-@pytest.mark.skipif(
-    not os.getenv("OPENROUTER_API_KEY"), reason="OPENROUTER_API_KEY not set"
-)
+@pytest.mark.skipif(not os.getenv("OPENROUTER_API_KEY"), reason="OPENROUTER_API_KEY not set")
 def test_openrouter_call():
     config = {
         "provider": "openrouter",
@@ -23,9 +21,7 @@ def test_openrouter_call():
     assert "Paris" in response
 
 
-@pytest.mark.skipif(
-    not os.getenv("OPENROUTER_API_KEY"), reason="OPENROUTER_API_KEY not set"
-)
+@pytest.mark.skipif(not os.getenv("OPENROUTER_API_KEY"), reason="OPENROUTER_API_KEY not set")
 def test_openrouter_parser_integration():
     from antinode_norma.core.parser import parse_story
 

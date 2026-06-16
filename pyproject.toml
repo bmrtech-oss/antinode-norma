@@ -9,7 +9,7 @@ description = "BDD feature file generator with INVEST quality gate"
 authors = [{name = "Antinode Labs", email = "info@antinodelabs.com"}]
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "anthropic>=0.23.0",
     "openai>=1.0.0",
@@ -18,12 +18,13 @@ dependencies = [
     "mcp>=0.1.0",
     "jira>=3.4.0",
     "requests>=2.31.0",
+    "mcp @ git+https://github.com/modelcontextprotocol/python-sdk.git@main",
     "click>=8.1.0",
 ]
 
 [tool.black]
 line-length = 100
-target-version = ['py39', 'py310', 'py311', 'py312']
+target-version = ['py310', 'py311', 'py312']
 include = '\.pyi?$'
 exclude = '''
 /(

@@ -40,9 +40,7 @@ def get_step_definitions(keyword: str = None):
     return steps
 
 
-async def run_agent_from_raw(
-    raw_story: str, quality_only: bool = False
-) -> Dict[str, Any]:
+async def run_agent_from_raw(raw_story: str, quality_only: bool = False) -> Dict[str, Any]:
     """Run the Norma agent from raw story text."""
     # Parse
     story = parse_story(raw_story, llm_call)

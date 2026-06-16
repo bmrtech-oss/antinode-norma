@@ -35,17 +35,13 @@ class TestInvestChecks:
         assert is_negotiable(story) is True
 
     def test_is_valuable(self):
-        story = UserStory(
-            role="u", action="a", benefit="benefit", acceptance_criteria=["c1"]
-        )
+        story = UserStory(role="u", action="a", benefit="benefit", acceptance_criteria=["c1"])
         assert is_valuable(story) is True
         story.benefit = "call the API"
         assert is_valuable(story) is False
 
     def test_is_estimable(self):
-        story = UserStory(
-            role="u", action="a", benefit="b", acceptance_criteria=["clear step"]
-        )
+        story = UserStory(role="u", action="a", benefit="b", acceptance_criteria=["clear step"])
         assert is_estimable(story) is True
         story.acceptance_criteria = ["handle various cases"]
         assert is_estimable(story) is False

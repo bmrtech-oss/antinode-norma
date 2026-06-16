@@ -18,9 +18,7 @@ def test_generate_gherkin_calls_llm(mock_llm_call):
 
 def test_generate_gherkin_prompt_content():
     # Test that the prompt includes story details by capturing it
-    story = UserStory(
-        role="tester", action="test", benefit="learn", acceptance_criteria=["c1"]
-    )
+    story = UserStory(role="tester", action="test", benefit="learn", acceptance_criteria=["c1"])
     step_defs = ["Given a"]
     recorded_prompt = None
 

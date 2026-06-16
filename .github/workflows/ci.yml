@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12']
 
     steps:
       - name: Checkout code
@@ -37,6 +37,8 @@ jobs:
           flake8 antinode_norma/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Check formatting with black
+        # Only run Black on Python 3.12 to avoid AST parsing version mismatches
+        if: matrix.python-version == '3.12'
         run: |
           black --check antinode_norma/ tests/
 
@@ -55,7 +57,6 @@ jobs:
   integration:
     name: Integration tests
     runs-on: ubuntu-latest
-    # Run only on push events (not PRs) to avoid exposing secrets to forks
     if: github.event_name == 'push'
     needs: test
 
@@ -76,7 +77,6 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run integration tests
-        # Only run if OPENROUTER_API_KEY secret is set
         if: env.OPENROUTER_API_KEY != ''
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}

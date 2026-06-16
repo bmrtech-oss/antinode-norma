@@ -12,9 +12,7 @@ async def main():
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            jira = JIRA(
-                server=os.getenv("JIRA_SERVER"), token_auth=os.getenv("JIRA_TOKEN")
-            )
+            jira = JIRA(server=os.getenv("JIRA_SERVER"), token_auth=os.getenv("JIRA_TOKEN"))
             issues = jira.search_issues("labels = bdd-ready")
             for issue in issues:
                 raw_text = f"{issue.fields.summary}\n{issue.fields.description or ''}"

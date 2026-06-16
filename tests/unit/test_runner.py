@@ -51,9 +51,7 @@ async def test_run_agent_from_raw_generation():
     with (
         patch("antinode_norma.runner.parse_story", return_value=story),
         patch("antinode_norma.runner.compute_quality", return_value=mock_report),
-        patch(
-            "antinode_norma.runner.get_step_definitions", return_value=["Given a step"]
-        ),
+        patch("antinode_norma.runner.get_step_definitions", return_value=["Given a step"]),
         patch(
             "antinode_norma.runner.generate_gherkin",
             return_value="Feature: test\nScenario: test\nGiven something",
@@ -72,9 +70,7 @@ async def test_run_agent_from_raw_generation():
 @pytest.mark.asyncio
 async def test_run_agent_from_raw_fails_quality():
     """Test that the runner returns an error when quality fails."""
-    story = UserStory(
-        role="tester", action="test", benefit="learn", acceptance_criteria=["vague"]
-    )
+    story = UserStory(role="tester", action="test", benefit="learn", acceptance_criteria=["vague"])
     mock_report = QualityReport(
         passes_invest=False,
         invest_details={"testable": False},
@@ -111,9 +107,7 @@ async def test_run_agent_from_raw_gherkin_validation_fails():
     with (
         patch("antinode_norma.runner.parse_story", return_value=story),
         patch("antinode_norma.runner.compute_quality", return_value=mock_report),
-        patch(
-            "antinode_norma.runner.get_step_definitions", return_value=["Given a step"]
-        ),
+        patch("antinode_norma.runner.get_step_definitions", return_value=["Given a step"]),
         patch("antinode_norma.runner.generate_gherkin", return_value="bad gherkin"),
         patch("antinode_norma.runner.validate_gherkin") as mock_validate,
     ):

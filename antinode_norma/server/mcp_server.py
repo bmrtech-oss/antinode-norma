@@ -108,9 +108,7 @@ async def main():
             story_id = arguments.get("story_id")
             suggestions = arguments.get("suggestions", [])
             if story_id not in stories:
-                return [
-                    types.TextContent(type="text", text=f"Story {story_id} not found")
-                ]
+                return [types.TextContent(type="text", text=f"Story {story_id} not found")]
             original = stories[story_id]
             prompt = f"""Improve this story based on suggestions:
 {original.json(indent=2)}
@@ -133,17 +131,13 @@ Return improved JSON matching the same schema."""
             story_id = arguments.get("story_id")
             step_defs = arguments.get("step_definitions", [])
             if story_id not in stories:
-                return [
-                    types.TextContent(type="text", text=f"Story {story_id} not found")
-                ]
+                return [types.TextContent(type="text", text=f"Story {story_id} not found")]
             story = stories[story_id]
             gherkin = generate_gherkin(story, step_defs, llm_call)
             validation = validate_gherkin(gherkin)
             if not validation.valid:
                 return [
-                    types.TextContent(
-                        type="text", text=f"Validation failed: {validation.errors}"
-                    )
+                    types.TextContent(type="text", text=f"Validation failed: {validation.errors}")
                 ]
             safe_action = story.action.lower().replace(" ", "_")
             output_dir = os.getenv("NORMA_OUTPUT_DIR", "features")
