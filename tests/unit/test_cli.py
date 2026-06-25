@@ -27,29 +27,31 @@ def test_learn_command_stores_failures_and_shows_suggestions(monkeypatch, tmp_pa
     )
 
     report_path.write_text(
-        json.dumps({
-            "suites": [
-                {
-                    "title": "",
-                    "suites": [],
-                    "tests": [
-                        {
-                            "title": "Forgot password",
-                            "location": {
-                                "file": str(spec_path),
-                                "line": 3,
-                            },
-                            "results": [
-                                {
-                                    "status": "failed",
-                                    "error": "locator.click: waiting for locator('text=Forgot password')",
-                                }
-                            ],
-                        }
-                    ],
-                }
-            ]
-        }),
+        json.dumps(
+            {
+                "suites": [
+                    {
+                        "title": "",
+                        "suites": [],
+                        "tests": [
+                            {
+                                "title": "Forgot password",
+                                "location": {
+                                    "file": str(spec_path),
+                                    "line": 3,
+                                },
+                                "results": [
+                                    {
+                                        "status": "failed",
+                                        "error": "locator.click: waiting for locator('text=Forgot password')",
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
         encoding="utf-8",
     )
 

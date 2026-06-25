@@ -13,6 +13,7 @@ from enum import Enum
 
 class ActionType(Enum):
     """Supported test actions."""
+
     NAVIGATE = "navigate"
     CLICK = "click"
     DOUBLE_CLICK = "double_click"
@@ -38,9 +39,10 @@ class ActionType(Enum):
 @dataclass(frozen=True)
 class TestStep:
     """A single test step."""
+
     action: ActionType
-    target: Optional[str] = None       # CSS selector, XPath, URL, etc.
-    value: Optional[str] = None        # text to fill, expected text, etc.
+    target: Optional[str] = None  # CSS selector, XPath, URL, etc.
+    value: Optional[str] = None  # text to fill, expected text, etc.
     description: Optional[str] = None  # human‑readable step text (from Gherkin)
     options: dict = field(default_factory=dict)  # extra parameters (timeout, etc.)
 
@@ -48,6 +50,7 @@ class TestStep:
 @dataclass(frozen=True)
 class TestCase:
     """A single test case (scenario)."""
+
     name: str
     steps: List[TestStep]
     tags: List[str] = field(default_factory=list)
@@ -58,6 +61,7 @@ class TestCase:
 @dataclass(frozen=True)
 class TestSuite:
     """A collection of test cases from one feature file."""
+
     name: str
     cases: List[TestCase]
     description: Optional[str] = None

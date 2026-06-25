@@ -8,7 +8,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
-DB_FILE: Path = Path(os.getenv("ANTINODE_FAILURE_DB_FILE", Path.home() / ".antinode_norma_failures.db"))
+DB_FILE: Path = Path(
+    os.getenv("ANTINODE_FAILURE_DB_FILE", Path.home() / ".antinode_norma_failures.db")
+)
 _TABLE_NAME = "failure_events"
 
 _SELECTOR_PATTERNS = [
@@ -176,7 +178,14 @@ def store_playwright_failures(report_path: Path) -> List[FailureEvent]:
         for failure in failures:
             conn.execute(
                 f"INSERT INTO {_TABLE_NAME} (step_text, test_title, file_path, line, selector, error_message) VALUES (?, ?, ?, ?, ?, ?)",
-                (failure.step_text, failure.test_title, failure.file_path, failure.line, failure.selector, failure.error_message),
+                (
+                    failure.step_text,
+                    failure.test_title,
+                    failure.file_path,
+                    failure.line,
+                    failure.selector,
+                    failure.error_message,
+                ),
             )
             inserted.append(failure)
         conn.commit()

@@ -32,26 +32,101 @@ def _normalize_action(action_value: str) -> ActionType:
 
 def _build_prompt(step_text: str) -> str:
     examples = [
-        ('Given I navigate to "https://example.com/login"', {'action': 'NAVIGATE', 'target': None, 'value': 'https://example.com/login', 'options': {}}),
-        ('When I click on "#login-button"', {'action': 'CLICK', 'target': '#login-button', 'value': None, 'options': {}}),
-        ('Then I should see "Welcome"', {'action': 'ASSERT_TEXT', 'target': None, 'value': 'Welcome', 'options': {}}),
-        ('When I fill "test@example.com" into "#email"', {'action': 'FILL', 'target': '#email', 'value': 'test@example.com', 'options': {}}),
-        ('When I double click "#item"', {'action': 'DOUBLE_CLICK', 'target': '#item', 'value': None, 'options': {}}),
-        ('When I right click on "#menu"', {'action': 'RIGHT_CLICK', 'target': '#menu', 'value': None, 'options': {}}),
-        ('When I hover over "#tooltip-trigger"', {'action': 'HOVER', 'target': '#tooltip-trigger', 'value': None, 'options': {}}),
-        ('When I clear "#search"', {'action': 'CLEAR', 'target': '#search', 'value': None, 'options': {}}),
-        ('When I select "United States" from "#country"', {'action': 'SELECT', 'target': '#country', 'value': 'United States', 'options': {}}),
-        ('When I check "#subscribe"', {'action': 'CHECK', 'target': '#subscribe', 'value': None, 'options': {}}),
-        ('When I uncheck "#subscribe"', {'action': 'UNCHECK', 'target': '#subscribe', 'value': None, 'options': {}}),
-        ('Then "#spinner" should be visible', {'action': 'ASSERT_VISIBLE', 'target': '#spinner', 'value': None, 'options': {}}),
-        ('Then "#spinner" should not be visible', {'action': 'ASSERT_HIDDEN', 'target': '#spinner', 'value': None, 'options': {}}),
-        ('Then I should see "Account created"', {'action': 'ASSERT_TEXT', 'target': None, 'value': 'Account created', 'options': {}}),
-        ('Then the value of "#price" should be "19.99"', {'action': 'ASSERT_VALUE', 'target': '#price', 'value': '19.99', 'options': {}}),
-        ('Then the URL should be "https://example.com/dashboard"', {'action': 'ASSERT_URL', 'target': None, 'value': 'https://example.com/dashboard', 'options': {}}),
-        ('Then the title should contain "Dashboard"', {'action': 'ASSERT_TITLE', 'target': None, 'value': 'Dashboard', 'options': {}}),
-        ('And I wait for 5 seconds', {'action': 'WAIT', 'target': None, 'value': '5', 'options': {}}),
-        ('When I take a screenshot', {'action': 'SCREENSHOT', 'target': None, 'value': None, 'options': {}}),
-        ('When I execute script "return window.location.href"', {'action': 'EXECUTE_SCRIPT', 'target': None, 'value': 'return window.location.href', 'options': {}}),
+        (
+            'Given I navigate to "https://example.com/login"',
+            {
+                "action": "NAVIGATE",
+                "target": None,
+                "value": "https://example.com/login",
+                "options": {},
+            },
+        ),
+        (
+            'When I click on "#login-button"',
+            {"action": "CLICK", "target": "#login-button", "value": None, "options": {}},
+        ),
+        (
+            'Then I should see "Welcome"',
+            {"action": "ASSERT_TEXT", "target": None, "value": "Welcome", "options": {}},
+        ),
+        (
+            'When I fill "test@example.com" into "#email"',
+            {"action": "FILL", "target": "#email", "value": "test@example.com", "options": {}},
+        ),
+        (
+            'When I double click "#item"',
+            {"action": "DOUBLE_CLICK", "target": "#item", "value": None, "options": {}},
+        ),
+        (
+            'When I right click on "#menu"',
+            {"action": "RIGHT_CLICK", "target": "#menu", "value": None, "options": {}},
+        ),
+        (
+            'When I hover over "#tooltip-trigger"',
+            {"action": "HOVER", "target": "#tooltip-trigger", "value": None, "options": {}},
+        ),
+        (
+            'When I clear "#search"',
+            {"action": "CLEAR", "target": "#search", "value": None, "options": {}},
+        ),
+        (
+            'When I select "United States" from "#country"',
+            {"action": "SELECT", "target": "#country", "value": "United States", "options": {}},
+        ),
+        (
+            'When I check "#subscribe"',
+            {"action": "CHECK", "target": "#subscribe", "value": None, "options": {}},
+        ),
+        (
+            'When I uncheck "#subscribe"',
+            {"action": "UNCHECK", "target": "#subscribe", "value": None, "options": {}},
+        ),
+        (
+            'Then "#spinner" should be visible',
+            {"action": "ASSERT_VISIBLE", "target": "#spinner", "value": None, "options": {}},
+        ),
+        (
+            'Then "#spinner" should not be visible',
+            {"action": "ASSERT_HIDDEN", "target": "#spinner", "value": None, "options": {}},
+        ),
+        (
+            'Then I should see "Account created"',
+            {"action": "ASSERT_TEXT", "target": None, "value": "Account created", "options": {}},
+        ),
+        (
+            'Then the value of "#price" should be "19.99"',
+            {"action": "ASSERT_VALUE", "target": "#price", "value": "19.99", "options": {}},
+        ),
+        (
+            'Then the URL should be "https://example.com/dashboard"',
+            {
+                "action": "ASSERT_URL",
+                "target": None,
+                "value": "https://example.com/dashboard",
+                "options": {},
+            },
+        ),
+        (
+            'Then the title should contain "Dashboard"',
+            {"action": "ASSERT_TITLE", "target": None, "value": "Dashboard", "options": {}},
+        ),
+        (
+            "And I wait for 5 seconds",
+            {"action": "WAIT", "target": None, "value": "5", "options": {}},
+        ),
+        (
+            "When I take a screenshot",
+            {"action": "SCREENSHOT", "target": None, "value": None, "options": {}},
+        ),
+        (
+            'When I execute script "return window.location.href"',
+            {
+                "action": "EXECUTE_SCRIPT",
+                "target": None,
+                "value": "return window.location.href",
+                "options": {},
+            },
+        ),
     ]
 
     prompt_lines = [
@@ -80,13 +155,17 @@ def _build_prompt(step_text: str) -> str:
             error_line = failure.error_message.splitlines()[0]
             prompt_lines.append(f"- {summary}: {error_line}")
         prompt_lines.append("")
-        prompt_lines.append("Prefer more robust selectors or alternative mappings when a similar failure is detected.")
+        prompt_lines.append(
+            "Prefer more robust selectors or alternative mappings when a similar failure is detected."
+        )
 
-    prompt_lines.extend([
-        "Now convert this step to Playwright:",
-        f"Gherkin: \"{step_text}\"",
-        "Playwright:",
-    ])
+    prompt_lines.extend(
+        [
+            "Now convert this step to Playwright:",
+            f'Gherkin: "{step_text}"',
+            "Playwright:",
+        ]
+    )
 
     return "\n".join(prompt_lines)
 
@@ -96,7 +175,7 @@ def _extract_json_object(raw: str) -> str:
     end = raw.rfind("}")
     if start == -1 or end == -1 or end < start:
         raise ValueError("LLM response does not contain a valid JSON object")
-    return raw[start:end + 1]
+    return raw[start : end + 1]
 
 
 def _parse_llm_output(raw: str) -> Dict[str, Any]:
@@ -163,7 +242,9 @@ def _persist_cache() -> None:
         _LOGGER.debug("Unable to persist LLM cache to %s: %s", _CACHE_FILE, exc)
 
 
-def _add_to_cache(step_text: str, mapping: Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]) -> None:
+def _add_to_cache(
+    step_text: str, mapping: Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]
+) -> None:
     key = _cache_key(step_text)
     quality = get_config().quality
     if key in _CACHE_ORDER:
@@ -185,7 +266,9 @@ def _build_llm_config_from_env() -> Dict[str, Any]:
 
     return {
         "provider": provider,
-        "api_key": os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("OPENROUTER_API_KEY"),
+        "api_key": os.getenv("ANTHROPIC_API_KEY")
+        or os.getenv("OPENAI_API_KEY")
+        or os.getenv("OPENROUTER_API_KEY"),
         "model": os.getenv("LLM_MODEL") or None,
         "temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
         "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "1024")),
@@ -200,7 +283,9 @@ async def _call_llm(prompt: str, config: Dict[str, Any]) -> str:
     return await asyncio.to_thread(llm, prompt)
 
 
-async def map_step_with_llm(step_text: str) -> Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]:
+async def map_step_with_llm(
+    step_text: str,
+) -> Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]:
     key = _cache_key(step_text)
     if key in _CACHE:
         _LOGGER.debug("LLM cache hit for step: %s", key)
@@ -218,9 +303,14 @@ async def map_step_with_llm(step_text: str) -> Tuple[ActionType, Optional[str], 
         mapping = _parse_llm_output(raw_output)
     except Exception as exc:
         _LOGGER.debug("LLM mapping failed on first attempt for '%s': %s", step_text, exc)
-        retry_prompt = prompt + "\n\nIMPORTANT: Please respond with valid JSON only. The JSON object must include action, target, value, and options."
+        retry_prompt = (
+            prompt
+            + "\n\nIMPORTANT: Please respond with valid JSON only. The JSON object must include action, target, value, and options."
+        )
         try:
-            raw_output = await asyncio.wait_for(_call_llm(retry_prompt, llm_config), timeout=timeout)
+            raw_output = await asyncio.wait_for(
+                _call_llm(retry_prompt, llm_config), timeout=timeout
+            )
             mapping = _parse_llm_output(raw_output)
         except Exception as retry_exc:
             raise ValueError(
@@ -247,7 +337,11 @@ def map_step(
     use_llm: bool = True,
     fallback_to_rules: bool = True,
     fallback_engine: Optional[RuleEngine] = None,
-    interactive_callback: Optional[Callable[[str, str, list[str]], Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]]] = None,
+    interactive_callback: Optional[
+        Callable[
+            [str, str, list[str]], Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]
+        ]
+    ] = None,
 ) -> Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]:
     if not use_llm:
         return (fallback_engine or RuleEngine()).map_step(step_text)

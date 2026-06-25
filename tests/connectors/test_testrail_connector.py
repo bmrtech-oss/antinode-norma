@@ -2,7 +2,11 @@ import os
 import pytest
 from unittest.mock import Mock, patch
 
-from antinode_norma.connectors.testrail_connector import add_test_case, add_test_result, create_test_run
+from antinode_norma.connectors.testrail_connector import (
+    add_test_case,
+    add_test_result,
+    create_test_run,
+)
 
 
 @patch("antinode_norma.connectors.testrail_connector.requests.Session")
@@ -16,7 +20,11 @@ def test_add_test_case_posts_payload(MockSession):
 
     with patch.dict(
         os.environ,
-        {"TESTRAIL_URL": "https://testrail.example.com", "TESTRAIL_USER": "user", "TESTRAIL_TOKEN": "token"},
+        {
+            "TESTRAIL_URL": "https://testrail.example.com",
+            "TESTRAIL_USER": "user",
+            "TESTRAIL_TOKEN": "token",
+        },
     ):
         result = add_test_case(101, "Login test", "Verify login flow")
 
@@ -35,7 +43,11 @@ def test_add_test_result_posts_payload(MockSession):
 
     with patch.dict(
         os.environ,
-        {"TESTRAIL_URL": "https://testrail.example.com", "TESTRAIL_USER": "user", "TESTRAIL_TOKEN": "token"},
+        {
+            "TESTRAIL_URL": "https://testrail.example.com",
+            "TESTRAIL_USER": "user",
+            "TESTRAIL_TOKEN": "token",
+        },
     ):
         result = add_test_result(222, 1, "Passed")
 
@@ -54,7 +66,11 @@ def test_create_test_run_posts_payload(MockSession):
 
     with patch.dict(
         os.environ,
-        {"TESTRAIL_URL": "https://testrail.example.com", "TESTRAIL_USER": "user", "TESTRAIL_TOKEN": "token"},
+        {
+            "TESTRAIL_URL": "https://testrail.example.com",
+            "TESTRAIL_USER": "user",
+            "TESTRAIL_TOKEN": "token",
+        },
     ):
         result = create_test_run(1, 2, "Daily run", "Daily smoke suite")
 

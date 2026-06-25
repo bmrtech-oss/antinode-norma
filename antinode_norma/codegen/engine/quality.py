@@ -3,16 +3,18 @@
 from dataclasses import dataclass, field
 from typing import Optional, List
 
+
 @dataclass
 class QualityConfig:
     """Settings for improving test code quality."""
+
     use_page_objects: bool = False
     generate_step_defs: bool = False
     selector_strategy: str = "data-testid"  # "data-testid", "id", "css", "auto"
     add_explicit_waits: bool = True
     enable_scenario_outlines: bool = True
     run_formatter: bool = True
-    formatter_tool: Optional[str] = None   # if None, auto‑detect
+    formatter_tool: Optional[str] = None  # if None, auto‑detect
     run_linter: bool = False
     linter_tool: Optional[str] = None
     page_object_dir: str = "pages"
@@ -37,16 +39,36 @@ class QualityConfig:
             self.formatter_tool = "prettier"  # default; can be overridden
 
         if isinstance(self.use_llm_mapping, str):
-            self.use_llm_mapping = self.use_llm_mapping.strip().lower() in {"true", "1", "yes", "on"}
+            self.use_llm_mapping = self.use_llm_mapping.strip().lower() in {
+                "true",
+                "1",
+                "yes",
+                "on",
+            }
 
         if isinstance(self.enable_self_healing, str):
-            self.enable_self_healing = self.enable_self_healing.strip().lower() in {"true", "1", "yes", "on"}
+            self.enable_self_healing = self.enable_self_healing.strip().lower() in {
+                "true",
+                "1",
+                "yes",
+                "on",
+            }
 
         if isinstance(self.enable_visual_testing, str):
-            self.enable_visual_testing = self.enable_visual_testing.strip().lower() in {"true", "1", "yes", "on"}
+            self.enable_visual_testing = self.enable_visual_testing.strip().lower() in {
+                "true",
+                "1",
+                "yes",
+                "on",
+            }
 
         if isinstance(self.enable_failure_learning, str):
-            self.enable_failure_learning = self.enable_failure_learning.strip().lower() in {"true", "1", "yes", "on"}
+            self.enable_failure_learning = self.enable_failure_learning.strip().lower() in {
+                "true",
+                "1",
+                "yes",
+                "on",
+            }
 
         if isinstance(self.failure_learning_max_examples, str):
             try:
@@ -56,7 +78,7 @@ class QualityConfig:
 
         if isinstance(self.visual_snapshot_dir, str):
             self.visual_snapshot_dir = self.visual_snapshot_dir.strip() or "visual-snapshots"
-            self.visual_snapshot_dir = self.visual_snapshot_dir.replace('\\', '/')
+            self.visual_snapshot_dir = self.visual_snapshot_dir.replace("\\", "/")
 
         if isinstance(self.llm_mapping_cache_size, str):
             try:

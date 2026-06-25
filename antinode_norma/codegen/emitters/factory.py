@@ -13,9 +13,11 @@ _emitter_registry = {
     "selenium": SeleniumEmitter,
 }
 
+
 def register_emitter(name: str, emitter_class: type) -> None:
     """Register a new emitter."""
     _emitter_registry[name.lower()] = emitter_class
+
 
 def get_emitter(name: str) -> Emitter:
     """Return an instance of the requested emitter."""

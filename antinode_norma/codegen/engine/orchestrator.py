@@ -12,9 +12,9 @@ from ..config import get_config
 from ..post_processors.formatter import CodeFormatter
 from ..post_processors.linter import CodeLinter
 
+
 class Orchestrator:
-    def __init__(self, parser: Optional[GherkinParser] = None,
-                 emitter: Optional[Emitter] = None):
+    def __init__(self, parser: Optional[GherkinParser] = None, emitter: Optional[Emitter] = None):
         self.parser = parser or GherkinParser()
         self.emitter = emitter
 
@@ -29,8 +29,9 @@ class Orchestrator:
         generated_files = list(output_dir.glob("*.spec.ts")) + list(output_dir.glob("*.ts"))
         return generated_files
 
-    def generate(self, feature_path: Path, output_dir: Optional[Path] = None,
-                 framework: Optional[str] = None) -> None:
+    def generate(
+        self, feature_path: Path, output_dir: Optional[Path] = None, framework: Optional[str] = None
+    ) -> None:
         config = get_config()
         fw = framework or config.default_framework
         out_dir = output_dir or config.get_output_dir(fw)

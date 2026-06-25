@@ -20,7 +20,7 @@ class SeleniumEmitter(Emitter):
         write_file(output_dir / filename, content)
 
     def _safe_filename(self, name: str) -> str:
-        return re.sub(r'[^a-zA-Z0-9_]', '_', name).lower()
+        return re.sub(r"[^a-zA-Z0-9_]", "_", name).lower()
 
     def _render(self, suite: TestSuite) -> str:
         lines = [
@@ -64,7 +64,9 @@ class SeleniumEmitter(Emitter):
         elif action == ActionType.ASSERT_VISIBLE:
             return f"assert self.driver.find_element(By.CSS_SELECTOR, '{target}').is_displayed()"
         elif action == ActionType.ASSERT_HIDDEN:
-            return f"assert not self.driver.find_element(By.CSS_SELECTOR, '{target}').is_displayed()"
+            return (
+                f"assert not self.driver.find_element(By.CSS_SELECTOR, '{target}').is_displayed()"
+            )
         elif action == ActionType.WAIT:
             return f"import time; time.sleep({int(value)})"
         elif action == ActionType.CHECK:

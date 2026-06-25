@@ -44,29 +44,31 @@ def test_e2e_failure_learning_influences_gherkin_parsing(tmp_path, monkeypatch):
     )
 
     report_path.write_text(
-        json.dumps({
-            "suites": [
-                {
-                    "title": "",
-                    "suites": [],
-                    "tests": [
-                        {
-                            "title": "User Login",
-                            "location": {
-                                "file": str(spec_path),
-                                "line": 5,
-                            },
-                            "results": [
-                                {
-                                    "status": "failed",
-                                    "error": "locator.click: waiting for locator('#login-button'). Timeout 30000ms exceeded.",
-                                }
-                            ],
-                        }
-                    ],
-                }
-            ]
-        }),
+        json.dumps(
+            {
+                "suites": [
+                    {
+                        "title": "",
+                        "suites": [],
+                        "tests": [
+                            {
+                                "title": "User Login",
+                                "location": {
+                                    "file": str(spec_path),
+                                    "line": 5,
+                                },
+                                "results": [
+                                    {
+                                        "status": "failed",
+                                        "error": "locator.click: waiting for locator('#login-button'). Timeout 30000ms exceeded.",
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -81,11 +83,11 @@ def test_e2e_failure_learning_influences_gherkin_parsing(tmp_path, monkeypatch):
     feature_path.write_text(
         "Feature: User Login\n"
         "  Scenario: Successful login\n"
-        "    Given I navigate to \"https://example.com/login\"\n"
-        "    When I fill \"test@example.com\" into \"#email\"\n"
-        "    And I fill \"password123\" into \"#password\"\n"
-        "    And I click on \"#login-button\"\n"
-        "    Then I should see \"Welcome\"\n"
+        '    Given I navigate to "https://example.com/login"\n'
+        '    When I fill "test@example.com" into "#email"\n'
+        '    And I fill "password123" into "#password"\n'
+        '    And I click on "#login-button"\n'
+        '    Then I should see "Welcome"\n'
     )
 
     # Configure with failure learning enabled
@@ -131,19 +133,21 @@ def test_e2e_failure_suggestions_and_cli_integration(tmp_path, monkeypatch):
     )
 
     report_path.write_text(
-        json.dumps({
-            "tests": [
-                {
-                    "title": "Reset Password",
-                    "results": [
-                        {
-                            "status": "failed",
-                            "error": "locator.click: waiting for locator('text=Forgot password?'). Element not found.",
-                        }
-                    ],
-                }
-            ]
-        }),
+        json.dumps(
+            {
+                "tests": [
+                    {
+                        "title": "Reset Password",
+                        "results": [
+                            {
+                                "status": "failed",
+                                "error": "locator.click: waiting for locator('text=Forgot password?'). Element not found.",
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
         encoding="utf-8",
     )
 

@@ -86,7 +86,11 @@ async def list_tools() -> list[types.Tool]:
                 "type": "object",
                 "properties": {
                     "feature_path": {"type": "string", "description": "Path to the .feature file"},
-                    "framework": {"type": "string", "enum": ["playwright", "cypress", "selenium"], "default": "playwright"},
+                    "framework": {
+                        "type": "string",
+                        "enum": ["playwright", "cypress", "selenium"],
+                        "default": "playwright",
+                    },
                     "output_dir": {"type": "string", "description": "Output directory (optional)"},
                     "use_page_objects": {"type": "boolean", "default": False},
                     "generate_step_defs": {"type": "boolean", "default": False},
@@ -102,7 +106,11 @@ async def list_tools() -> list[types.Tool]:
                 "type": "object",
                 "properties": {
                     "feature_path": {"type": "string", "description": "Path to the .feature file"},
-                    "framework": {"type": "string", "enum": ["playwright", "cypress", "selenium"], "default": "playwright"},
+                    "framework": {
+                        "type": "string",
+                        "enum": ["playwright", "cypress", "selenium"],
+                        "default": "playwright",
+                    },
                     "output_dir": {"type": "string", "description": "Output directory (optional)"},
                 },
                 "required": ["feature_path"],
@@ -115,7 +123,11 @@ async def list_tools() -> list[types.Tool]:
                 "type": "object",
                 "properties": {
                     "feature_path": {"type": "string", "description": "Path to the .feature file"},
-                    "framework": {"type": "string", "enum": ["playwright", "cypress", "selenium"], "default": "playwright"},
+                    "framework": {
+                        "type": "string",
+                        "enum": ["playwright", "cypress", "selenium"],
+                        "default": "playwright",
+                    },
                     "output_dir": {"type": "string", "description": "Output directory (optional)"},
                 },
                 "required": ["feature_path"],

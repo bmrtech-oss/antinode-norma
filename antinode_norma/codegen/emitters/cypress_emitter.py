@@ -20,7 +20,7 @@ class CypressEmitter(Emitter):
         write_file(output_dir / filename, content)
 
     def _safe_filename(self, name: str) -> str:
-        return re.sub(r'[^a-zA-Z0-9_]', '_', name).lower()
+        return re.sub(r"[^a-zA-Z0-9_]", "_", name).lower()
 
     def _render(self, suite: TestSuite) -> str:
         lines = [

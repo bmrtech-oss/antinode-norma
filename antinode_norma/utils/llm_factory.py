@@ -152,7 +152,11 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
                 action = _extract_block(prompt, "Action:").splitlines()[0].strip()
                 benefit = _extract_block(prompt, "Benefit:").splitlines()[0].strip()
                 criteria_block = _extract_block(prompt, "Acceptance criteria:")
-                criteria = [line.strip()[2:].strip() for line in criteria_block.splitlines() if line.strip().startswith("- ")]
+                criteria = [
+                    line.strip()[2:].strip()
+                    for line in criteria_block.splitlines()
+                    if line.strip().startswith("- ")
+                ]
                 return _build_feature(role, action, benefit, criteria)
             return json.dumps(
                 {

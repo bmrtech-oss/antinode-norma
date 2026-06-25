@@ -19,12 +19,14 @@ def clear_llm_cache(monkeypatch, tmp_path):
 
 def test_map_step_with_llm_returns_playwright_mapping(monkeypatch):
     async def fake_call(prompt: str, config: dict) -> str:
-        return json.dumps({
-            "action": "NAVIGATE",
-            "target": None,
-            "value": "https://example.com/login",
-            "options": {},
-        })
+        return json.dumps(
+            {
+                "action": "NAVIGATE",
+                "target": None,
+                "value": "https://example.com/login",
+                "options": {},
+            }
+        )
 
     monkeypatch.setattr(llm_step_mapper, "_call_llm", fake_call)
     action, target, value, options = llm_step_mapper.map_step(
@@ -41,12 +43,14 @@ def test_map_step_with_llm_returns_playwright_mapping(monkeypatch):
 
 def test_map_step_with_llm_understands_natural_language(monkeypatch):
     async def fake_call(prompt: str, config: dict) -> str:
-        return json.dumps({
-            "action": "CLICK",
-            "target": "text=reset link",
-            "value": None,
-            "options": {},
-        })
+        return json.dumps(
+            {
+                "action": "CLICK",
+                "target": "text=reset link",
+                "value": None,
+                "options": {},
+            }
+        )
 
     monkeypatch.setattr(llm_step_mapper, "_call_llm", fake_call)
     action, target, value, options = llm_step_mapper.map_step(
@@ -84,12 +88,14 @@ def test_map_step_cache_prevents_duplicate_llm_calls(monkeypatch):
 
     async def fake_call(prompt: str, config: dict) -> str:
         call_count["count"] += 1
-        return json.dumps({
-            "action": "CLICK",
-            "target": "#login-button",
-            "value": None,
-            "options": {},
-        })
+        return json.dumps(
+            {
+                "action": "CLICK",
+                "target": "#login-button",
+                "value": None,
+                "options": {},
+            }
+        )
 
     monkeypatch.setattr(llm_step_mapper, "_call_llm", fake_call)
 
@@ -120,7 +126,11 @@ def test_build_prompt_includes_failure_context(monkeypatch):
         created_at="2026-06-25 00:00:00",
     )
 
-    monkeypatch.setattr(llm_step_mapper, "get_failure_examples_for_step", lambda step_text, max_examples=2: [failure])
+    monkeypatch.setattr(
+        llm_step_mapper,
+        "get_failure_examples_for_step",
+        lambda step_text, max_examples=2: [failure],
+    )
 
     prompt = llm_step_mapper._build_prompt('When I click on "#login-button"')
 
@@ -133,16 +143,24 @@ def test_build_prompt_skips_failure_context_when_disabled(monkeypatch):
         enable_failure_learning = False
         failure_learning_max_examples = 2
 
-    monkeypatch.setattr(llm_step_mapper, "get_config", lambda: type("C", (), {"quality": DummyQuality})())
-    monkeypatch.setattr(llm_step_mapper, "get_failure_examples_for_step", lambda step_text, max_examples=2: [FailureEvent(
-        step_text="await steps.clickElement(page, '#login-button')",
-        test_title="User Login › click login",
-        file_path=None,
-        line=None,
-        selector="#login-button",
-        error_message="locator.click: waiting for locator('#login-button')",
-        created_at="2026-06-25 00:00:00",
-    )])
+    monkeypatch.setattr(
+        llm_step_mapper, "get_config", lambda: type("C", (), {"quality": DummyQuality})()
+    )
+    monkeypatch.setattr(
+        llm_step_mapper,
+        "get_failure_examples_for_step",
+        lambda step_text, max_examples=2: [
+            FailureEvent(
+                step_text="await steps.clickElement(page, '#login-button')",
+                test_title="User Login › click login",
+                file_path=None,
+                line=None,
+                selector="#login-button",
+                error_message="locator.click: waiting for locator('#login-button')",
+                created_at="2026-06-25 00:00:00",
+            )
+        ],
+    )
 
     prompt = llm_step_mapper._build_prompt('When I click on "#login-button"')
     assert "Previous failure patterns to avoid:" not in prompt

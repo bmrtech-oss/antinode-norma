@@ -28,7 +28,6 @@ class GherkinParser(Parser):
         self.quality = quality_config or get_config().quality
         self.interactive_callback = interactive_callback
 
-
     def parse(self, source: Path) -> TestSuite:
         """
         Parse a .feature file and return a TestSuite.

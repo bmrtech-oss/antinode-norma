@@ -92,7 +92,7 @@ async def handle_generate_tests(arguments: Dict[str, Any]) -> List[Dict[str, Any
         orchestrator.generate(
             feature_path=feature_path,
             output_dir=config.get_output_dir(framework),
-            framework=framework
+            framework=framework,
         )
 
         output_path = config.get_output_dir(framework)
@@ -104,22 +104,25 @@ async def handle_generate_tests(arguments: Dict[str, Any]) -> List[Dict[str, Any
             "quality_settings": {
                 "use_page_objects": config.quality.use_page_objects,
                 "generate_step_defs": config.quality.generate_step_defs,
-                    "enable_visual_testing": config.quality.enable_visual_testing,
-                    "visual_snapshot_dir": config.quality.visual_snapshot_dir,
+                "enable_visual_testing": config.quality.enable_visual_testing,
+                "visual_snapshot_dir": config.quality.visual_snapshot_dir,
                 "selector_strategy": config.quality.selector_strategy,
-            }
+            },
         }
 
-        return [{
-            "type": "text",
-            "text": _format_result(True, f"Tests generated successfully for {framework}", result_data)
-        }]
+        return [
+            {
+                "type": "text",
+                "text": _format_result(
+                    True, f"Tests generated successfully for {framework}", result_data
+                ),
+            }
+        ]
 
     except Exception as e:
-        return [{
-            "type": "text",
-            "text": _format_result(False, f"Error generating tests: {str(e)}")
-        }]
+        return [
+            {"type": "text", "text": _format_result(False, f"Error generating tests: {str(e)}")}
+        ]
 
 
 async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -143,11 +146,18 @@ async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[s
     output_dir = arguments.get("output_dir")
 
     if not feature_path:
-        return [{"type": "text", "text": _format_result(False, "Error: 'feature_path' is required")}]
+        return [
+            {"type": "text", "text": _format_result(False, "Error: 'feature_path' is required")}
+        ]
 
     feature_path = Path(feature_path)
     if not feature_path.exists():
-        return [{"type": "text", "text": _format_result(False, f"Error: Feature file not found: {feature_path}")}]
+        return [
+            {
+                "type": "text",
+                "text": _format_result(False, f"Error: Feature file not found: {feature_path}"),
+            }
+        ]
 
     try:
         # Load config and enable page objects
@@ -163,6 +173,7 @@ async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[s
 
         # Only emit page objects (using a custom emitter)
         from antinode_norma.codegen.emitters.page_object_emitter import PageObjectEmitter
+
         emitter = PageObjectEmitter()
         emitter.emit(suite, config.get_output_dir(framework))
 
@@ -174,16 +185,20 @@ async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[s
             "page_object_dir": str(output_path),
         }
 
-        return [{
-            "type": "text",
-            "text": _format_result(True, f"Page Objects generated successfully", result_data)
-        }]
+        return [
+            {
+                "type": "text",
+                "text": _format_result(True, f"Page Objects generated successfully", result_data),
+            }
+        ]
 
     except Exception as e:
-        return [{
-            "type": "text",
-            "text": _format_result(False, f"Error generating page objects: {str(e)}")
-        }]
+        return [
+            {
+                "type": "text",
+                "text": _format_result(False, f"Error generating page objects: {str(e)}"),
+            }
+        ]
 
 
 async def handle_generate_step_defs(arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -207,11 +222,18 @@ async def handle_generate_step_defs(arguments: Dict[str, Any]) -> List[Dict[str,
     output_dir = arguments.get("output_dir")
 
     if not feature_path:
-        return [{"type": "text", "text": _format_result(False, "Error: 'feature_path' is required")}]
+        return [
+            {"type": "text", "text": _format_result(False, "Error: 'feature_path' is required")}
+        ]
 
     feature_path = Path(feature_path)
     if not feature_path.exists():
-        return [{"type": "text", "text": _format_result(False, f"Error: Feature file not found: {feature_path}")}]
+        return [
+            {
+                "type": "text",
+                "text": _format_result(False, f"Error: Feature file not found: {feature_path}"),
+            }
+        ]
 
     try:
         # Load config and enable step definitions
@@ -227,6 +249,7 @@ async def handle_generate_step_defs(arguments: Dict[str, Any]) -> List[Dict[str,
 
         # Only emit step definitions
         from antinode_norma.codegen.emitters.step_def_emitter import StepDefEmitter
+
         emitter = StepDefEmitter()
         emitter.emit(suite, config.get_output_dir(framework))
 
@@ -238,16 +261,22 @@ async def handle_generate_step_defs(arguments: Dict[str, Any]) -> List[Dict[str,
             "step_def_dir": str(output_path),
         }
 
-        return [{
-            "type": "text",
-            "text": _format_result(True, f"Step definitions generated successfully", result_data)
-        }]
+        return [
+            {
+                "type": "text",
+                "text": _format_result(
+                    True, f"Step definitions generated successfully", result_data
+                ),
+            }
+        ]
 
     except Exception as e:
-        return [{
-            "type": "text",
-            "text": _format_result(False, f"Error generating step definitions: {str(e)}")
-        }]
+        return [
+            {
+                "type": "text",
+                "text": _format_result(False, f"Error generating step definitions: {str(e)}"),
+            }
+        ]
 
 
 async def handle_validate_feature(arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -269,15 +298,23 @@ async def handle_validate_feature(arguments: Dict[str, Any]) -> List[Dict[str, A
     check_invest = arguments.get("check_invest", True)
 
     if not feature_path:
-        return [{"type": "text", "text": _format_result(False, "Error: 'feature_path' is required")}]
+        return [
+            {"type": "text", "text": _format_result(False, "Error: 'feature_path' is required")}
+        ]
 
     feature_path = Path(feature_path)
     if not feature_path.exists():
-        return [{"type": "text", "text": _format_result(False, f"Error: Feature file not found: {feature_path}")}]
+        return [
+            {
+                "type": "text",
+                "text": _format_result(False, f"Error: Feature file not found: {feature_path}"),
+            }
+        ]
 
     try:
         # Parse the feature file
         from antinode_norma.codegen.parsers.gherkin_parser import GherkinParser
+
         parser = GherkinParser()
         suite = parser.parse(feature_path)
 
@@ -299,11 +336,15 @@ async def handle_validate_feature(arguments: Dict[str, Any]) -> List[Dict[str, A
 
                 # Check Estimable (simplified)
                 if len(case.steps) > 20:
-                    warnings.append(f"Scenario '{case.name}' has many steps ({len(case.steps)}), consider splitting.")
+                    warnings.append(
+                        f"Scenario '{case.name}' has many steps ({len(case.steps)}), consider splitting."
+                    )
 
                 # Check Small (simplified)
                 if len(case.steps) > 10:
-                    warnings.append(f"Scenario '{case.name}' has {len(case.steps)} steps, consider simplifying.")
+                    warnings.append(
+                        f"Scenario '{case.name}' has {len(case.steps)} steps, consider simplifying."
+                    )
 
         result_data = {
             "feature_path": str(feature_path),
@@ -315,20 +356,19 @@ async def handle_validate_feature(arguments: Dict[str, Any]) -> List[Dict[str, A
             "is_valid": len(issues) == 0,
         }
 
-        return [{
-            "type": "text",
-            "text": _format_result(
-                len(issues) == 0,
-                "Feature validation completed",
-                result_data
-            )
-        }]
+        return [
+            {
+                "type": "text",
+                "text": _format_result(
+                    len(issues) == 0, "Feature validation completed", result_data
+                ),
+            }
+        ]
 
     except Exception as e:
-        return [{
-            "type": "text",
-            "text": _format_result(False, f"Error validating feature: {str(e)}")
-        }]
+        return [
+            {"type": "text", "text": _format_result(False, f"Error validating feature: {str(e)}")}
+        ]
 
 
 # Tool definitions for MCP server
@@ -341,38 +381,35 @@ def get_tool_definitions():
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "feature_path": {
-                        "type": "string",
-                        "description": "Path to the .feature file"
-                    },
+                    "feature_path": {"type": "string", "description": "Path to the .feature file"},
                     "framework": {
                         "type": "string",
                         "description": "Target framework",
                         "enum": ["playwright", "cypress", "selenium"],
-                        "default": "playwright"
+                        "default": "playwright",
                     },
                     "output_dir": {
                         "type": "string",
-                        "description": "Output directory for generated tests (optional)"
+                        "description": "Output directory for generated tests (optional)",
                     },
                     "use_page_objects": {
                         "type": "boolean",
                         "description": "Generate Page Objects",
-                        "default": False
+                        "default": False,
                     },
                     "generate_step_defs": {
                         "type": "boolean",
                         "description": "Generate reusable step definitions",
-                        "default": False
+                        "default": False,
                     },
                     "verbose": {
                         "type": "boolean",
                         "description": "Enable verbose output",
-                        "default": False
-                    }
+                        "default": False,
+                    },
                 },
-                "required": ["feature_path"]
-            }
+                "required": ["feature_path"],
+            },
         },
         {
             "name": "generate_page_objects",
@@ -380,23 +417,20 @@ def get_tool_definitions():
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "feature_path": {
-                        "type": "string",
-                        "description": "Path to the .feature file"
-                    },
+                    "feature_path": {"type": "string", "description": "Path to the .feature file"},
                     "framework": {
                         "type": "string",
                         "description": "Target framework",
                         "enum": ["playwright", "cypress", "selenium"],
-                        "default": "playwright"
+                        "default": "playwright",
                     },
                     "output_dir": {
                         "type": "string",
-                        "description": "Output directory for page objects (optional)"
-                    }
+                        "description": "Output directory for page objects (optional)",
+                    },
                 },
-                "required": ["feature_path"]
-            }
+                "required": ["feature_path"],
+            },
         },
         {
             "name": "generate_step_defs",
@@ -404,23 +438,20 @@ def get_tool_definitions():
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "feature_path": {
-                        "type": "string",
-                        "description": "Path to the .feature file"
-                    },
+                    "feature_path": {"type": "string", "description": "Path to the .feature file"},
                     "framework": {
                         "type": "string",
                         "description": "Target framework",
                         "enum": ["playwright", "cypress", "selenium"],
-                        "default": "playwright"
+                        "default": "playwright",
                     },
                     "output_dir": {
                         "type": "string",
-                        "description": "Output directory for step definitions (optional)"
-                    }
+                        "description": "Output directory for step definitions (optional)",
+                    },
                 },
-                "required": ["feature_path"]
-            }
+                "required": ["feature_path"],
+            },
         },
         {
             "name": "validate_feature",
@@ -428,17 +459,14 @@ def get_tool_definitions():
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "feature_path": {
-                        "type": "string",
-                        "description": "Path to the .feature file"
-                    },
+                    "feature_path": {"type": "string", "description": "Path to the .feature file"},
                     "check_invest": {
                         "type": "boolean",
                         "description": "Run INVEST quality check",
-                        "default": True
-                    }
+                        "default": True,
+                    },
                 },
-                "required": ["feature_path"]
-            }
+                "required": ["feature_path"],
+            },
         },
     ]

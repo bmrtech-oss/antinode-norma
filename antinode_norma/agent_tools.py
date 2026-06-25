@@ -44,13 +44,22 @@ try:
     from .connectors.testrail_connector import add_test_case, add_test_result, create_test_run
 except ImportError:
 
-    def add_test_case(section_id: int, title: str, description: str = "", case_type: int = 1, priority_id: int = 2):
+    def add_test_case(
+        section_id: int, title: str, description: str = "", case_type: int = 1, priority_id: int = 2
+    ):
         return {"error": "TestRail connector not installed"}
 
     def add_test_result(test_id: int, status_id: int, comment: str = ""):
         return {"error": "TestRail connector not installed"}
 
-    def create_test_run(project_id: int, suite_id: int, name: str, description: str = "", include_all: bool = True, case_ids=None):
+    def create_test_run(
+        project_id: int,
+        suite_id: int,
+        name: str,
+        description: str = "",
+        include_all: bool = True,
+        case_ids=None,
+    ):
         return {"error": "TestRail connector not installed"}
 
 
@@ -315,7 +324,9 @@ def upload_testrail_case(**kwargs) -> Dict:
     priority_id = kwargs.get("priority_id", 2)
     if section_id is None or not title:
         return {"error": "section_id and title are required."}
-    return add_test_case(int(section_id), title, description, case_type=1, priority_id=int(priority_id))
+    return add_test_case(
+        int(section_id), title, description, case_type=1, priority_id=int(priority_id)
+    )
 
 
 def add_testrail_result(**kwargs) -> Dict:

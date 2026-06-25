@@ -11,7 +11,7 @@ FEATURE_GENERATION_EXAMPLES = [
             "The user can click the link and set a new password.",
             "Invalid reset tokens show an error message.",
         ],
-        "feature": "Feature: Password reset\n\nScenario: Request password reset link\n  Given the user is on the login page\n  When the user requests a password reset link\n  Then the system sends a reset email to the registered address\n\nScenario: Reset password with valid token\n  Given the user has a valid reset token\n  When the user submits a new password\n  Then the password is updated successfully\n\nScenario: Show error for invalid token\n  Given the user has an invalid reset token\n  When the user attempts to reset the password\n  Then the system displays an invalid token error message"
+        "feature": "Feature: Password reset\n\nScenario: Request password reset link\n  Given the user is on the login page\n  When the user requests a password reset link\n  Then the system sends a reset email to the registered address\n\nScenario: Reset password with valid token\n  Given the user has a valid reset token\n  When the user submits a new password\n  Then the password is updated successfully\n\nScenario: Show error for invalid token\n  Given the user has an invalid reset token\n  When the user attempts to reset the password\n  Then the system displays an invalid token error message",
     },
     {
         "role": "online shopper",
@@ -22,7 +22,7 @@ FEATURE_GENERATION_EXAMPLES = [
             "The user can enter shipping and payment details.",
             "The order confirmation page is shown after payment.",
         ],
-        "feature": "Feature: Checkout order\n\nScenario: Review cart before purchase\n  Given the shopper has items in their cart\n  When they view the cart summary\n  Then the page shows item names, quantities, and total price\n\nScenario: Complete checkout with payment\n  Given the shopper is on the checkout page\n  When they enter shipping and payment information and submit\n  Then the order confirmation page is displayed"
+        "feature": "Feature: Checkout order\n\nScenario: Review cart before purchase\n  Given the shopper has items in their cart\n  When they view the cart summary\n  Then the page shows item names, quantities, and total price\n\nScenario: Complete checkout with payment\n  Given the shopper is on the checkout page\n  When they enter shipping and payment information and submit\n  Then the order confirmation page is displayed",
     },
     {
         "role": "guest shopper",
@@ -33,7 +33,7 @@ FEATURE_GENERATION_EXAMPLES = [
             "Search results show matching products.",
             "The user can filter results by category.",
         ],
-        "feature": "Feature: Product search\n\nScenario: Search using keywords\n  Given the shopper is on the homepage\n  When they enter a product keyword in the search bar\n  Then search results display matching products\n\nScenario: Filter search results\n  Given search results are visible\n  When the shopper filters by category\n  Then the results list is updated to match the selected category"
+        "feature": "Feature: Product search\n\nScenario: Search using keywords\n  Given the shopper is on the homepage\n  When they enter a product keyword in the search bar\n  Then search results display matching products\n\nScenario: Filter search results\n  Given search results are visible\n  When the shopper filters by category\n  Then the results list is updated to match the selected category",
     },
 ]
 

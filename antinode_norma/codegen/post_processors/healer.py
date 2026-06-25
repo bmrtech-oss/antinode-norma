@@ -34,12 +34,7 @@ def _load_cache() -> None:
 
 def _persist_cache() -> None:
     try:
-        data = {
-            "entries": [
-                {"key": key, "selector": _CACHE[key]}
-                for key in _CACHE_ORDER
-            ]
-        }
+        data = {"entries": [{"key": key, "selector": _CACHE[key]} for key in _CACHE_ORDER]}
         _CACHE_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
     except Exception as exc:
         _LOGGER.debug("Unable to persist selector healing cache: %s", exc)
@@ -70,17 +65,17 @@ def _build_prompt(old_selector: str, step_context: str) -> str:
         {
             "old_selector": "#email",
             "step_context": "And I fill the email address",
-            "suggested_selector": "[data-testid=\"email\"]",
+            "suggested_selector": '[data-testid="email"]',
         },
         {
             "old_selector": "#password",
             "step_context": "And I fill the password field",
-            "suggested_selector": "[aria-label=\"Password\"]",
+            "suggested_selector": '[aria-label="Password"]',
         },
         {
             "old_selector": ".submit-btn",
             "step_context": "When I submit the form",
-            "suggested_selector": "role=button[name=\"Submit\"]",
+            "suggested_selector": 'role=button[name="Submit"]',
         },
     ]
     lines = [
@@ -95,11 +90,13 @@ def _build_prompt(old_selector: str, step_context: str) -> str:
         lines.append(f"Step context: {example['step_context']}")
         lines.append(f"Suggested selector: {example['suggested_selector']}")
         lines.append("")
-    lines.extend([
-        f"Old selector: {old_selector}",
-        f"Step context: {step_context}",
-        "Suggested selector:",
-    ])
+    lines.extend(
+        [
+            f"Old selector: {old_selector}",
+            f"Step context: {step_context}",
+            "Suggested selector:",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -107,7 +104,9 @@ def _build_llm_config_from_env() -> Dict[str, Any]:
     provider = os.getenv("LLM_PROVIDER", "anthropic").strip().lower() or "anthropic"
     return {
         "provider": provider,
-        "api_key": os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("OPENROUTER_API_KEY"),
+        "api_key": os.getenv("ANTHROPIC_API_KEY")
+        or os.getenv("OPENAI_API_KEY")
+        or os.getenv("OPENROUTER_API_KEY"),
         "model": os.getenv("LLM_MODEL") or None,
         "temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
         "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "1024")),

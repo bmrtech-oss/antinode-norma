@@ -39,6 +39,7 @@ def section_header(text: str) -> None:
 def code_block(text: str, language: str = "python") -> None:
     """Print a code block with syntax highlighting."""
     from rich.syntax import Syntax
+
     syntax = Syntax(text, language, theme="monokai", line_numbers=False)
     console.print(syntax)
 
@@ -98,7 +99,7 @@ def prompt_user_mapping(
 ) -> str:
     """Prompt the user to provide or choose a mapping for an unmapped step."""
     section_header(f"Unmapped Step: {step_text}")
-    
+
     if suggested_mappings:
         console.print("\n[dim]Suggested mappings:[/dim]")
         for i, mapping in enumerate(suggested_mappings, 1):

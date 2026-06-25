@@ -20,25 +20,53 @@ def cli():
 
 
 @cli.command()
-@click.option('--feature', '-f', 'feature_paths', required=True, multiple=True, type=click.Path(exists=True, dir_okay=False),
-              help='Path to one or more .feature files. Repeat this flag for multiple files.')
-@click.option('--output', '-o', type=click.Path(), help='Output directory (overrides config).')
-@click.option('--framework', '-fw', default=None,
-              help='Target framework: playwright, cypress, or selenium.')
-@click.option('--config-file', '-c', type=click.Path(exists=True, dir_okay=False),
-              help='Optional YAML configuration file.')
-@click.option('--use-page-objects', is_flag=True, help='Generate Page Object classes.')
-@click.option('--generate-step-defs', is_flag=True, help='Generate reusable step definitions.')
-@click.option('--enable-visual-testing', is_flag=True, help='Include visual snapshot assertions.')
-@click.option('--visual-snapshot-dir', type=click.Path(), help='Directory for baseline snapshots.')
-@click.option('--workers', default=1, type=int, show_default=True,
-              help='Number of parallel worker threads for batch generation.')
-@click.option('--verbose', is_flag=True, help='Enable verbose output.')
-def generate(feature_paths, output, framework, config_file, use_page_objects, generate_step_defs, enable_visual_testing, visual_snapshot_dir, workers, verbose):
+@click.option(
+    "--feature",
+    "-f",
+    "feature_paths",
+    required=True,
+    multiple=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help="Path to one or more .feature files. Repeat this flag for multiple files.",
+)
+@click.option("--output", "-o", type=click.Path(), help="Output directory (overrides config).")
+@click.option(
+    "--framework", "-fw", default=None, help="Target framework: playwright, cypress, or selenium."
+)
+@click.option(
+    "--config-file",
+    "-c",
+    type=click.Path(exists=True, dir_okay=False),
+    help="Optional YAML configuration file.",
+)
+@click.option("--use-page-objects", is_flag=True, help="Generate Page Object classes.")
+@click.option("--generate-step-defs", is_flag=True, help="Generate reusable step definitions.")
+@click.option("--enable-visual-testing", is_flag=True, help="Include visual snapshot assertions.")
+@click.option("--visual-snapshot-dir", type=click.Path(), help="Directory for baseline snapshots.")
+@click.option(
+    "--workers",
+    default=1,
+    type=int,
+    show_default=True,
+    help="Number of parallel worker threads for batch generation.",
+)
+@click.option("--verbose", is_flag=True, help="Enable verbose output.")
+def generate(
+    feature_paths,
+    output,
+    framework,
+    config_file,
+    use_page_objects,
+    generate_step_defs,
+    enable_visual_testing,
+    visual_snapshot_dir,
+    workers,
+    verbose,
+):
     """Generate executable test scripts from one or more Gherkin feature files."""
     # Load configuration
     cfg = load_config(config_file=Path(config_file) if config_file else None)
-    
+
     # Override with CLI args
     if output:
         cfg.output_dir = Path(output)
@@ -65,9 +93,7 @@ def generate(feature_paths, output, framework, config_file, use_page_objects, ge
     def process_feature(feature_path: Path) -> str:
         orch = Orchestrator()
         orch.generate(
-            feature_path=feature_path,
-            output_dir=output_dir_path,
-            framework=framework_name
+            feature_path=feature_path, output_dir=output_dir_path, framework=framework_name
         )
         return str(feature_path)
 
@@ -107,11 +133,20 @@ def generate(feature_paths, output, framework, config_file, use_page_objects, ge
 
 
 @cli.command()
-@click.option('--feature', '-f', required=True, type=click.Path(exists=True, dir_okay=False),
-              help='Path to the .feature file.')
-@click.option('--check-invest', is_flag=True, default=True,
-              help='Run INVEST quality check on scenarios (default: true).')
-@click.option('--verbose', is_flag=True, help='Show detailed output.')
+@click.option(
+    "--feature",
+    "-f",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help="Path to the .feature file.",
+)
+@click.option(
+    "--check-invest",
+    is_flag=True,
+    default=True,
+    help="Run INVEST quality check on scenarios (default: true).",
+)
+@click.option("--verbose", is_flag=True, help="Show detailed output.")
 def validate(feature, check_invest, verbose):
     """Validate a Gherkin feature file for quality and completeness."""
     try:
@@ -137,9 +172,13 @@ def validate(feature, check_invest, verbose):
                 issues.append(f"Scenario '{case.name}' has no steps – not testable.")
             # Estimable – too many steps?
             if len(case.steps) > 20:
-                issues.append(f"Scenario '{case.name}' has {len(case.steps)} steps – consider splitting.")
+                issues.append(
+                    f"Scenario '{case.name}' has {len(case.steps)} steps – consider splitting."
+                )
             elif len(case.steps) > 10:
-                warnings.append(f"Scenario '{case.name}' has {len(case.steps)} steps – consider simplifying.")
+                warnings.append(
+                    f"Scenario '{case.name}' has {len(case.steps)} steps – consider simplifying."
+                )
             # Testable – check if each step has a clear action (we already have actions)
             # Small – if there are too many criteria in one scenario?
             if len(case.steps) > 10:

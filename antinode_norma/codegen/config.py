@@ -26,11 +26,13 @@ class CodegenConfig:
     default_framework: str = "playwright"
     feature_dir: Path = Path("features")
     output_dir: Path = Path("generated_tests")
-    framework_output_map: Dict[str, str] = field(default_factory=lambda: {
-        "playwright": "playwright",
-        "cypress": "cypress",
-        "selenium": "selenium",
-    })
+    framework_output_map: Dict[str, str] = field(
+        default_factory=lambda: {
+            "playwright": "playwright",
+            "cypress": "cypress",
+            "selenium": "selenium",
+        }
+    )
     parser_options: Dict[str, Any] = field(default_factory=dict)
     emitter_options: Dict[str, Any] = field(default_factory=dict)
     verbose: bool = False
@@ -62,6 +64,7 @@ def _load_dotenv():
     """Load .env file using python-dotenv if available."""
     try:
         from dotenv import load_dotenv
+
         load_dotenv()
     except ImportError:
         pass
@@ -69,7 +72,7 @@ def _load_dotenv():
 
 def _set_nested(dic: dict, key: str, value: Any):
     """Set a nested dictionary value using dot notation."""
-    parts = key.split('.')
+    parts = key.split(".")
     for part in parts[:-1]:
         dic = dic.setdefault(part, {})
     dic[parts[-1]] = value
@@ -119,16 +122,13 @@ def _clean_config_dict(config_dict: dict) -> dict:
 
     # Remove any keys that start with underscore
     for key in list(config_dict.keys()):
-        if key.startswith('_'):
+        if key.startswith("_"):
             config_dict.pop(key)
 
     return config_dict
 
 
-def load_config(
-    config_file: Optional[Path] = None,
-    auto_discover: bool = True
-) -> CodegenConfig:
+def load_config(config_file: Optional[Path] = None, auto_discover: bool = True) -> CodegenConfig:
     """
     Load configuration from environment variables and optionally a YAML file.
     """
@@ -152,7 +152,8 @@ def load_config(
     if config_file and config_file.exists():
         try:
             import yaml
-            with open(config_file, 'r', encoding='utf-8') as f:
+
+            with open(config_file, "r", encoding="utf-8") as f:
                 file_config = yaml.safe_load(f)
                 if file_config:
                     config_dict.update(file_config)
@@ -165,7 +166,7 @@ def load_config(
     env_prefix = "CODEGEN_"
     for key, value in os.environ.items():
         if key.startswith(env_prefix):
-            env_key = key[len(env_prefix):].lower()
+            env_key = key[len(env_prefix) :].lower()
             if env_key.startswith("quality_"):
                 env_key = f"quality.{env_key[len('quality_'):]}"
             elif env_key.startswith("parser_options_"):

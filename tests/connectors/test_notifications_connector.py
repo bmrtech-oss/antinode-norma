@@ -27,7 +27,9 @@ def test_post_teams_message_sends_payload(MockPost):
     mock_response.raise_for_status.return_value = None
     MockPost.return_value = mock_response
 
-    result = post_teams_message("https://outlook.office.com/webhook/foo", "Build Result", "All tests passed")
+    result = post_teams_message(
+        "https://outlook.office.com/webhook/foo", "Build Result", "All tests passed"
+    )
 
     MockPost.assert_called_once()
     assert result["status"] == "sent"

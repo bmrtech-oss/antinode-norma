@@ -13,11 +13,19 @@ def test_generate_feature_from_raw_text(tmp_path):
         acceptance_criteria=["The system sends a reset email."],
     )
 
-    with patch("antinode_norma.agent_tools.parse_story", return_value=story), patch(
-        "antinode_norma.agent_tools.create_llm_callable", return_value=lambda prompt: "feature content"
-    ), patch("antinode_norma.agent_tools.generate_gherkin", return_value="Feature: Reset password\nScenario: Reset password\n  Given ..."), patch(
-        "antinode_norma.agent_tools.validate_gherkin"
-    ) as mock_validate, patch("antinode_norma.agent_tools.write_feature_file") as mock_write:
+    with (
+        patch("antinode_norma.agent_tools.parse_story", return_value=story),
+        patch(
+            "antinode_norma.agent_tools.create_llm_callable",
+            return_value=lambda prompt: "feature content",
+        ),
+        patch(
+            "antinode_norma.agent_tools.generate_gherkin",
+            return_value="Feature: Reset password\nScenario: Reset password\n  Given ...",
+        ),
+        patch("antinode_norma.agent_tools.validate_gherkin") as mock_validate,
+        patch("antinode_norma.agent_tools.write_feature_file") as mock_write,
+    ):
         mock_validate.return_value.valid = True
         mock_validate.return_value.errors = []
 
@@ -43,9 +51,18 @@ def test_generate_feature_from_story_dict(tmp_path):
         "acceptance_criteria": ["Search results show matching products."],
     }
 
-    with patch("antinode_norma.agent_tools.create_llm_callable", return_value=lambda prompt: "feature content"), patch(
-        "antinode_norma.agent_tools.generate_gherkin", return_value="Feature: Search products\nScenario: Search products\n  Given ..."
-    ), patch("antinode_norma.agent_tools.validate_gherkin") as mock_validate, patch("antinode_norma.agent_tools.write_feature_file") as mock_write:
+    with (
+        patch(
+            "antinode_norma.agent_tools.create_llm_callable",
+            return_value=lambda prompt: "feature content",
+        ),
+        patch(
+            "antinode_norma.agent_tools.generate_gherkin",
+            return_value="Feature: Search products\nScenario: Search products\n  Given ...",
+        ),
+        patch("antinode_norma.agent_tools.validate_gherkin") as mock_validate,
+        patch("antinode_norma.agent_tools.write_feature_file") as mock_write,
+    ):
         mock_validate.return_value.valid = True
         mock_validate.return_value.errors = []
 

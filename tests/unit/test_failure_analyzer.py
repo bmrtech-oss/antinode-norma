@@ -26,29 +26,31 @@ def test_store_playwright_failures_extracts_selector_and_step_text(tmp_path):
     )
 
     report_path.write_text(
-        json.dumps({
-            "suites": [
-                {
-                    "title": "",
-                    "suites": [],
-                    "tests": [
-                        {
-                            "title": "User Login › Successful login",
-                            "location": {
-                                "file": str(spec_path),
-                                "line": 5,
-                            },
-                            "results": [
-                                {
-                                    "status": "failed",
-                                    "error": "locator.fill: Test timeout of 30000ms exceeded. waiting for locator('#email')",
-                                }
-                            ],
-                        }
-                    ],
-                }
-            ]
-        }),
+        json.dumps(
+            {
+                "suites": [
+                    {
+                        "title": "",
+                        "suites": [],
+                        "tests": [
+                            {
+                                "title": "User Login › Successful login",
+                                "location": {
+                                    "file": str(spec_path),
+                                    "line": 5,
+                                },
+                                "results": [
+                                    {
+                                        "status": "failed",
+                                        "error": "locator.fill: Test timeout of 30000ms exceeded. waiting for locator('#email')",
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -59,7 +61,9 @@ def test_store_playwright_failures_extracts_selector_and_step_text(tmp_path):
     assert "steps.fillField" in (event.step_text or "")
     assert event.test_title == "User Login › Successful login"
 
-    examples = failure_analyzer.get_failure_examples_for_step("When I fill 'testuser@example.com' into '#email'")
+    examples = failure_analyzer.get_failure_examples_for_step(
+        "When I fill 'testuser@example.com' into '#email'"
+    )
     assert len(examples) == 1
     assert examples[0].selector == "#email"
 
@@ -67,19 +71,21 @@ def test_store_playwright_failures_extracts_selector_and_step_text(tmp_path):
 def test_get_recent_failures_returns_stored_records(tmp_path):
     report_path = tmp_path / "playwright-report.json"
     report_path.write_text(
-        json.dumps({
-            "tests": [
-                {
-                    "title": "Forgot password",
-                    "results": [
-                        {
-                            "status": "failed",
-                            "error": "locator.click: waiting for locator('text=Forgot password')",
-                        }
-                    ],
-                }
-            ]
-        }),
+        json.dumps(
+            {
+                "tests": [
+                    {
+                        "title": "Forgot password",
+                        "results": [
+                            {
+                                "status": "failed",
+                                "error": "locator.click: waiting for locator('text=Forgot password')",
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -102,34 +108,38 @@ def test_get_failure_suggestions_for_step_returns_fix_recommendations(tmp_path):
     )
 
     report_path.write_text(
-        json.dumps({
-            "suites": [
-                {
-                    "title": "",
-                    "suites": [],
-                    "tests": [
-                        {
-                            "title": "Forgot password",
-                            "location": {
-                                "file": str(spec_path),
-                                "line": 3,
-                            },
-                            "results": [
-                                {
-                                    "status": "failed",
-                                    "error": "locator.click: waiting for locator('text=Forgot password')",
-                                }
-                            ],
-                        }
-                    ],
-                }
-            ]
-        }),
+        json.dumps(
+            {
+                "suites": [
+                    {
+                        "title": "",
+                        "suites": [],
+                        "tests": [
+                            {
+                                "title": "Forgot password",
+                                "location": {
+                                    "file": str(spec_path),
+                                    "line": 3,
+                                },
+                                "results": [
+                                    {
+                                        "status": "failed",
+                                        "error": "locator.click: waiting for locator('text=Forgot password')",
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
         encoding="utf-8",
     )
 
     failure_analyzer.store_playwright_failures(report_path)
-    suggestions = failure_analyzer.get_failure_suggestions_for_step("When I click on \"text=Forgot password\"")
+    suggestions = failure_analyzer.get_failure_suggestions_for_step(
+        'When I click on "text=Forgot password"'
+    )
 
     assert len(suggestions) == 1
     assert "Consider using a more robust selector" in suggestions[0]

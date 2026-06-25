@@ -19,6 +19,9 @@ def generate_gherkin(
     if step_definitions:
         extra = "\nExisting step definitions (reuse if possible):\n"
         extra += "\n".join(f"- {s}" for s in step_definitions)
-        prompt = prompt.replace("Output ONLY a valid Gherkin feature file.", f"{extra}\n\nOutput ONLY a valid Gherkin feature file.")
+        prompt = prompt.replace(
+            "Output ONLY a valid Gherkin feature file.",
+            f"{extra}\n\nOutput ONLY a valid Gherkin feature file.",
+        )
 
     return llm_call(prompt)

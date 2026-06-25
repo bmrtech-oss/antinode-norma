@@ -38,7 +38,7 @@ def _print_json_result(result):
 @click.version_option()
 def cli():
     """Antinode Norma – Transform user stories into Gherkin feature files.
-    
+
     \b
     Quick start:
       anorm generate "As a user, I want to log in"
@@ -57,7 +57,7 @@ def cli():
 @click.option("--interactive", is_flag=True, help="Ask for help on unmapped steps")
 def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
     """Generate a feature file from a user story.
-    
+
     \b
     Examples:
       anorm generate "As a user, I want to log in"
@@ -73,7 +73,7 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
         except IOError as e:
             error_context(e, f"Failed to read story file: {file}")
             sys.exit(1)
-    
+
     if not story_text:
         error_message("No story provided. Use --file or pass story text as argument.")
         click.echo("Run 'anorm generate --help' for usage examples.")
@@ -87,14 +87,14 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
                 task = progress.add_task("[cyan]Processing...", total=None)
                 result = await run_agent_from_raw(story_text, quality_only=quality_only)
                 progress.update(task, completed=True)
-            
+
             if quality_only:
                 section_header("Quality Assessment")
-                score = result.get('quality_score', 0)
+                score = result.get("quality_score", 0)
                 score_color = "green" if score >= 0.8 else "yellow" if score >= 0.6 else "red"
                 click.echo(f"Quality score: [{score_color}]{score:.1%}[/{score_color}]")
                 click.echo(f"Passes INVEST: {result['passes_invest']}")
-                
+
                 if result.get("issues"):
                     warning_message("Quality issues found:")
                     for issue in result["issues"]:
@@ -109,8 +109,12 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
                         for issue in result["issues"]:
                             click.echo(f"  • {issue}")
                     if interactive:
-                        info_message("Interactive mode is enabled. You can retry with corrected story text.")
-                        if click.confirm("Would you like to retry with corrected story text?", default=False):
+                        info_message(
+                            "Interactive mode is enabled. You can retry with corrected story text."
+                        )
+                        if click.confirm(
+                            "Would you like to retry with corrected story text?", default=False
+                        ):
                             corrected = click.prompt("Enter corrected story text", type=str)
                             result = await run_agent_from_raw(corrected, quality_only=quality_only)
                             if "error" in result:
@@ -119,7 +123,9 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
                             if dry_run:
                                 info_message("Dry-run mode: no files written")
                                 section_header("Generated Feature File")
-                                feature_path = result.get('feature_path', 'features/generated.feature')
+                                feature_path = result.get(
+                                    "feature_path", "features/generated.feature"
+                                )
                                 click.echo(f"Would write to: {feature_path}")
                                 click.echo("\n(Content preview not available in this version)")
                             else:
@@ -130,12 +136,12 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
                     if dry_run:
                         info_message("Dry-run mode: no files written")
                         section_header("Generated Feature File")
-                        feature_path = result.get('feature_path', 'features/generated.feature')
+                        feature_path = result.get("feature_path", "features/generated.feature")
                         click.echo(f"Would write to: {feature_path}")
                         click.echo("\n(Content preview not available in this version)")
                     else:
                         success_message(f"Feature file written: {result['feature_path']}")
-            
+
             return result
         except Exception as e:
             error_context(e, "An unexpected error occurred during generation")
@@ -148,7 +154,7 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
 @click.argument("goal")
 def agent(goal):
     """Run the autonomous BDD agent with a high‑level goal.
-    
+
     \b
     Example:
       anorm agent "Generate login and password reset tests for our web app"
@@ -158,27 +164,29 @@ def agent(goal):
         from .agent_tools import AGENT_TOOLS
 
         info_message(f"Starting agent with goal: {goal}")
-        
+
         llm_config = {
             "provider": os.getenv("LLM_PROVIDER", "openrouter"),
             "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY"),
         }
-        
+
         if not llm_config["api_key"]:
-            error_message("LLM API key not configured. Set OPENROUTER_API_KEY or ANTHROPIC_API_KEY.")
+            error_message(
+                "LLM API key not configured. Set OPENROUTER_API_KEY or ANTHROPIC_API_KEY."
+            )
             sys.exit(1)
-        
+
         agent_instance = BDDAgent(llm_config, AGENT_TOOLS)
-        
+
         with progress_bar(description="Agent running...") as progress:
             task = progress.add_task("[cyan]Processing...", total=None)
             result = agent_instance.run(goal)
             progress.update(task, completed=True)
-        
+
         success_message("Agent completed")
         section_header("Result")
         click.echo(json.dumps(result, indent=2))
-        
+
     except Exception as e:
         error_context(e, "Agent execution failed")
         sys.exit(1)
@@ -189,6 +197,7 @@ def agent(goal):
 def jira_search(label):
     """Search JIRA issues by label."""
     from .agent_tools import search_jira_stories
+
     result = search_jira_stories(label=label)
     return _print_json_result(result)
 
@@ -199,6 +208,7 @@ def jira_search(label):
 def jira_comment(issue_key, comment):
     """Post a comment on a JIRA issue."""
     from .agent_tools import comment_on_jira
+
     result = comment_on_jira(issue_key=issue_key, comment=" ".join(comment).strip())
     return _print_json_result(result)
 
@@ -209,7 +219,10 @@ def jira_comment(issue_key, comment):
 def jira_transition(issue_key, transition_name):
     """Transition a JIRA issue to a new status."""
     from .agent_tools import transition_jira_issue
-    result = transition_jira_issue(issue_key=issue_key, transition_name=" ".join(transition_name).strip())
+
+    result = transition_jira_issue(
+        issue_key=issue_key, transition_name=" ".join(transition_name).strip()
+    )
     return _print_json_result(result)
 
 
@@ -219,7 +232,10 @@ def jira_transition(issue_key, transition_name):
 def jira_status(issue_key, status_name):
     """Update a JIRA issue status by name."""
     from .agent_tools import update_jira_issue_status
-    result = update_jira_issue_status(issue_key=issue_key, status_name=" ".join(status_name).strip())
+
+    result = update_jira_issue_status(
+        issue_key=issue_key, status_name=" ".join(status_name).strip()
+    )
     return _print_json_result(result)
 
 
@@ -231,6 +247,7 @@ def jira_status(issue_key, status_name):
 def testrail_case(section_id, title, description, priority_id):
     """Upload a test case to TestRail."""
     from .agent_tools import upload_testrail_case
+
     result = upload_testrail_case(
         section_id=section_id,
         title=title,
@@ -247,41 +264,61 @@ def testrail_case(section_id, title, description, priority_id):
 def testrail_result(test_id, status_id, comment):
     """Add a result to a TestRail test case."""
     from .agent_tools import add_testrail_result
+
     result = add_testrail_result(test_id=test_id, status_id=status_id, comment=comment)
     return _print_json_result(result)
 
 
 @cli.command("notify-slack")
-@click.option("--webhook-url", help="Slack webhook URL. If omitted, uses SLACK_WEBHOOK_URL from environment.")
+@click.option(
+    "--webhook-url", help="Slack webhook URL. If omitted, uses SLACK_WEBHOOK_URL from environment."
+)
 @click.argument("text", nargs=-1)
 def notify_slack(webhook_url, text):
     """Send a Slack notification."""
     from .agent_tools import notify_slack as notify_slack_tool
+
     result = notify_slack_tool(webhook_url=webhook_url, text=" ".join(text).strip())
     return _print_json_result(result)
 
 
 @cli.command("notify-teams")
-@click.option("--webhook-url", help="Teams webhook URL. If omitted, uses TEAMS_WEBHOOK_URL from environment.")
+@click.option(
+    "--webhook-url", help="Teams webhook URL. If omitted, uses TEAMS_WEBHOOK_URL from environment."
+)
 @click.option("--title", required=True, help="Notification title.")
 @click.option("--text", required=True, help="Notification body text.")
 def notify_teams(webhook_url, title, text):
     """Send a Microsoft Teams notification."""
     from .agent_tools import notify_teams as notify_teams_tool
+
     result = notify_teams_tool(webhook_url=webhook_url, title=title, text=text)
     return _print_json_result(result)
 
 
 @cli.command()
-@click.option("--report-file", "report_file", required=True, type=click.Path(exists=True, dir_okay=False),
-              help="Path to a Playwright JSON report file produced with --reporter=json.")
-@click.option("--db-file", "db_file", type=click.Path(dir_okay=False),
-              help="Optional path to the local failure database file.")
-@click.option("--show-recent", is_flag=True, help="Show recent stored failure examples after learning.")
-@click.option("--show-suggestions", is_flag=True, help="Show suggested fixes for the learned failures.")
+@click.option(
+    "--report-file",
+    "report_file",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help="Path to a Playwright JSON report file produced with --reporter=json.",
+)
+@click.option(
+    "--db-file",
+    "db_file",
+    type=click.Path(dir_okay=False),
+    help="Optional path to the local failure database file.",
+)
+@click.option(
+    "--show-recent", is_flag=True, help="Show recent stored failure examples after learning."
+)
+@click.option(
+    "--show-suggestions", is_flag=True, help="Show suggested fixes for the learned failures."
+)
 def learn(report_file, db_file, show_recent, show_suggestions):
     """Learn from Playwright test failures and persist failure patterns.
-    
+
     \b
     Examples:
       anorm learn --report-file test-results/report.json
@@ -301,20 +338,20 @@ def learn(report_file, db_file, show_recent, show_suggestions):
 
     try:
         section_header("Learning from Failures")
-        
+
         with progress_bar(description="Processing test report...") as progress:
             task = progress.add_task("[cyan]Reading report...", total=None)
             failures = store_playwright_failures(Path(report_file))
             progress.update(task, completed=True)
-        
+
         success_message(f"Stored {len(failures)} failure event(s) from {report_file}")
-        
+
         if failures:
             section_header("Failure Summary")
             for i, failure in enumerate(failures[:10], 1):
                 selector_info = failure.selector or "no selector"
                 click.echo(f"  {i}. [{failure.test_title}] {selector_info}")
-            
+
             if len(failures) > 10:
                 info_message(f"... and {len(failures) - 10} more")
 
@@ -335,15 +372,19 @@ def learn(report_file, db_file, show_recent, show_suggestions):
             recent = get_recent_failures(5)
             if recent:
                 for i, failure in enumerate(recent, 1):
-                    error_first_line = failure.error_message.splitlines()[0] if failure.error_message else "unknown"
+                    error_first_line = (
+                        failure.error_message.splitlines()[0]
+                        if failure.error_message
+                        else "unknown"
+                    )
                     click.echo(f"  {i}. {failure.test_title}")
                     click.echo(f"     Selector: {failure.selector or 'none'}")
                     click.echo(f"     Error: {error_first_line}")
             else:
                 info_message("No prior failure records found.")
-        
+
         success_message("Learning complete!")
-        
+
     except Exception as exc:
         error_context(exc, "Failed to learn from report")
         sys.exit(1)
@@ -366,8 +407,13 @@ def completion(shell):
 
 
 @cli.command()
-@click.option("--feature-file", "feature_file", required=True, type=click.Path(exists=True, dir_okay=False),
-              help="Path to a Gherkin feature file to parse.")
+@click.option(
+    "--feature-file",
+    "feature_file",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help="Path to a Gherkin feature file to parse.",
+)
 @click.option("--interactive", is_flag=True, help="Prompt for unmapped step mappings during parse.")
 def parse(feature_file, interactive):
     """Parse a feature file into mapped test steps."""
@@ -397,7 +443,9 @@ def parse(feature_file, interactive):
         for case in suite.cases:
             click.echo(f"Scenario: {case.name}")
             for step in case.steps:
-                click.echo(f"  - {step.description} -> {step.action.name} target={step.target} value={step.value}")
+                click.echo(
+                    f"  - {step.description} -> {step.action.name} target={step.target} value={step.value}"
+                )
     except Exception as e:
         error_context(e, "Failed to parse feature file")
         sys.exit(1)
@@ -407,7 +455,7 @@ def parse(feature_file, interactive):
 @click.option("--transport", default="stdio", help="MCP transport (stdio or sse)")
 def serve(transport):
     """Start the Norma MCP server.
-    
+
     \b
     Example:
       anorm serve --transport stdio

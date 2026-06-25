@@ -12,6 +12,7 @@ from ..config import get_config
 from ..engine.quality import QualityConfig
 from ..post_processors.healer import render_playwright_healer
 
+
 class PlaywrightEmitter(Emitter):
     """Generate Playwright test files with optional quality enhancements."""
 
@@ -54,14 +55,15 @@ class PlaywrightEmitter(Emitter):
         """Convert URL to a CamelCase page name."""
         # Remove protocol and domain, keep path
         import urllib.parse
+
         parsed = urllib.parse.urlparse(url)
-        path = parsed.path.strip('/')
+        path = parsed.path.strip("/")
         if not path:
-            path = 'home'
-        parts = path.split('/')
+            path = "home"
+        parts = path.split("/")
         # Capitalise each part
-        name = ''.join(p.capitalize() for p in parts if p)
-        return name + 'Page'
+        name = "".join(p.capitalize() for p in parts if p)
+        return name + "Page"
 
     def _emit_page_objects(self, suite: TestSuite, pages_dir: Path) -> None:
         """Generate Page Object classes for each distinct page."""
@@ -103,12 +105,12 @@ class PlaywrightEmitter(Emitter):
     def _selector_to_method(self, selector: str) -> str:
         """Convert selector string to a camelCase method name."""
         # Remove special characters, keep alphanumeric and underscore
-        clean = re.sub(r'[^a-zA-Z0-9]', '_', selector)
+        clean = re.sub(r"[^a-zA-Z0-9]", "_", selector)
         # Convert to camelCase
-        parts = clean.split('_')
+        parts = clean.split("_")
         if len(parts) == 1:
             return parts[0].lower()
-        return parts[0].lower() + ''.join(p.capitalize() for p in parts[1:])
+        return parts[0].lower() + "".join(p.capitalize() for p in parts[1:])
 
     def _emit_step_defs(self, suite: TestSuite, steps_dir: Path) -> None:
         """Generate reusable step definition functions."""
@@ -190,7 +192,9 @@ class PlaywrightEmitter(Emitter):
             # Import page objects from relative path
             page_imports = []
             for page_name in self.pages.keys():
-                page_imports.append(f"import {{ {page_name} }} from './{self.quality.page_object_dir}/{page_name.lower()}.page';")
+                page_imports.append(
+                    f"import {{ {page_name} }} from './{self.quality.page_object_dir}/{page_name.lower()}.page';"
+                )
             imports.extend(page_imports)
         if use_sd:
             imports.append("import * as steps from './steps/common_steps';")
@@ -231,35 +235,55 @@ class PlaywrightEmitter(Emitter):
         # If using step defs, call the step functions
         if use_sd:
             if action == ActionType.NAVIGATE:
-                return f"{helper_prefix}await steps.navigateTo(page, '{self._escape_string(value or '')}');" + self._render_visual_assertion(action, step)
+                return (
+                    f"{helper_prefix}await steps.navigateTo(page, '{self._escape_string(value or '')}');"
+                    + self._render_visual_assertion(action, step)
+                )
             elif action == ActionType.CLICK:
                 selector = helper_target or f"'{self._escape_string(target or '')}'"
-                return f"{helper_prefix}await steps.clickElement(page, {selector});" + self._render_visual_assertion(action, step)
+                return (
+                    f"{helper_prefix}await steps.clickElement(page, {selector});"
+                    + self._render_visual_assertion(action, step)
+                )
             elif action == ActionType.FILL:
                 selector = helper_target or f"'{self._escape_string(target or '')}'"
-                return f"{helper_prefix}await steps.fillField(page, {selector}, '{self._escape_string(value or '')}');" + self._render_visual_assertion(action, step)
+                return (
+                    f"{helper_prefix}await steps.fillField(page, {selector}, '{self._escape_string(value or '')}');"
+                    + self._render_visual_assertion(action, step)
+                )
             elif action == ActionType.ASSERT_TEXT:
                 return f"await steps.assertText(page, '{self._escape_string(value or '')}');"
             elif action == ActionType.CHECK:
                 selector = helper_target or f"'{self._escape_string(target or '')}'"
-                return f"{helper_prefix}await steps.checkElement(page, {selector});" + self._render_visual_assertion(action, step)
+                return (
+                    f"{helper_prefix}await steps.checkElement(page, {selector});"
+                    + self._render_visual_assertion(action, step)
+                )
             elif action == ActionType.UNCHECK:
                 selector = helper_target or f"'{self._escape_string(target or '')}'"
-                return f"{helper_prefix}await steps.uncheckElement(page, {selector});" + self._render_visual_assertion(action, step)
+                return (
+                    f"{helper_prefix}await steps.uncheckElement(page, {selector});"
+                    + self._render_visual_assertion(action, step)
+                )
             elif action == ActionType.SELECT:
                 selector = helper_target or f"'{self._escape_string(target or '')}'"
-                return f"{helper_prefix}await steps.selectOption(page, {selector}, '{self._escape_string(value or '')}');" + self._render_visual_assertion(action, step)
+                return (
+                    f"{helper_prefix}await steps.selectOption(page, {selector}, '{self._escape_string(value or '')}');"
+                    + self._render_visual_assertion(action, step)
+                )
             elif action == ActionType.SCREENSHOT:
                 return f"{helper_prefix}await steps.assertScreenshot(page, '{self.quality.visual_snapshot_dir}/{self._safe_filename(step.description or 'screenshot')}.png');"
             elif action in {ActionType.ASSERT_VISIBLE, ActionType.ASSERT_HIDDEN}:
                 selector = helper_target or f"'{self._escape_string(target or '')}'"
-                method = 'assertVisible' if action == ActionType.ASSERT_VISIBLE else 'assertHidden'
+                method = "assertVisible" if action == ActionType.ASSERT_VISIBLE else "assertHidden"
                 return f"{helper_prefix}await steps.{method}(page, {selector});"
             elif action == ActionType.ASSERT_VALUE:
                 selector = helper_target or f"'{self._escape_string(target or '')}'"
                 return f"{helper_prefix}await steps.assertValue(page, {selector}, '{self._escape_string(value or '')}');"
         # Fallback to inline code
-        code = self._inline_translate(step, helper_prefix=helper_prefix, helper_target=helper_target)
+        code = self._inline_translate(
+            step, helper_prefix=helper_prefix, helper_target=helper_target
+        )
         return code + self._render_visual_assertion(action, step)
 
     def _needs_selector_healing(self, action: ActionType) -> bool:
@@ -291,14 +315,18 @@ class PlaywrightEmitter(Emitter):
             ActionType.SELECT,
         }:
             return ""
-        snapshot_name = self._safe_filename(step.description or step.target or action.value or action.name)
+        snapshot_name = self._safe_filename(
+            step.description or step.target or action.value or action.name
+        )
         snapshot_dir = self.quality.visual_snapshot_dir
         return f"\nawait expect(page).toHaveScreenshot('{snapshot_dir}/{snapshot_name}.png');"
 
     def _escape_string(self, value: str) -> str:
-        return value.replace('\\', '\\\\').replace("'", "\\'").replace('\n', ' ').replace('\r', ' ')
+        return value.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ").replace("\r", " ")
 
-    def _inline_translate(self, step: TestStep, helper_prefix: str = "", helper_target: Optional[str] = None) -> str:
+    def _inline_translate(
+        self, step: TestStep, helper_prefix: str = "", helper_target: Optional[str] = None
+    ) -> str:
         """Original inline translation (unchanged)."""
         action = step.action
         if helper_target is not None:
@@ -327,9 +355,11 @@ class PlaywrightEmitter(Emitter):
         elif action == ActionType.ASSERT_VALUE:
             return f"{helper_prefix}await expect(page.locator({target_expr})).toHaveValue('{self._escape_string(value or '')}');"
         else:
-            return f"{helper_prefix}// UNKNOWN ACTION: {self._escape_string(step.description or '')}"
+            return (
+                f"{helper_prefix}// UNKNOWN ACTION: {self._escape_string(step.description or '')}"
+            )
 
     def _safe_filename(self, name: str) -> str:
         if name is None:
-            name = 'snapshot'
-        return re.sub(r'[^a-zA-Z0-9_]', '_', str(name)).lower()
+            name = "snapshot"
+        return re.sub(r"[^a-zA-Z0-9_]", "_", str(name)).lower()

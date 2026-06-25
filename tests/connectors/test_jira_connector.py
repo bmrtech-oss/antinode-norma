@@ -37,7 +37,9 @@ def test_jira_fetch_issues_uses_label_filter(MockJIRA):
     mock_jira.search_issues.return_value = [issue]
     MockJIRA.return_value = mock_jira
 
-    with patch.dict(os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}):
+    with patch.dict(
+        os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}
+    ):
         results = fetch_issues()
 
     assert mock_jira.search_issues.called
@@ -61,7 +63,9 @@ def test_jira_search_stories_returns_issue_list(MockJIRA):
     mock_jira.search_issues.return_value = [issue]
     MockJIRA.return_value = mock_jira
 
-    with patch.dict(os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}):
+    with patch.dict(
+        os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}
+    ):
         result = search_jira_stories()
 
     assert result["issues"][0]["issue_key"] == "JIRA-123"
@@ -79,7 +83,9 @@ def test_jira_fetch_issue_returns_issue_fields(MockJIRA):
     mock_jira.issue.return_value = issue
     MockJIRA.return_value = mock_jira
 
-    with patch.dict(os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}):
+    with patch.dict(
+        os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}
+    ):
         result = fetch_issue("JIRA-123")
 
     mock_jira.issue.assert_called_once_with("JIRA-123")
@@ -101,7 +107,9 @@ def test_jira_comment_on_issue_posts_comment(MockJIRA):
     mock_jira.add_comment.return_value = mock_comment
     MockJIRA.return_value = mock_jira
 
-    with patch.dict(os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}):
+    with patch.dict(
+        os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}
+    ):
         result = comment_on_issue("JIRA-123", "This is a test comment.")
 
     mock_jira.issue.assert_called_once_with("JIRA-123")
@@ -122,7 +130,9 @@ def test_jira_transition_issue_applies_transition(MockJIRA):
     ]
     MockJIRA.return_value = mock_jira
 
-    with patch.dict(os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}):
+    with patch.dict(
+        os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}
+    ):
         result = transition_issue("JIRA-123", "Done")
 
     mock_jira.issue.assert_called_once_with("JIRA-123")

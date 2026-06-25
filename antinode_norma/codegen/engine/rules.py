@@ -19,15 +19,19 @@ class RuleEngine:
             ActionType.NAVIGATE,
             lambda m: None,
             lambda m: m.group("url"),
-            lambda m: {}
+            lambda m: {},
         )
 
         self.add_rule(
             r"^(?:Given |And )?the user is on the (?P<page>[^\"]*) page",
             ActionType.NAVIGATE,
             lambda m: None,
-            lambda m: f"https://example.com/{m.group('page').replace(' ', '_')}" if m.group('page') else "https://example.com",
-            lambda m: {}
+            lambda m: (
+                f"https://example.com/{m.group('page').replace(' ', '_')}"
+                if m.group("page")
+                else "https://example.com"
+            ),
+            lambda m: {},
         )
 
         # --- CLICK ---
@@ -36,21 +40,21 @@ class RuleEngine:
             ActionType.CLICK,
             lambda m: m.group("selector"),
             lambda m: None,
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:When |And )?the user clicks '(?P<text>[^']*)'",
             ActionType.CLICK,
             lambda m: f"text={m.group('text')}",
             lambda m: None,
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:When |And )?the user clicks the (?P<element>.*)",
             ActionType.CLICK,
             lambda m: f"text={m.group('element')}",
             lambda m: None,
-            lambda m: {}
+            lambda m: {},
         )
 
         # --- FILL ---
@@ -59,28 +63,28 @@ class RuleEngine:
             ActionType.FILL,
             lambda m: m.group("selector"),
             lambda m: m.group("value"),
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:When |And )?I fill \"(?P<value>[^\"]*)\" in \"(?P<selector>[^\"]*)\"",
             ActionType.FILL,
             lambda m: m.group("selector"),
             lambda m: m.group("value"),
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:When |And )?the user submits a registered email address",
             ActionType.FILL,
             lambda m: "#email",
             lambda m: "user@example.com",
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:When |And )?the user submits a new password",
             ActionType.FILL,
             lambda m: "#new-password",
             lambda m: "new_secure_password",
-            lambda m: {}
+            lambda m: {},
         )
 
         # --- LOGIN (new) ---
@@ -90,7 +94,7 @@ class RuleEngine:
             ActionType.NAVIGATE,
             lambda m: None,
             lambda m: "https://example.com/dashboard",
-            lambda m: {}
+            lambda m: {},
         )
 
         # --- ASSERTIONS ---
@@ -99,63 +103,63 @@ class RuleEngine:
             ActionType.ASSERT_TEXT,
             lambda m: None,
             lambda m: m.group("text"),
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:Then |And )?the system returns a \"(?P<text>[^\"]*)\"",
             ActionType.ASSERT_TEXT,
             lambda m: None,
             lambda m: m.group("text"),
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:Then |And )?a password reset email is sent",
             ActionType.ASSERT_TEXT,
             lambda m: None,
             lambda m: "reset email sent",
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:Then |And )?the email is received within \d+ minutes?",
             ActionType.ASSERT_TEXT,
             lambda m: None,
             lambda m: "email received",
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:Then |And )?the reset link is secure",
             ActionType.ASSERT_TEXT,
             lambda m: None,
             lambda m: "reset link secure",
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:Then |And )?the reset link expires in \d+ hours?",
             ActionType.ASSERT_TEXT,
             lambda m: None,
             lambda m: "reset link expires",
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:Then |And )?the password is updated",
             ActionType.ASSERT_TEXT,
             lambda m: None,
             lambda m: "password updated",
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:Then |And )?the system returns a confirmation that the new password is set",
             ActionType.ASSERT_TEXT,
             lambda m: None,
             lambda m: "password set confirmation",
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:Then |And )?the system returns a successful login session with the new password",
             ActionType.ASSERT_TEXT,
             lambda m: None,
             lambda m: "login successful",
-            lambda m: {}
+            lambda m: {},
         )
 
         # --- URL ASSERTIONS ---
@@ -164,7 +168,7 @@ class RuleEngine:
             ActionType.ASSERT_URL,
             lambda m: None,
             lambda m: m.group("url"),
-            lambda m: {}
+            lambda m: {},
         )
 
         # --- VISIBILITY ---
@@ -173,14 +177,14 @@ class RuleEngine:
             ActionType.ASSERT_VISIBLE,
             lambda m: m.group("selector"),
             lambda m: None,
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:Then |And )?\"(?P<selector>[^\"]*)\" should not be visible",
             ActionType.ASSERT_HIDDEN,
             lambda m: m.group("selector"),
             lambda m: None,
-            lambda m: {}
+            lambda m: {},
         )
 
         # --- WAIT ---
@@ -189,7 +193,7 @@ class RuleEngine:
             ActionType.WAIT,
             lambda m: None,
             lambda m: m.group("seconds"),
-            lambda m: {}
+            lambda m: {},
         )
 
         # --- CHECK / UNCHECK ---
@@ -198,14 +202,14 @@ class RuleEngine:
             ActionType.CHECK,
             lambda m: m.group("selector"),
             lambda m: None,
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:When |And )?I uncheck \"(?P<selector>[^\"]*)\"",
             ActionType.UNCHECK,
             lambda m: m.group("selector"),
             lambda m: None,
-            lambda m: {}
+            lambda m: {},
         )
 
         # --- SELECT ---
@@ -214,7 +218,7 @@ class RuleEngine:
             ActionType.SELECT,
             lambda m: m.group("selector"),
             lambda m: m.group("value"),
-            lambda m: {}
+            lambda m: {},
         )
 
         # --- GIVEN SETUP (dummy) ---
@@ -223,22 +227,29 @@ class RuleEngine:
             ActionType.NAVIGATE,
             lambda m: None,
             lambda m: "https://example.com/reset",
-            lambda m: {}
+            lambda m: {},
         )
         self.add_rule(
             r"^(?:Given )?the user has successfully updated the password",
             ActionType.NAVIGATE,
             lambda m: None,
             lambda m: "https://example.com",
-            lambda m: {}
+            lambda m: {},
         )
 
-    def add_rule(self, pattern: str, action: ActionType,
-                 target_func: Callable, value_func: Callable,
-                 options_func: Callable):
+    def add_rule(
+        self,
+        pattern: str,
+        action: ActionType,
+        target_func: Callable,
+        value_func: Callable,
+        options_func: Callable,
+    ):
         self.rules.append((re.compile(pattern), action, target_func, value_func, options_func))
 
-    def map_step(self, step_text: str) -> Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]:
+    def map_step(
+        self, step_text: str
+    ) -> Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]:
         for pattern, action, target_func, value_func, options_func in self.rules:
             match = pattern.match(step_text)
             if match:
