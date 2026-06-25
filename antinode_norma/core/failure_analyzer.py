@@ -51,8 +51,7 @@ def _get_connection() -> sqlite3.Connection:
 
 def _ensure_database() -> None:
     with _get_connection() as conn:
-        conn.execute(
-            f"""
+        conn.execute(f"""
             CREATE TABLE IF NOT EXISTS {_TABLE_NAME} (
                 id INTEGER PRIMARY KEY,
                 step_text TEXT,
@@ -63,8 +62,7 @@ def _ensure_database() -> None:
                 error_message TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-            """
-        )
+            """)
         conn.commit()
 
 
