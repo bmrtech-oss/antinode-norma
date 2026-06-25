@@ -324,7 +324,9 @@ def learn(report_file, db_file, show_recent, show_suggestions):
                 context = failure.step_text or failure.selector or failure.test_title
                 suggestions = get_failure_suggestions_for_step(context)
                 if suggestions:
-                    click.echo(f"\n  📍 {failure.selector or failure.test_title}:")
+                    header = failure.selector or failure.test_title
+                    click.echo(f"\nSuggestions for {header}")
+                    click.echo(f"  📍 {header}:")
                     for suggestion in suggestions:
                         click.echo(f"     ✓ {suggestion}")
 
