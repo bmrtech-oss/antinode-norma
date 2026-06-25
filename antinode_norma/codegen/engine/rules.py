@@ -33,6 +33,17 @@ class RuleEngine:
             ),
             lambda m: {},
         )
+        self.add_rule(
+            r"^(?:Given |And )?I am on the (?P<page>[^\"]*) page",
+            ActionType.NAVIGATE,
+            lambda m: None,
+            lambda m: (
+                f"https://example.com/{m.group('page').replace(' ', '_')}"
+                if m.group("page")
+                else "https://example.com"
+            ),
+            lambda m: {},
+        )
 
         # --- CLICK ---
         self.add_rule(
@@ -56,6 +67,20 @@ class RuleEngine:
             lambda m: None,
             lambda m: {},
         )
+        self.add_rule(
+            r"^(?:When |And )?I click the \"(?P<text>[^\"]*)\" (?:link|button)",
+            ActionType.CLICK,
+            lambda m: f"text={m.group('text')}",
+            lambda m: None,
+            lambda m: {},
+        )
+        self.add_rule(
+            r"^(?:And )?I open the (?P<link_type>\w+) link",
+            ActionType.CLICK,
+            lambda m: f"text={m.group('link_type')} link",
+            lambda m: None,
+            lambda m: {},
+        )
 
         # --- FILL ---
         self.add_rule(
@@ -73,10 +98,24 @@ class RuleEngine:
             lambda m: {},
         )
         self.add_rule(
+            r"^(?:When |And )?I submit (?:my )?registered email address",
+            ActionType.FILL,
+            lambda m: "#email",
+            lambda m: "user@example.com",
+            lambda m: {},
+        )
+        self.add_rule(
             r"^(?:When |And )?the user submits a registered email address",
             ActionType.FILL,
             lambda m: "#email",
             lambda m: "user@example.com",
+            lambda m: {},
+        )
+        self.add_rule(
+            r"^(?:When |And )?I set a new password",
+            ActionType.FILL,
+            lambda m: "#new-password",
+            lambda m: "new_secure_password",
             lambda m: {},
         )
         self.add_rule(
@@ -90,6 +129,13 @@ class RuleEngine:
         # --- LOGIN (new) ---
         # Map "logs in with the new password" to a NAVIGATE to dashboard
         self.add_rule(
+            r"^(?:And )?I can log in with the new password successfully",
+            ActionType.NAVIGATE,
+            lambda m: None,
+            lambda m: "https://example.com/dashboard",
+            lambda m: {},
+        )
+        self.add_rule(
             r"^(?:When |And )?the user logs in with the new password",
             ActionType.NAVIGATE,
             lambda m: None,
@@ -98,6 +144,13 @@ class RuleEngine:
         )
 
         # --- ASSERTIONS ---
+        self.add_rule(
+            r"^(?:Then |And )?the system should display an error message \"(?P<text>[^\"]*)\"",
+            ActionType.ASSERT_TEXT,
+            lambda m: None,
+            lambda m: m.group("text"),
+            lambda m: {},
+        )
         self.add_rule(
             r"^(?:Then |And )?I should see \"(?P<text>[^\"]*)\"",
             ActionType.ASSERT_TEXT,
@@ -110,6 +163,13 @@ class RuleEngine:
             ActionType.ASSERT_TEXT,
             lambda m: None,
             lambda m: m.group("text"),
+            lambda m: {},
+        )
+        self.add_rule(
+            r"^(?:Then |And )?I receive a password reset email",
+            ActionType.ASSERT_TEXT,
+            lambda m: None,
+            lambda m: "password reset email",
             lambda m: {},
         )
         self.add_rule(
@@ -189,6 +249,13 @@ class RuleEngine:
 
         # --- WAIT ---
         self.add_rule(
+            r"^(?:Given |And )?the token is older than \d+ minutes?",
+            ActionType.WAIT,
+            lambda m: None,
+            lambda m: "31",
+            lambda m: {},
+        )
+        self.add_rule(
             r"^(?:And )?I wait for (?P<seconds>\d+) seconds?",
             ActionType.WAIT,
             lambda m: None,
@@ -222,6 +289,13 @@ class RuleEngine:
         )
 
         # --- GIVEN SETUP (dummy) ---
+        self.add_rule(
+            r"^(?:Given )?an invalid reset token exists",
+            ActionType.NAVIGATE,
+            lambda m: None,
+            lambda m: "https://example.com/reset?token=invalid",
+            lambda m: {},
+        )
         self.add_rule(
             r"^(?:Given )?a valid reset token exists",
             ActionType.NAVIGATE,

@@ -59,7 +59,7 @@ class GherkinParser(Parser):
                 TestCase(
                     name=scenario.name or "Untitled Scenario",
                     steps=steps,
-                    tags=[tag.name for tag in scenario.tags],
+                    tags=[self._tag_text(tag) for tag in scenario.tags],
                     description=scenario.description or "",
                     background=background_steps if feature.background else None,
                 )
@@ -69,9 +69,13 @@ class GherkinParser(Parser):
             name=feature.name or "Untitled Feature",
             cases=cases,
             description=feature.description or "",
-            tags=[tag.name for tag in feature.tags],
+            tags=[self._tag_text(tag) for tag in feature.tags],
             background=background_steps if feature.background else None,
         )
+
+    def _tag_text(self, tag) -> str:
+        """Return the tag name text for behave Tag objects."""
+        return getattr(tag, "name", getattr(tag, "text", str(tag)))
 
     def _behave_steps_to_teststeps(self, behave_steps: List[Step]) -> List[TestStep]:
         """Convert behave Step objects to our TestStep model."""
