@@ -18,7 +18,13 @@ jobs:
     - name: Install Python dependencies
       run: python3 -m pip install -e .
     - name: Generate Playwright tests
-      run: python3 -m antinode_norma.codegen.cli.commands generate -f features/*.feature -fw playwright
+      run: |
+        set -e
+        args=()
+        for f in features/*.feature; do
+          args+=( -f "$f" )
+        done
+        python3 -m antinode_norma.codegen.cli.commands generate "${args[@]}" -fw playwright
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run Playwright tests
