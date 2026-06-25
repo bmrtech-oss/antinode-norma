@@ -10,6 +10,7 @@ from antinode_norma.utils.llm_factory import create_llm_callable
 
 load_dotenv()
 
+
 def test_openrouter():
     config = {
         "provider": "openrouter",
@@ -18,9 +19,9 @@ def test_openrouter():
         "base_url": os.getenv("LLM_BASE_URL", "https://openrouter.ai/api/v1"),
         "temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
         "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "1024")),
-        "extra_body": {"provider": {"require_parameters": True}}
+        "extra_body": {"provider": {"require_parameters": True}},
     }
-    
+
     try:
         llm = create_llm_callable(config)
         response = llm("What is the capital of France?")
@@ -29,6 +30,7 @@ def test_openrouter():
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
+
 
 if __name__ == "__main__":
     test_openrouter()
