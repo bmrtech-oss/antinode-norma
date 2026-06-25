@@ -1,22 +1,24 @@
 from typing import Callable, List
 from .schemas import UserStory
+from .prompts import FEATURE_PROMPT_TEMPLATE, select_feature_examples
 
 
 def generate_gherkin(
     story: UserStory, step_definitions: List[str], llm_call: Callable[[str], str]
 ) -> str:
-    prompt = f"""You are a BDD expert. Write a Gherkin .feature file for the following user story.
+    examples = select_feature_examples(story)
+    prompt = FEATURE_PROMPT_TEMPLATE.format(
+        examples="\n\n".join(examples),
+        role=story.role,
+        action=story.action,
+        benefit=story.benefit,
+        criteria="\n".join(f"- {c}" for c in story.acceptance_criteria),
+    )
 
-User story:
-Role: {story.role}
-Action: {story.action}
-Benefit: {story.benefit}
-Acceptance criteria:
-{chr(10).join('- ' + c for c in story.acceptance_criteria)}
-
-Existing step definitions (reuse if possible):
-{chr(10).join('- ' + s for s in step_definitions)}
-
-Output ONLY the Gherkin content. Use format: Feature: ... Scenario: ... Given ... When ... Then ..."""
+    # Include step definitions as optional guidance for reusable phrases.
+    if step_definitions:
+        extra = "\nExisting step definitions (reuse if possible):\n"
+        extra += "\n".join(f"- {s}" for s in step_definitions)
+        prompt = prompt.replace("Output ONLY a valid Gherkin feature file.", f"{extra}\n\nOutput ONLY a valid Gherkin feature file.")
 
     return llm_call(prompt)

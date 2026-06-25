@@ -4,7 +4,11 @@ from .schemas import UserStory, QualityReport
 VAGUE_WORDS = {"etc", "various", "handle", "properly", "many", "some", "multiple"}
 IMPL_WORDS = {"sql", "database", "rest", "api", "class", "method"}
 SYSTEM_WORDS = {"call", "update", "insert", "delete", "compute"}
-TEST_VERBS = {"should", "must", "returns", "displays", "sends"}
+TEST_VERBS = {
+    "should", "must", "returns", "displays", "sends",
+    "click", "enter", "receive", "set", "log",
+    "provides", "confirms", "updates", "shows",
+}
 
 
 def is_independent(story: UserStory) -> bool:

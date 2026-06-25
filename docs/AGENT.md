@@ -132,7 +132,86 @@ Claude will call the MCP tool and return the result.
 
 ---
 
-## 6. How the Agent Works (Internals)
+## 6. Code Generation Tools via the Agent
+
+The agent now supports **test code generation** tools. These tools allow the agent to automatically generate executable test scripts (Playwright, Cypress, Selenium) from validated Gherkin `.feature` files.
+
+### Available Code Generation Tools
+
+| Tool Name | Description |
+| :--- | :--- |
+| `generate_tests` | Generate full test scripts from a feature file |
+| `generate_page_objects` | Generate Page Object classes only |
+| `generate_step_defs` | Generate reusable step definitions only |
+| `validate_feature` | Validate a feature file for quality and completeness |
+
+### Example Agent Workflow
+
+The agent can now orchestrate the **entire BDD lifecycle** in a single session:
+
+```bash
+anorm agent "Generate a feature file for JIRA-123, validate it, then generate Playwright tests with Page Objects."
+```
+
+The agent will:
+
+1. Fetch the JIRA issue (using `fetch_jira_story`).
+2. Submit and improve the story (using `submit_story` / `improve_story`).
+3. Generate the `.feature` file (using `generate_feature`).
+4. Validate the feature file (using `validate_feature`).
+5. Generate executable tests with quality enhancements (using `generate_tests` with `use_page_objects=true`).
+
+### Using Code Generation Tools Directly in MCP
+
+All code generation tools are also available as **standalone MCP tools**. See the [Claude Plugin documentation](CLAUDE_PLUGIN.md) for integration details.
+
+### Tool Parameters
+
+#### `generate_tests`
+
+```json
+{
+  "feature_path": "features/login.feature",
+  "framework": "playwright",          // playwright, cypress, selenium
+  "output_dir": "generated_tests",    // optional
+  "use_page_objects": true,           // optional, default false
+  "generate_step_defs": true,         // optional, default false
+  "verbose": false                    // optional, default false
+}
+```
+
+#### `generate_page_objects`
+
+```json
+{
+  "feature_path": "features/login.feature",
+  "framework": "playwright",
+  "output_dir": "generated_tests"     // optional
+}
+```
+
+#### `generate_step_defs`
+
+```json
+{
+  "feature_path": "features/login.feature",
+  "framework": "playwright",
+  "output_dir": "generated_tests"     // optional
+}
+```
+
+#### `validate_feature`
+
+```json
+{
+  "feature_path": "features/login.feature",
+  "check_invest": true                // optional, default true
+}
+```
+
+---
+
+## 7. How the Agent Works (Internals)
 
 ### The ReAct Loop
 
@@ -169,7 +248,7 @@ This state is passed to the planner on each iteration, allowing the agent to ada
 
 ---
 
-## 7. Configuration
+## 8. Configuration
 
 The agent respects the same environment variables as the rest of Antinode Norma:
 
@@ -183,7 +262,7 @@ The agent respects the same environment variables as the rest of Antinode Norma:
 
 ---
 
-## 8. Example End‑to‑End Scenarios
+## 9. Example End‑to‑End Scenarios
 
 ### Scenario 1: Generate Feature from a Simple Story
 
@@ -214,7 +293,7 @@ If `generate_feature` produces invalid Gherkin, the agent can call `fix_feature`
 
 ---
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 | Issue | Solution |
 | :--- | :--- |
@@ -225,7 +304,7 @@ If `generate_feature` produces invalid Gherkin, the agent can call `fix_feature`
 
 ---
 
-## 10. Extending the Agent
+## 11. Extending the Agent
 
 You can add new tools by:
 
@@ -237,7 +316,7 @@ The agent is designed to be extensible – you can integrate with your own inter
 
 ---
 
-## 11. Next Steps
+## 12. Next Steps
 
 - Try the agent with your own stories.
 - Integrate with your CI/CD pipeline.
@@ -247,4 +326,4 @@ For more details, see the [Project README](../README.md) and the [Testing Guide]
 
 ---
 
-*Last updated: 2026-06-16*
+*Last updated: 2026-06-25*

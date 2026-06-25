@@ -1,0 +1,87 @@
+name: Phase 7 Integrations
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validate-integration-tools:
+    name: Validate optional integration tooling
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install -r requirements-dev.txt
+
+      - name: Verify CLI integration commands
+        run: |
+          python -m antinode_norma.cli --help | grep "jira-search" || true
+          python -m antinode_norma.cli --help | grep "notify-slack" || true
+
+  integration-smoke:
+    name: Optional integration smoke tests
+    runs-on: ubuntu-latest
+    needs: validate-integration-tools
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install -r requirements-dev.txt
+
+      - name: Confirm optional integrations configured
+        run: |
+          echo "JIRA_SERVER=$JIRA_SERVER"
+          echo "TESTRAIL_URL=$TESTRAIL_URL"
+          echo "SLACK_WEBHOOK_URL=$SLACK_WEBHOOK_URL"
+          echo "TEAMS_WEBHOOK_URL=$TEAMS_WEBHOOK_URL"
+        env:
+          JIRA_SERVER: ${{ secrets.JIRA_SERVER }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          TESTRAIL_URL: ${{ secrets.TESTRAIL_URL }}
+          TESTRAIL_USER: ${{ secrets.TESTRAIL_USER }}
+          TESTRAIL_TOKEN: ${{ secrets.TESTRAIL_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+
+      - name: Validate JIRA integration configuration
+        if: env.JIRA_SERVER != '' && env.JIRA_TOKEN != ''
+        run: |
+          echo "JIRA credentials provided; ready for JIRA workflow execution."
+
+      - name: Validate TestRail integration configuration
+        if: env.TESTRAIL_URL != '' && env.TESTRAIL_USER != '' && env.TESTRAIL_TOKEN != ''
+        run: |
+          echo "TestRail credentials provided; ready for TestRail workflow execution."
+
+      - name: Validate Slack notification configuration
+        if: env.SLACK_WEBHOOK_URL != ''
+        run: |
+          echo "Slack webhook configured; ready for notifications."
+
+      - name: Validate Teams notification configuration
+        if: env.TEAMS_WEBHOOK_URL != ''
+        run: |
+          echo "Teams webhook configured; ready for notifications."

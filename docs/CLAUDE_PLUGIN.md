@@ -6,11 +6,16 @@ This document explains how to build, install, configure, and use the **Antinode 
 
 ## Overview
 
-The Antinode Norma plugin brings BDD (Behavior-Driven Development) capabilities directly into Claude Desktop. It exposes three MCP tools that allow Claude to:
+The Antinode Norma plugin brings BDD (Behavior-Driven Development) capabilities directly into Claude Desktop. It exposes **seven MCP tools** that allow Claude to:
 
-- **Submit user stories** and receive an INVEST quality report.
-- **Improve stories** based on quality suggestions.
-- **Generate Gherkin `.feature` files** from validated stories.
+- Submit user stories and receive an INVEST quality report (`submit_story`).
+- Improve stories based on quality suggestions (`improve_story`).
+- Generate Gherkin `.feature` files from validated stories (`generate_feature`).
+- Run the autonomous BDD agent (`run_bdd_agent`).
+- **Generate executable test scripts** from feature files (`generate_tests`).
+- **Generate Page Object classes** (`generate_page_objects`).
+- **Generate reusable step definitions** (`generate_step_defs`).
+- **Validate feature files** for quality and completeness (`validate_feature`).
 
 The plugin leverages your chosen LLM (OpenRouter, Anthropic, OpenAI, or local) and supports optional JIRA integration.
 
@@ -115,6 +120,92 @@ You can set these variables in several ways:
 
 > **Note for Plugin Packaging:**  
 > When you pack the plugin with `mcpb pack`, the `.env` file is **not** included in the bundle. This is by design to avoid shipping secrets. Users must set the required environment variables themselves. The `manifest.json` already references `${OPENROUTER_API_KEY}` and others, so they will be resolved from the environment when Claude Desktop starts. This approach is secure and follows best practices.
+
+---
+
+## Code Generation Tools
+
+The plugin includes four additional MCP tools for test code generation:
+
+### `generate_tests`
+
+Generates executable test scripts from a `.feature` file.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `feature_path` | string | Yes | Path to the `.feature` file |
+| `framework` | string | No | `playwright`, `cypress`, or `selenium` (default: `playwright`) |
+| `output_dir` | string | No | Output directory (default: from config) |
+| `use_page_objects` | boolean | No | Generate Page Objects (default: `false`) |
+| `generate_step_defs` | boolean | No | Generate step definitions (default: `false`) |
+| `verbose` | boolean | No | Enable verbose output (default: `false`) |
+
+**Example Claude prompt:**
+> "Generate Playwright tests with Page Objects for the feature file at `features/login.feature`."
+
+### `generate_page_objects`
+
+Generates Page Object classes only.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `feature_path` | string | Yes | Path to the `.feature` file |
+| `framework` | string | No | `playwright`, `cypress`, or `selenium` (default: `playwright`) |
+| `output_dir` | string | No | Output directory |
+
+### `generate_step_defs`
+
+Generates reusable step definitions only.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `feature_path` | string | Yes | Path to the `.feature` file |
+| `framework` | string | No | `playwright`, `cypress`, or `selenium` (default: `playwright`) |
+| `output_dir` | string | No | Output directory |
+
+### `validate_feature`
+
+Validates a Gherkin feature file for quality and completeness.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `feature_path` | string | Yes | Path to the `.feature` file |
+| `check_invest` | boolean | No | Run INVEST quality check (default: `true`) |
+
+**Example Claude prompt:**
+> "Validate the feature file at `features/reset_password.feature` and tell me if it meets INVEST criteria."
+
+### Output Quality Enhancements
+
+When using `generate_tests` with `use_page_objects: true` or `generate_step_defs: true`, the generated code includes:
+
+- **Page Object Model** – Clean separation of selectors and actions.
+- **Reusable Step Definitions** – Common actions (fill, click, navigate) as functions.
+- **Explicit Waits** – Robust `waitForSelector` before interactions.
+- **Data‑Driven Testing** – Support for Scenario Outlines with Examples.
+- **Code Formatting** – Auto‑formatting with Prettier or Black.
+- **Linting** – Optional ESLint or flake8 with auto‑fix.
+
+### Configuration for Code Generation
+
+Add these variables to your `.env` file to control code generation defaults:
+
+```bash
+# Code Generation defaults
+CODEGEN_DEFAULT_FRAMEWORK=playwright
+CODEGEN_OUTPUT_DIR=generated_tests
+CODEGEN_QUALITY_USE_PAGE_OBJECTS=true
+CODEGEN_QUALITY_GENERATE_STEP_DEFS=true
+CODEGEN_QUALITY_SELECTOR_STRATEGY=data-testid
+CODEGEN_QUALITY_RUN_FORMATTER=true
+CODEGEN_QUALITY_FORMATTER_TOOL=prettier
+```
+
+See the [Code Generation Module README](../antinode_norma/codegen/README.md) for full configuration options.
 
 ---
 

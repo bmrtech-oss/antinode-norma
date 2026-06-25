@@ -1,0 +1,28 @@
+{
+  "name": "antinode-norma",
+  "version": "1.0.0",
+  "description": "[![CI](https://github.com/bmrtech-oss/antinode-norma/actions/workflows/ci.yml/badge.svg)](https://github.com/bmrtech-oss/antinode-norma/actions/workflows/ci.yml)\r [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://python.org)\r [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)\r [![MCP](https://img.shields.io/badge/MCP-compatible-9B59B6)](https://github.com/modelcontextprotocol)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "tests"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bmrtech-oss/antinode-norma.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/bmrtech-oss/antinode-norma/issues"
+  },
+  "homepage": "https://github.com/bmrtech-oss/antinode-norma#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.0.1"
+  }
+}

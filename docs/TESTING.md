@@ -14,7 +14,8 @@ This document provides step‑by‑step instructions for setting up, running, an
 6. [Interpreting Test Output](#6-interpreting-test-output)
 7. [Writing New Tests](#7-writing-new-tests)
 8. [Continuous Integration (CI)](#8-continuous-integration-ci)
-9. [Troubleshooting](#9-troubleshooting)
+9. [Testing the Code Generation Module](#9-testing-the-code-generation-module)
+10. [Troubleshooting](#10-troubleshooting)
 
 ---
 
@@ -120,6 +121,26 @@ pytest
 ```
 
 This will execute **all** tests. If you do not have `OPENROUTER_API_KEY` set, integration tests will be skipped automatically with a message.
+
+### 5.1a Run Tests Inside Docker/Podman
+
+If you prefer to run tests in the local containerized environment, build the image and run:
+
+```bash
+docker compose build
+
+docker compose run --rm app pytest
+```
+
+For Podman:
+
+```bash
+podman compose build
+
+podman compose run --rm app pytest
+```
+
+This uses the same development image and dependencies as the local Docker workflow.
 
 ### 5.2 Run Only Unit Tests (Fast)
 
@@ -304,7 +325,204 @@ If you want to run integration tests in CI, store your `OPENROUTER_API_KEY` as a
 
 ---
 
-## 9. Troubleshooting
+## 9. Testing the Code Generation Module
+
+The code generation module (`antinode_norma.codegen`) has its own test suite. Below is guidance on testing the various components.
+
+### 9.1 Test Structure for Codegen
+
+The codegen tests should be organised as follows:
+
+```text
+tests/
+├── unit/
+│   └── codegen/
+│       ├── test_models.py          # Test dataclasses (TestSuite, TestCase, etc.)
+│       ├── test_rules.py           # Test RuleEngine step mapping
+│       ├── test_parsers.py         # Test GherkinParser (with mock files)
+│       └── test_emitters.py        # Test emitters with mock TestSuite
+├── integration/
+│   └── codegen/
+│       ├── test_gherkin_parser.py  # Test with real .feature files
+│       ├── test_orchestrator.py    # Test end‑to‑end generation
+│       └── test_emitters_real.py   # Test emitters with real output
+└── fixtures/
+    └── codegen/
+        ├── login.feature           # Sample feature file
+        └── expected/               # Expected output files
+```
+
+### 9.2 Running Codegen Tests
+
+```bash
+# Run all codegen tests
+pytest tests/unit/codegen/ tests/integration/codegen/
+
+# Run only unit tests (fast)
+pytest tests/unit/codegen/ -m "not integration"
+
+# Run only integration tests (requires real LLM or file system)
+pytest tests/integration/codegen/ -m integration
+```
+
+### 9.3 Sample Unit Test: RuleEngine
+
+```python
+# tests/unit/codegen/test_rules.py
+import pytest
+from antinode_norma.codegen.engine.rules import RuleEngine
+from antinode_norma.codegen.models.test_model import ActionType
+
+def test_navigate_rule():
+    engine = RuleEngine()
+    action, target, value, options = engine.map_step("Given I navigate to \"https://example.com\"")
+    assert action == ActionType.NAVIGATE
+    assert value == "https://example.com"
+
+def test_click_rule():
+    engine = RuleEngine()
+    action, target, value, options = engine.map_step("When I click on \"#login-button\"")
+    assert action == ActionType.CLICK
+    assert target == "#login-button"
+
+def test_fill_rule():
+    engine = RuleEngine()
+    action, target, value, options = engine.map_step("And I fill \"test@example.com\" into \"#email\"")
+    assert action == ActionType.FILL
+    assert target == "#email"
+    assert value == "test@example.com"
+```
+
+### 9.4 Sample Integration Test: Orchestrator
+
+```python
+# tests/integration/codegen/test_orchestrator.py
+import pytest
+from pathlib import Path
+from antinode_norma.codegen import Orchestrator
+
+@pytest.mark.integration
+def test_orchestrator_generate_playwright(tmp_path):
+    # Create a temporary feature file
+    feature_path = tmp_path / "test.feature"
+    feature_path.write_text("""
+        Feature: Test Feature
+          Scenario: Test Scenario
+            Given I navigate to "https://example.com"
+            When I click on "#button"
+    """)
+
+    orchestrator = Orchestrator()
+    orchestrator.generate(
+        feature_path=feature_path,
+        output_dir=tmp_path / "output",
+        framework="playwright"
+    )
+
+    # Check that the file was created
+    output_file = tmp_path / "output" / "test_feature.spec.ts"
+    assert output_file.exists()
+    content = output_file.read_text()
+    assert "await page.goto('https://example.com')" in content
+    assert "await page.locator('#button').click()" in content
+```
+
+### 9.5 Testing Emitters with Quality Enhancements
+
+```python
+# tests/unit/codegen/test_emitters.py
+from antinode_norma.codegen.emitters.playwright_emitter import PlaywrightEmitter
+from antinode_norma.codegen.models.test_model import TestSuite, TestCase, TestStep, ActionType
+
+def test_playwright_emitter_with_page_objects(tmp_path):
+    # Create a test suite
+    suite = TestSuite(
+        name="Login",
+        cases=[
+            TestCase(
+                name="Successful Login",
+                steps=[
+                    TestStep(action=ActionType.NAVIGATE, value="https://example.com/login"),
+                    TestStep(action=ActionType.FILL, target="#email", value="test@example.com"),
+                    TestStep(action=ActionType.CLICK, target="#login-button"),
+                ]
+            )
+        ]
+    )
+
+    # Configure emitter with quality settings
+    emitter = PlaywrightEmitter()
+    # Set quality config (simplified for test)
+    emitter.quality.use_page_objects = True
+
+    emitter.emit(suite, tmp_path)
+
+    # Check main test file
+    assert (tmp_path / "login.spec.ts").exists()
+    # Check page objects
+    assert (tmp_path / "pages" / "loginpage.page.ts").exists()
+```
+
+### 9.6 Test Fixtures
+
+Create sample feature files in `tests/fixtures/codegen/`:
+
+**`login.feature`**:
+```gherkin
+Feature: Login
+  Scenario: Successful login
+    Given I navigate to "https://example.com/login"
+    When I fill "test@example.com" into "#email"
+    And I fill "SecurePass123" into "#password"
+    And I click on "#login-button"
+    Then I should see "Welcome"
+```
+
+### 9.7 Mocking External Dependencies
+
+For unit tests, mock the file system and LLM calls:
+
+```python
+# tests/unit/codegen/test_parsers.py
+from unittest.mock import mock_open, patch
+from antinode_norma.codegen.parsers.gherkin_parser import GherkinParser
+
+def test_parser_with_mock_file():
+    mock_content = """
+        Feature: Test
+          Scenario: Test
+            Given I navigate to "https://example.com"
+    """
+    with patch("builtins.open", mock_open(read_data=mock_content)):
+        parser = GherkinParser()
+        # The parser reads from a Path, so we need to mock Path.read_text
+        # or pass a string directly. Adjust as needed.
+        # For this example, we'd use a real file or a StringIO.
+        pass
+```
+
+### 9.8 Coverage
+
+To generate coverage specifically for the codegen module:
+
+```bash
+pytest --cov=antinode_norma.codegen --cov-report=html tests/unit/codegen/ tests/integration/codegen/
+```
+
+### 9.9 Continuous Integration
+
+Ensure the codegen tests are included in your CI pipeline (`.github/workflows/ci.yml`):
+
+```yaml
+- name: Run codegen tests
+  run: |
+    pytest tests/unit/codegen/ -m "not integration"
+    # Integration tests require API keys – run conditionally
+```
+
+---
+
+## 10. Troubleshooting
 
 | Problem | Solution |
 | :--- | :--- |
@@ -317,17 +535,4 @@ If you want to run integration tests in CI, store your `OPENROUTER_API_KEY` as a
 
 ---
 
-## 10. Summary
-
-You now have a complete test suite for `antinode-norma`:
-
-- **Unit tests** verify core logic without external dependencies.
-- **Integration tests** validate the system works with real LLM calls.
-- **Easy to run** with simple `pytest` commands.
-- **Extensible** – add new tests as you extend the system.
-
-Run the tests regularly to catch regressions and maintain high code quality.
-
----
-
-*Last updated: 2026-06-16*
+*Last updated: 2026-06-25*

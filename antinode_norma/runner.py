@@ -22,7 +22,10 @@ LLM_CONFIG = {
     "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "1024")),
     "url": os.getenv("LLM_URL"),
 }
-llm_call = create_llm_callable(LLM_CONFIG)
+
+
+def get_llm_callable():
+    return create_llm_callable(LLM_CONFIG)
 
 
 def get_step_definitions(keyword: str = None):
@@ -43,6 +46,7 @@ def get_step_definitions(keyword: str = None):
 async def run_agent_from_raw(raw_story: str, quality_only: bool = False) -> Dict[str, Any]:
     """Run the Norma agent from raw story text."""
     # Parse
+    llm_call = get_llm_callable()
     story = parse_story(raw_story, llm_call)
     # Quality check
     report = compute_quality(story)
