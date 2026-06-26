@@ -174,7 +174,83 @@ This guide helps position Antinode Norma as a software offering, including marke
 
 ---
 
-## 4. Practical Recommendations
+## 4. Open Source Leader Roadmap
+
+This roadmap is designed to turn Antinode Norma into the best open-source AI-powered BDD automation tool on the market. It prioritizes reliability, transparency, community adoption, and extensibility over closed-source lock-in.
+
+### 4.1 Phase 1: Open-source adoption foundation
+
+- Ship a polished starter experience with a clear `README`, quickstart example, and one-command feature-to-test generation flow.
+- Publish sample feature files, generated Playwright tests, and a self-contained demo project for login, password reset, and checkout flows.
+- Ensure the CLI and plugin workflows work with free or self-hosted LLM providers such as OpenRouter, Claude, and local models.
+- Add open-source-ready docs: installation, contribution guide, issue templates, and architecture overview.
+- Create a public roadmap and transparent release cadence so users can see what’s coming and why.
+
+### 4.2 Phase 2: Product excellence and trust
+
+- Harden core generation by delivering robust page objects, reusable step definitions, and clear mapping diagnostics.
+- Add structured output validation, prompt transparency, and confidence signals so users understand how each step was mapped.
+- Build quality features that matter for open source: Gherkin linting, INVEST checks, drift detection, and selector resilience rules.
+- Provide a GitHub Actions template and CI-ready flows for generation, validation, and Playwright test execution.
+- Ship a flexible plugin/connector architecture for JIRA/TestRail/CI and for alternative LLM providers.
+
+### 4.3 Phase 3: Community and ecosystem leadership
+
+- Position Antinode Norma as the open-source alternative to closed AI test generators by emphasizing no vendor lock-in, self-hosted options, and community contributions.
+- Publish targeted content: comparison posts, migration guides from Cucumber/Behave/recorders, and stories about using AI with disciplined automation.
+- Launch a community asset library: reusable selectors, page object templates, step libraries, and integration snippets.
+- Create a clear “how to extend” developer guide for adding new mappings, output emitters, and connector adapters.
+- Use the open-source model to attract contributions: small issues, documentation sprints, and sample workflows.
+
+### 4.4 Phase 4: Fleet intelligence and failure learning
+
+- Deliver failure-aware features that let the tool learn from real runs: analytics on failing steps, selector drift, and test flakiness.
+- Add self-healing suggestions, alternative selector proposals, and guidance to repair broken automation.
+- Build fleet governance primitives such as shared selector registries, versioned page objects, and health reports for generated test families.
+- Promote these features as the open-source path to more sustainable automation, not just one-off script generation.
+
+### 4.5 Phase 5: Open source market differentiation
+
+- Make transparency a core differentiator: open prompts, schema docs, example outputs, and a public feedback loop.
+- Focus on developer experience: fast onboarding, useful error messages, interactive repair, and dry-run generation.
+- Raise open-source credibility with strong test coverage, CI badges, reproducible builds, and visible community adoption.
+- Build marketing assets around the narrative: “Best open-source AI BDD automation for teams who want reusable, reliable tests without vendor lock-in.”
+
+---
+
+## 5. Playbook-Aligned Roadmap
+
+This roadmap is aligned with the structure and cadence used in `ai-development-playbook`. It focuses Antinode Norma on measurable quarterly initiatives, clear ownership, and the same “signal over noise” operating model.
+
+### Q2 2026 (Current Quarter)
+
+| Initiative | Focus | Target |
+|:-----------|:------|:-------|
+| Publish the Antinode Norma open-source starter bundle | docs, quickstart, sample feature/test artifacts | 2026-06-30 |
+| Add a Playwright CI validation workflow and GitHub Actions template | quality, automation, CI | 2026-06-30 |
+| Release an OpenRouter/self-hosted LLM compatibility guide | integration, onboarding | 2026-06-20 |
+| Launch community contribution primers and issue labels | community, contribution | 2026-06-15 |
+| Add prompt transparency and mapping diagnostics to README | trust, transparency | 2026-06-25 |
+
+### Q3 2026 (Planned)
+
+- Implement a reusable selector registry and page object versioning pattern.
+- Add failure analysis reporting for generated tests and drift alerts.
+- Publish a migration guide from Cucumber/Behave/recorders into Antinode Norma.
+- Develop a `docs/PLAYBOOK_ALIGNMENT.md` section linking Antinode Norma workflows to the AI playbook’s phases.
+- Automate dependency scanning and release notes generation using GitHub Actions.
+
+### Long-Term Radar (H2 2026)
+
+- Explore MCP-style conversational workflows for issue tracking and test generation.
+- Evaluate self-healing selector proposals and failure-driven mapping updates.
+- Build a formal “fleet automation health” dashboard for open-source users.
+- Create shared open-source assets: step libraries, selector patterns, and example projects.
+- Adopt a quarterly release review process matching the AI playbook’s weekly/monthly cadence.
+
+---
+
+## 6. Practical Recommendations
 
 1. **Create a one-page positioning brief**
    - Problem, solution, target audience, key benefits, evidence.
