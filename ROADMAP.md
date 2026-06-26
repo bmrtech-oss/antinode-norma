@@ -9,35 +9,55 @@ This roadmap outlines **phased improvements** that will elevate the solution to 
 
 ## Phase 1: AI‑Powered Step Mapping (Score +0.7)
 
-**Goal:** Replace hard‑coded regex rules with dynamic LLM‑based step mapping.
+**Goal:** Replace hard‑coded regex rules with a hybrid LLM + rule engine step mapper that is robust, explainable, and repairable.
 
 ### Why:
-- Current rule engine is limited to predefined patterns.
-- AI can understand natural language and generate appropriate Playwright actions on the fly.
+- The current rule engine is limited to predefined patterns and brittle selectors.
+- LLMs can interpret natural language and generate rich Playwright actions, while rules provide safety and fallback.
+- A robust mapping layer will reduce unmapped steps, improve generated test accuracy, and support future self-healing.
 
 ### Tasks:
 
-1. **Create a new LLM-based step mapper module**
-   - File: `antinode_norma/codegen/engine/llm_step_mapper.py`
-   - Implement `async def map_step_with_llm(step_text: str) -> Tuple[ActionType, str, str]`
-   - Use a prompt template with few‑shot examples of Gherkin → Playwright mapping.
-   - Support fallback to rule engine if LLM fails.
+1. **Improve the LLM prompt library**
+   - Expand `llm_step_mapper._build_prompt()` with more diverse examples: navigation, form filling, dialogs, file uploads, role/aria selectors, and assertions.
+   - Add example mappings for `And`/`But` steps and scenario-specific language.
+   - Use explicit reasoning prompts: first classify the step type, then output JSON only.
 
-2. **Integrate the LLM mapper into the parsing pipeline**
-   - Modify `GherkinParser._parse_steps()` to try LLM mapping first, fallback to rule engine.
-   - Add caching to avoid repeated LLM calls for identical steps.
+2. **Add confidence-aware hybrid routing**
+   - Return a confidence score or quality signal from `map_step_with_llm()`.
+   - If confidence is low or the LLM output is invalid, fall back to `RuleEngine` before raising errors.
+   - Log when LLM mapping differs from rule outcomes for later inspection.
 
-3. **Prompt engineering**
-   - Create a set of 20–30 example mappings for training.
-   - Use chain‑of‑thought prompting for complex steps (e.g., "When the user logs in with the new password" → navigate to dashboard).
+3. **Make caching smarter and persistent**
+   - Normalize cache keys for step templates, not just verbatim text.
+   - Preserve corrected mappings from failures and interactive fixes.
+   - Add a command or debug mode to inspect the LLM mapping cache.
 
-4. **Add configuration toggle**
+4. **Add interactive repair and human-in-the-loop support**
+   - Use `interactive_callback` in `llm_step_mapper.map_step()` to let users correct unmapped or ambiguous steps during generation.
+   - Persist those manual corrections so the mapper learns from them.
+
+5. **Improve selector and action robustness**
+   - Extend `ActionType`/`options` to support locator strategy hints such as `text=`, `role=`, `data-testid=`, and fallback selector lists.
+   - Let the mapper propose multiple candidate selectors or a more robust selector when the page context is unclear.
+
+6. **Use failure learning proactively**
+   - Feed failed step execution examples into the prompt using the existing failure analyzer hook.
+   - Prefer robust selectors and avoid patterns that previously caused flakiness.
+
+7. **Add diagnostics and mapping metrics**
+   - Expose a `--show-mapping-decisions` or `debug` mode to report whether each step used LLM, rules, or fallback.
+   - Track step mapping coverage, LLM success rate, and fallback frequency.
+
+8. **Add tests and validation**
+   - Unit tests for the mapper, prompt parsing, cache behavior, and JSON schema validation.
+   - Mock LLM integration tests for valid output, malformed JSON, retry behavior, and fallback.
+   - End-to-end tests that verify a sample `.feature` is parsed into Playwright actions.
+
+9. **Add configuration toggles and defaults**
    - Add `use_llm_mapping: bool` to `QualityConfig`.
-   - Set default to `true` if LLM provider is configured.
-
-5. **Add tests**
-   - Unit tests for `llm_step_mapper.py`.
-   - Integration test with mock LLM.
+   - Add `llm_mapping_cache_size`, `llm_mapping_timeout`, and `enable_failure_learning` to configuration.
+   - Use environment defaults when an LLM provider is configured.
 
 ---
 

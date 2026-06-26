@@ -4,7 +4,9 @@ import json
 import pytest
 
 from antinode_norma.core.failure_analyzer import FailureEvent
+from antinode_norma.codegen.config import CodegenConfig
 from antinode_norma.codegen.engine import llm_step_mapper
+from antinode_norma.codegen.engine.rules import RuleEngine
 
 
 @pytest.fixture(autouse=True)
@@ -80,6 +82,28 @@ def test_map_step_falls_back_to_rule_engine_when_llm_fails(monkeypatch):
     assert action.name == "NAVIGATE"
     assert target is None
     assert value == "https://example.com/login"
+    assert options == {}
+
+
+def test_rule_engine_respects_codegen_base_url(monkeypatch):
+    config = CodegenConfig(base_url="https://myapp.local")
+    monkeypatch.setattr(
+        "antinode_norma.codegen.engine.rules.get_config",
+        lambda: config,
+    )
+
+    engine = RuleEngine()
+    action, target, value, options = engine.map_step("Given the user is on the login page")
+
+    assert action.name == "NAVIGATE"
+    assert value == "https://myapp.local/login"
+    assert options == {}
+
+    action, target, value, options = engine.map_step(
+        "Given the user has successfully updated the password"
+    )
+    assert action.name == "NAVIGATE"
+    assert value == "https://myapp.local"
     assert options == {}
 
 

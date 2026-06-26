@@ -6,7 +6,7 @@ This document explains how to build, install, configure, and use the **Antinode 
 
 ## Overview
 
-The Antinode Norma plugin brings BDD (Behavior-Driven Development) capabilities directly into Claude Desktop. It exposes **seven MCP tools** that allow Claude to:
+The Antinode Norma plugin brings BDD (Behavior-Driven Development) capabilities directly into Claude Desktop. It exposes **eight MCP tools** that allow Claude to:
 
 - Submit user stories and receive an INVEST quality report (`submit_story`).
 - Improve stories based on quality suggestions (`improve_story`).
@@ -218,6 +218,13 @@ After installation, the plugin registers an MCP server named `norma`. The tools 
 | `submit_story` | Submits a user story and returns an INVEST quality report. | `raw_text`, `role`, `action`, `benefit`, `acceptance_criteria` (list), `dependencies` (optional), `estimated_points` (optional) |
 | `improve_story` | Requests an improved version of a story based on quality suggestions. | `story_id` (from `submit_story`), `suggestions` (list) |
 | `generate_feature` | Generates a Gherkin `.feature` file from a previously submitted story. | `story_id` (from `submit_story`), `step_definitions` (optional list) |
+| `run_bdd_agent` | Runs the autonomous BDD agent on a high-level goal. | `story` (string), `max_iterations` (integer, optional) |
+| `generate_tests` | Generates executable test scripts from a feature file. | `feature_path`, `framework`, `output_dir`, `use_page_objects`, `generate_step_defs`, `verbose` |
+| `generate_page_objects` | Generates Page Object classes from a feature file. | `feature_path`, `framework`, `output_dir` |
+| `generate_step_defs` | Generates reusable step definitions from a feature file. | `feature_path`, `framework`, `output_dir` |
+| `validate_feature` | Validates a Gherkin feature file for quality and completeness. | `feature_path`, `check_invest` |
+
+The standalone code generation tools can be used directly from Claude Desktop when you already have a `.feature` file available. They can also be invoked from within the agent workflow as part of a larger BDD generation process.
 
 ---
 

@@ -242,6 +242,7 @@ CODEGEN_VERBOSE=true
 | `CODEGEN_QUALITY_RUN_LINTER` | Run linter after generation | `false` |
 | `CODEGEN_QUALITY_LINTER_TOOL` | Linter tool: `eslint`, `flake8`, or auto‑detect | `null` |
 | `CODEGEN_QUALITY_PAGE_OBJECT_DIR` | Sub‑folder for Page Objects | `pages` |
+| `CODEGEN_BASE_URL` | Base URL used for generated navigation steps | `https://example.com` |
 | `CODEGEN_QUALITY_STEP_DEF_DIR` | Sub‑folder for step definitions | `steps` |
 | `CODEGEN_QUALITY_WAIT_TIMEOUT` | Default wait timeout (ms) | `10000` |
 | `CODEGEN_QUALITY_RETRY_COUNT` | Retry attempts for flaky tests | `2` |

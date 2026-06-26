@@ -4,6 +4,7 @@ Declarative rules for mapping Gherkin step text to generic actions.
 
 import re
 from typing import Optional, Tuple, Dict, Any, Callable, List
+from ..config import get_config
 from ..models.test_model import ActionType
 
 
@@ -26,22 +27,14 @@ class RuleEngine:
             r"^(?:Given |And )?the user is on the (?P<page>[^\"]*) page",
             ActionType.NAVIGATE,
             lambda m: None,
-            lambda m: (
-                f"https://example.com/{m.group('page').replace(' ', '_')}"
-                if m.group("page")
-                else "https://example.com"
-            ),
+            lambda m: self._page_url(m.group("page")),
             lambda m: {},
         )
         self.add_rule(
             r"^(?:Given |And )?I am on the (?P<page>[^\"]*) page",
             ActionType.NAVIGATE,
             lambda m: None,
-            lambda m: (
-                f"https://example.com/{m.group('page').replace(' ', '_')}"
-                if m.group("page")
-                else "https://example.com"
-            ),
+            lambda m: self._page_url(m.group("page")),
             lambda m: {},
         )
 
@@ -132,14 +125,14 @@ class RuleEngine:
             r"^(?:And )?I can log in with the new password successfully",
             ActionType.NAVIGATE,
             lambda m: None,
-            lambda m: "https://example.com/dashboard",
+            lambda m: self._page_url("dashboard"),
             lambda m: {},
         )
         self.add_rule(
             r"^(?:When |And )?the user logs in with the new password",
             ActionType.NAVIGATE,
             lambda m: None,
-            lambda m: "https://example.com/dashboard",
+            lambda m: self._page_url("dashboard"),
             lambda m: {},
         )
 
@@ -293,23 +286,41 @@ class RuleEngine:
             r"^(?:Given )?an invalid reset token exists",
             ActionType.NAVIGATE,
             lambda m: None,
-            lambda m: "https://example.com/reset?token=invalid",
+            lambda m: self._url_with_path("/reset?token=invalid"),
             lambda m: {},
         )
         self.add_rule(
             r"^(?:Given )?a valid reset token exists",
             ActionType.NAVIGATE,
             lambda m: None,
-            lambda m: "https://example.com/reset",
+            lambda m: self._url_with_path("/reset"),
             lambda m: {},
         )
         self.add_rule(
             r"^(?:Given )?the user has successfully updated the password",
             ActionType.NAVIGATE,
             lambda m: None,
-            lambda m: "https://example.com",
+            lambda m: self._base_url(),
             lambda m: {},
         )
+
+    def _base_url(self) -> str:
+        config_url = get_config().base_url
+        if config_url:
+            return config_url.rstrip("/")
+        return "https://example.com"
+
+    def _page_url(self, page: Optional[str]) -> str:
+        base = self._base_url()
+        if not page:
+            return base
+        page_path = page.strip().replace(" ", "_")
+        return f"{base}/{page_path}"
+
+    def _url_with_path(self, path: str) -> str:
+        base = self._base_url()
+        trimmed = path.lstrip("/")
+        return f"{base}/{trimmed}"
 
     def add_rule(
         self,

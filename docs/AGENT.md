@@ -165,6 +165,12 @@ The agent will:
 
 All code generation tools are also available as **standalone MCP tools**. See the [Claude Plugin documentation](CLAUDE_PLUGIN.md) for integration details.
 
+For example, in Claude Desktop you can ask:
+
+> "Validate `features/reset_my_password.feature` and generate Playwright tests with Page Objects."
+
+This will invoke `validate_feature` and `generate_tests` directly, without requiring the full autonomous agent workflow.
+
 ### Tool Parameters
 
 #### `generate_tests`

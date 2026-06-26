@@ -26,6 +26,7 @@ class CodegenConfig:
     default_framework: str = "playwright"
     feature_dir: Path = Path("features")
     output_dir: Path = Path("generated_tests")
+    base_url: Optional[str] = None
     framework_output_map: Dict[str, str] = field(
         default_factory=lambda: {
             "playwright": "playwright",
