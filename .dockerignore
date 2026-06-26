@@ -10,3 +10,8 @@ __pycache__/
 htmlcov/
 dist/
 *.mcpb
+node_modules/
+generated_tests/
+playwright-report/
+test-results/
+.vscode/

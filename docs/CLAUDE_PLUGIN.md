@@ -6,11 +6,16 @@ This document explains how to build, install, configure, and use the **Antinode 
 
 ## Overview
 
-The Antinode Norma plugin brings BDD (Behavior-Driven Development) capabilities directly into Claude Desktop. It exposes three MCP tools that allow Claude to:
+The Antinode Norma plugin brings BDD (Behavior-Driven Development) capabilities directly into Claude Desktop. It exposes **eight MCP tools** that allow Claude to:
 
-- **Submit user stories** and receive an INVEST quality report.
-- **Improve stories** based on quality suggestions.
-- **Generate Gherkin `.feature` files** from validated stories.
+- Submit user stories and receive an INVEST quality report (`submit_story`).
+- Improve stories based on quality suggestions (`improve_story`).
+- Generate Gherkin `.feature` files from validated stories (`generate_feature`).
+- Run the autonomous BDD agent (`run_bdd_agent`).
+- **Generate executable test scripts** from feature files (`generate_tests`).
+- **Generate Page Object classes** (`generate_page_objects`).
+- **Generate reusable step definitions** (`generate_step_defs`).
+- **Validate feature files** for quality and completeness (`validate_feature`).
 
 The plugin leverages your chosen LLM (OpenRouter, Anthropic, OpenAI, or local) and supports optional JIRA integration.
 
@@ -118,6 +123,92 @@ You can set these variables in several ways:
 
 ---
 
+## Code Generation Tools
+
+The plugin includes four additional MCP tools for test code generation:
+
+### `generate_tests`
+
+Generates executable test scripts from a `.feature` file.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `feature_path` | string | Yes | Path to the `.feature` file |
+| `framework` | string | No | `playwright`, `cypress`, or `selenium` (default: `playwright`) |
+| `output_dir` | string | No | Output directory (default: from config) |
+| `use_page_objects` | boolean | No | Generate Page Objects (default: `false`) |
+| `generate_step_defs` | boolean | No | Generate step definitions (default: `false`) |
+| `verbose` | boolean | No | Enable verbose output (default: `false`) |
+
+**Example Claude prompt:**
+> "Generate Playwright tests with Page Objects for the feature file at `features/login.feature`."
+
+### `generate_page_objects`
+
+Generates Page Object classes only.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `feature_path` | string | Yes | Path to the `.feature` file |
+| `framework` | string | No | `playwright`, `cypress`, or `selenium` (default: `playwright`) |
+| `output_dir` | string | No | Output directory |
+
+### `generate_step_defs`
+
+Generates reusable step definitions only.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `feature_path` | string | Yes | Path to the `.feature` file |
+| `framework` | string | No | `playwright`, `cypress`, or `selenium` (default: `playwright`) |
+| `output_dir` | string | No | Output directory |
+
+### `validate_feature`
+
+Validates a Gherkin feature file for quality and completeness.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `feature_path` | string | Yes | Path to the `.feature` file |
+| `check_invest` | boolean | No | Run INVEST quality check (default: `true`) |
+
+**Example Claude prompt:**
+> "Validate the feature file at `features/reset_password.feature` and tell me if it meets INVEST criteria."
+
+### Output Quality Enhancements
+
+When using `generate_tests` with `use_page_objects: true` or `generate_step_defs: true`, the generated code includes:
+
+- **Page Object Model** – Clean separation of selectors and actions.
+- **Reusable Step Definitions** – Common actions (fill, click, navigate) as functions.
+- **Explicit Waits** – Robust `waitForSelector` before interactions.
+- **Data‑Driven Testing** – Support for Scenario Outlines with Examples.
+- **Code Formatting** – Auto‑formatting with Prettier or Black.
+- **Linting** – Optional ESLint or flake8 with auto‑fix.
+
+### Configuration for Code Generation
+
+Add these variables to your `.env` file to control code generation defaults:
+
+```bash
+# Code Generation defaults
+CODEGEN_DEFAULT_FRAMEWORK=playwright
+CODEGEN_OUTPUT_DIR=generated_tests
+CODEGEN_QUALITY_USE_PAGE_OBJECTS=true
+CODEGEN_QUALITY_GENERATE_STEP_DEFS=true
+CODEGEN_QUALITY_SELECTOR_STRATEGY=data-testid
+CODEGEN_QUALITY_RUN_FORMATTER=true
+CODEGEN_QUALITY_FORMATTER_TOOL=prettier
+```
+
+See the [Code Generation Module README](../antinode_norma/codegen/README.md) for full configuration options.
+
+---
+
 ## Available Tools
 
 After installation, the plugin registers an MCP server named `norma`. The tools are available in Claude Desktop with the prefix `mcp__plugin_antinode-norma_norma__`. You can invoke them by their short names; Claude will understand them naturally.
@@ -127,6 +218,13 @@ After installation, the plugin registers an MCP server named `norma`. The tools 
 | `submit_story` | Submits a user story and returns an INVEST quality report. | `raw_text`, `role`, `action`, `benefit`, `acceptance_criteria` (list), `dependencies` (optional), `estimated_points` (optional) |
 | `improve_story` | Requests an improved version of a story based on quality suggestions. | `story_id` (from `submit_story`), `suggestions` (list) |
 | `generate_feature` | Generates a Gherkin `.feature` file from a previously submitted story. | `story_id` (from `submit_story`), `step_definitions` (optional list) |
+| `run_bdd_agent` | Runs the autonomous BDD agent on a high-level goal. | `story` (string), `max_iterations` (integer, optional) |
+| `generate_tests` | Generates executable test scripts from a feature file. | `feature_path`, `framework`, `output_dir`, `use_page_objects`, `generate_step_defs`, `verbose` |
+| `generate_page_objects` | Generates Page Object classes from a feature file. | `feature_path`, `framework`, `output_dir` |
+| `generate_step_defs` | Generates reusable step definitions from a feature file. | `feature_path`, `framework`, `output_dir` |
+| `validate_feature` | Validates a Gherkin feature file for quality and completeness. | `feature_path`, `check_invest` |
+
+The standalone code generation tools can be used directly from Claude Desktop when you already have a `.feature` file available. They can also be invoked from within the agent workflow as part of a larger BDD generation process.
 
 ---
 

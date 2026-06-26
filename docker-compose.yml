@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: antinode-norma:dev
+    container_name: antinode-norma-app
+    working_dir: /app
+    tty: true
+    stdin_open: true
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: tail -f /dev/null

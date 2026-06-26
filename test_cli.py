@@ -23,6 +23,7 @@ TEST_STORY = (
     "- The system should expire the reset link after 30 minutes."
 )
 
+
 def main():
     print("=== Testing antinode-norma CLI ===\n")
     print("Using story:")
@@ -30,22 +31,14 @@ def main():
     print()
 
     # Build the command
-    cmd = [
-        sys.executable, "-m", "antinode_norma.cli", "generate",
-        TEST_STORY
-    ]
+    cmd = [sys.executable, "-m", "antinode_norma.cli", "generate", TEST_STORY]
 
     print(f"Running: {' '.join(cmd)}\n")
 
     # Run the CLI and capture output
     try:
         result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=120,
-            cwd=os.getcwd(),
-            env=os.environ.copy()
+            cmd, capture_output=True, text=True, timeout=120, cwd=os.getcwd(), env=os.environ.copy()
         )
     except subprocess.TimeoutExpired:
         print("ERROR: Command timed out after 120 seconds.")
@@ -69,7 +62,7 @@ def main():
         sys.exit(1)
 
     # Extract the file path from the output
-    lines = result.stdout.strip().split('\n')
+    lines = result.stdout.strip().split("\n")
     feature_path = None
     for line in lines:
         if "Feature file written:" in line:
@@ -98,6 +91,7 @@ def main():
 
     print("\n✅ Test passed! The CLI generated a valid feature file.")
     sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

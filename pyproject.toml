@@ -18,8 +18,13 @@ dependencies = [
     "mcp>=0.1.0",
     "jira>=3.4.0",
     "requests>=2.31.0",
-    "mcp @ git+https://github.com/modelcontextprotocol/python-sdk.git@main",
     "click>=8.1.0",
+    "gherkin-official>=29.0.0",
+    "PyYAML>=6.0",
+    "Jinja2>=3.0",
+    "behave>=1.2.6",
+    "rich>=13.0.0",
+    "tqdm>=4.65.0",
 ]
 
 [tool.black]

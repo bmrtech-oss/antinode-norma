@@ -1,10 +1,23 @@
 from typing import List, Union
 from .schemas import UserStory, QualityReport
+import re
 
 VAGUE_WORDS = {"etc", "various", "handle", "properly", "many", "some", "multiple"}
 IMPL_WORDS = {"sql", "database", "rest", "api", "class", "method"}
 SYSTEM_WORDS = {"call", "update", "insert", "delete", "compute"}
-TEST_VERBS = {"should", "must", "returns", "displays", "sends"}
+
+# Only consider criteria testable when they contain a concrete assertion or measurable outcome.
+TESTABLE_PATTERNS = [
+    r"\bshould\b",
+    r"\breturn(s?)\b",
+    r"\bdisplay(s?)\b",
+    r"\bshow(s?)\b",
+    r"\bexpect(ed)?\b",
+    r"\bstatus\b",
+    r"\b\d{3}\b",
+    r"\bappears?\b",
+    r"\bcontains?\b",
+]
 
 
 def is_independent(story: UserStory) -> bool:
@@ -36,11 +49,25 @@ def is_small(story: UserStory) -> bool:
     return len(story.acceptance_criteria) <= 5
 
 
+def _is_criterion_testable(ac: str) -> bool:
+    if not ac or not ac.strip():
+        return False
+    ac_lower = ac.lower()
+    for p in TESTABLE_PATTERNS:
+        if re.search(p, ac_lower):
+            return True
+    return False
+
+
 def is_testable(story: UserStory) -> bool:
-    for crit in story.acceptance_criteria:
-        if not any(verb in crit.lower() for verb in TEST_VERBS):
-            return False
-    return True
+    """
+    Return True only when all acceptance criteria are concrete/testable per pattern rules.
+    (Unit tests rely on 'all criteria must be testable' semantics.)
+    """
+    criteria: List[str] = story.acceptance_criteria or []
+    if not criteria:
+        return False
+    return all(_is_criterion_testable(c) for c in criteria)
 
 
 def _suggestion_for(criterion: str) -> str:

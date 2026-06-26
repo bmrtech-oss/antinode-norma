@@ -45,6 +45,30 @@ LLM_MAX_TOKENS=1024
 # ----- JIRA Configuration -----
 JIRA_SERVER=https://your-company.atlassian.net   # Your JIRA domain
 JIRA_TOKEN=your_api_token_here                    # Generate from Atlassian account
+
+# ----- TestRail Configuration -----
+TESTRAIL_URL=https://yourcompany.testrail.io
+TESTRAIL_USER=your-email@example.com
+TESTRAIL_TOKEN=your_api_token_here
+
+# ----- Notification Webhooks -----
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T/123/ABC
+TEAMS_WEBHOOK_URL=https://outlook.office.com/webhook/...
+```
+
+## 2.1 Optional Integration CLI Commands
+
+Use the new CLI commands to invoke integrations directly from the terminal.
+
+```bash
+anorm jira-search --label bdd-ready
+anorm jira-comment ABC-123 "Adding validation notes after feature generation"
+anorm jira-transition ABC-123 "In Progress"
+anorm jira-status ABC-123 Done
+anorm testrail-case --section-id 42 --title "Login flow" --description "Verify login succeeds"
+anorm testrail-result --test-id 128 --status-id 1 --comment "Passed on CI"
+anorm notify-slack --text "Build passed: all tests succeeded"
+anorm notify-teams --title "CI Status" --text "All checks passed"
 ```
 
 ### 2.1 Generate a JIRA API Token
@@ -147,9 +171,198 @@ Feature file written: features/reset_password.feature
 
 Open `features/reset_password.feature` – it should contain a valid Gherkin scenario.
 
+To preview output without writing a feature file:
+
+```bash
+anorm generate --dry-run "As a user, I want to reset my password so that I can regain access. Acceptance criteria: click forgot password, receive email, set new password."
+```
+
+To retry a failed story interactively:
+
+```bash
+anorm generate --interactive "As a user, I want to reset my password so that I can regain access. Acceptance criteria: click forgot password, receive email, set new password."
+```
+
+To generate shell completion and parse features:
+
+```bash
+anorm completion bash > ~/.bashrc
+anorm parse --feature-file features/reset_password.feature
+anorm parse --feature-file features/reset_password.feature --interactive
+```
+
 ---
 
-## 6. Test the JIRA Connector
+## 6. Generating Executable Tests from Feature Files
+
+Once you have validated `.feature` files, you can use the code generation module to turn them into executable test scripts.
+
+### 6.1 CLI – Generate Tests
+
+```bash
+python -m antinode_norma.codegen.cli.commands generate -f features/login.feature -fw playwright
+```
+
+**Options:**
+- `-f, --feature` – Path to the `.feature` file (required).
+- `-o, --output` – Output directory (overrides config).
+- `-fw, --framework` – Target framework: `playwright`, `cypress`, or `selenium`.
+- `-c, --config-file` – Optional YAML configuration file.
+
+### 6.2 Generate Tests with Quality Enhancements
+
+Enable Page Objects and step definitions for production‑ready code:
+
+```bash
+python -m antinode_norma.codegen.cli.commands generate -f features/login.feature -fw playwright
+```
+
+With the following `codegen.yaml` in your project root:
+
+```yaml
+default_framework: playwright
+quality:
+  use_page_objects: true
+  generate_step_defs: true
+  selector_strategy: "data-testid"
+  run_formatter: true
+  formatter_tool: "prettier"
+```
+
+This generates:
+- `generated_tests/playwright/login.spec.ts` – The test file.
+- `generated_tests/playwright/pages/login.page.ts` – Page Object class.
+- `generated_tests/playwright/steps/common_steps.ts` – Reusable step functions.
+
+### 6.3 Python API – Code Generation
+
+```python
+from antinode_norma.codegen import Orchestrator
+from antinode_norma.codegen.config import load_config
+
+# Load configuration (auto‑discovers codegen.yaml and .env)
+config = load_config()
+
+# Create orchestrator with quality settings
+orchestrator = Orchestrator()
+
+# Generate tests
+orchestrator.generate(
+    feature_path="features/login.feature",
+    output_dir=config.get_output_dir("playwright"),
+    framework="playwright"
+)
+```
+
+### 6.4 Available Code Generation Tools via MCP
+
+If you're using the MCP server or Claude Desktop plugin, the following tools are available:
+
+| Tool | Description |
+| :--- | :--- |
+| `generate_tests` | Generate full test scripts from a feature file |
+| `generate_page_objects` | Generate Page Object classes only |
+| `generate_step_defs` | Generate reusable step definitions only |
+| `validate_feature` | Validate a feature file for quality |
+
+**Example MCP tool call:**
+
+```json
+{
+  "name": "generate_tests",
+  "arguments": {
+    "feature_path": "features/login.feature",
+    "framework": "playwright",
+    "use_page_objects": true,
+    "generate_step_defs": true
+  }
+}
+```
+
+### 6.5 Configuration Reference
+
+Create a `codegen.yaml` file in your project root:
+
+```yaml
+# codegen.yaml
+default_framework: playwright
+feature_dir: features
+output_dir: generated_tests
+verbose: false
+
+quality:
+  use_page_objects: true
+  generate_step_defs: true
+  selector_strategy: "data-testid"
+  add_explicit_waits: true
+  enable_scenario_outlines: true
+  run_formatter: true
+  formatter_tool: "prettier"
+  page_object_dir: "pages"
+  step_def_dir: "steps"
+  wait_timeout: 10000
+  retry_count: 2
+```
+
+Or use environment variables in your `.env`:
+
+```bash
+CODEGEN_DEFAULT_FRAMEWORK=playwright
+CODEGEN_OUTPUT_DIR=generated_tests
+CODEGEN_QUALITY_USE_PAGE_OBJECTS=true
+CODEGEN_QUALITY_GENERATE_STEP_DEFS=true
+CODEGEN_QUALITY_RUN_FORMATTER=true
+```
+
+### 6.6 Next Steps: Run the Generated Tests
+
+**Playwright:**
+```bash
+npx playwright test generated_tests/playwright/login.spec.ts
+```
+
+**Playwright — Visual Testing (Phase 4)**
+
+The code generator can inject `expect(page).toHaveScreenshot()` assertions when you enable visual testing. To create baseline PNGs run the Playwright test runner with `--update-snapshots`.
+
+```bash
+# Install dependencies and browsers (once)
+npm install
+npx playwright install --with-deps
+
+# Run all generated Playwright tests and write baseline snapshots
+npx playwright test generated_tests/playwright --project=chromium --update-snapshots
+```
+
+**Playwright — Learning from Failures (Phase 5)**
+
+After running Playwright with `--reporter=json`, you can import failure data into Norma and persist it for future test generation.
+
+```bash
+npx playwright test generated_tests/playwright --project=chromium --reporter=json > playwright-report.json
+python -m antinode_norma.cli learn --report-file playwright-report.json --show-recent --show-suggestions
+```
+
+This stores failure patterns in a local SQLite database and provides the generator with negative examples to avoid flakier step mappings. The `--show-suggestions` flag also prints healing recommendations for selectors and step mappings derived from the learned failures.
+
+Notes:
+- The generator accepts two CLI flags: `--enable-visual-testing` and `--visual-snapshot-dir` (relative to the emitter output dir).
+- Playwright may write snapshots into per-spec folders like `your.spec.ts-snapshots/` and/or into the path used by the emitted `toHaveScreenshot()` call (for example `visual-snapshots/`).
+- To review/approve baselines, run the above command in a local branch and commit the snapshot PNGs once verified.
+
+**Cypress:**
+```bash
+npx cypress run --spec generated_tests/cypress/login.cy.js
+```
+
+**Selenium (pytest):**
+```bash
+pytest generated_tests/selenium/login_test.py
+```
+
+---
+
+## 7. Test the JIRA Connector
 
 The connector will fetch all issues with label `bdd-ready`, submit them to the agent, and print quality reports.
 
@@ -179,7 +392,7 @@ If the story fails quality, you'll see suggestions for improvement.
 
 ---
 
-## 7. Test the MCP Server (Advanced)
+## 8. Test the MCP Server (Advanced)
 
 To test the full tool‑based workflow:
 
@@ -241,7 +454,7 @@ You should see the feature file path printed.
 
 ---
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 | Issue | Likely Cause & Solution |
 | :--- | :--- |
@@ -253,16 +466,17 @@ You should see the feature file path printed.
 
 ---
 
-## 9. Next Steps
+## 10. Next Steps
 
 - **Automate with CI/CD:** Run the JIRA connector in a GitHub Action on a schedule.
+- **Add issue feedback:** Use the new JIRA comment API to post summaries or validation results back to your issue.
 - **Improve Quality Rules:** Customize `quality.py` to match your team's INVEST interpretation.
 - **Connect to Other Sources:** Write connectors for GitHub Issues, Azure DevOps, or Trello.
 - **Deploy as a Service:** Run the MCP server permanently to expose tools to multiple clients.
 
 ---
 
-## 10. Conclusion
+## 11. Conclusion
 
 You now have a fully functional **Antinode Norma** setup that:
 - Pulls stories from a free JIRA Cloud account.

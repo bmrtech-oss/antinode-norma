@@ -22,8 +22,7 @@ If you're stuck on a technical issue, please open a [GitHub Issue](https://githu
 - **Improve the INVEST quality checks** – Enhance `quality.py` with better heuristics or new criteria.
 - **Add a new connector** – Contribute connectors for Azure Boards, GitHub Issues, Trello, etc., by implementing the connector pattern.
 - **Improve documentation** – Clarify usage, add examples, or translate guides.
-- **Report outdated information** – Open an issue.
-
+- **Report outdated information** – Open an issue.- Use the issue templates in `.github/ISSUE_TEMPLATE/` for bugs and feature requests.
 ---
 
 ## Development Workflow

@@ -87,12 +87,82 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
 
     elif provider == "mock":
 
+        def _extract_block(prompt: str, marker: str) -> str:
+            if marker in prompt:
+                return prompt.split(marker, 1)[1].strip()
+            return ""
+
+        def _parse_story_text(raw_text: str):
+            role = "user"
+            action = "do something"
+            benefit = "achieve value"
+            text = raw_text.strip().strip("`\n ")
+            if text.lower().startswith("as a "):
+                text = text[5:]
+                if " so that " in text:
+                    before, after = text.split(" so that ", 1)
+                    benefit = after.strip().rstrip(".")
+                else:
+                    before = text
+                if " i want to " in before.lower():
+                    parts = before.split(" i want to ", 1)
+                    role = parts[0].strip().rstrip(".")
+                    action = parts[1].strip().rstrip(".")
+            elif text:
+                action = text.split(".")[0].strip()
+            return role, action, benefit
+
+        def _build_feature(role: str, action: str, benefit: str, criteria: list[str]):
+            feature_title = f"{action.capitalize()}"
+            scenario_title = f"Generate a feature for {action}"
+            steps = [
+                f"Given the {role} needs to {action}",
+                f"When they follow the process to {action}",
+                f"Then the outcome should support {benefit}",
+            ]
+            if criteria:
+                criteria_text = "\n".join(f"  - {c}" for c in criteria)
+            else:
+                criteria_text = "  - The system meets the acceptance criteria."
+            return (
+                f"Feature: {feature_title}\n\n"
+                f"Scenario: {scenario_title}\n"
+                f"  {steps[0]}\n"
+                f"  {steps[1]}\n"
+                f"  {steps[2]}\n"
+            )
+
         def mock_call(prompt: str) -> str:
+            if "Convert the following user story into a JSON object" in prompt:
+                raw_story = _extract_block(prompt, "Story:")
+                role, action, benefit = _parse_story_text(raw_story)
+                return json.dumps(
+                    {
+                        "role": role,
+                        "action": action,
+                        "benefit": benefit,
+                        "acceptance_criteria": [
+                            "The story is converted into a valid JSON schema.",
+                            "The story is suitable for Gherkin generation.",
+                        ],
+                    }
+                )
+            if "Output ONLY a valid Gherkin feature file" in prompt:
+                role = _extract_block(prompt, "Role:").splitlines()[0].strip()
+                action = _extract_block(prompt, "Action:").splitlines()[0].strip()
+                benefit = _extract_block(prompt, "Benefit:").splitlines()[0].strip()
+                criteria_block = _extract_block(prompt, "Acceptance criteria:")
+                criteria = [
+                    line.strip()[2:].strip()
+                    for line in criteria_block.splitlines()
+                    if line.strip().startswith("- ")
+                ]
+                return _build_feature(role, action, benefit, criteria)
             return json.dumps(
                 {
                     "role": "tester",
-                    "action": "test action",
-                    "benefit": "test benefit",
+                    "action": "perform a test action",
+                    "benefit": "validate a test flow",
                     "acceptance_criteria": ["criterion one", "criterion two"],
                 }
             )
