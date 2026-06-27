@@ -21,4 +21,4 @@ repos:
     hooks:
       - id: flake8
         additional_dependencies: []
-        args: ["antinode_norma/", "tests/"]
+        args: ["--max-line-length=100", "antinode_norma/", "tests/"]
