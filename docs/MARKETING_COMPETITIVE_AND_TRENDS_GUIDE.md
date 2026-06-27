@@ -180,11 +180,27 @@ This roadmap is designed to turn Antinode Norma into the best open-source AI-pow
 
 ### 4.1 Phase 1: Open-source adoption foundation
 
+Goal: Build trust, stabilize the core, and lower the barrier for first-time users.
+
 - Ship a polished starter experience with a clear `README`, quickstart example, and one-command feature-to-test generation flow.
 - Publish sample feature files, generated Playwright tests, and a self-contained demo project for login, password reset, and checkout flows.
 - Ensure the CLI and plugin workflows work with free or self-hosted LLM providers such as OpenRouter, Claude, and local models.
 - Add open-source-ready docs: installation, contribution guide, issue templates, and architecture overview.
 - Create a public roadmap and transparent release cadence so users can see what’s coming and why.
+- Set up GitHub Actions to run tests on every PR and add quality badges to the README for:
+  - build status
+  - test coverage
+  - code quality (SonarCloud)
+  - dependency health
+- Enable Dependabot for automated vulnerability scanning and dependency updates.
+- Cut the first official release as `v0.1.0` and publish a `CHANGELOG.md` following Keep a Changelog standards.
+- Publish a `TROUBLESHOOTING.md` with the top 5 common errors, including:
+  - API rate limits
+  - invalid LLM JSON responses
+  - missing environment variables
+  - failed Playwright generation
+  - CLI configuration issues
+- Package a zero-config quick start with a one-line Docker run command, including a mock LLM or free-tier OpenRouter demo so users can complete a generation cycle in under 2 minutes without installing dependencies.
 
 ### 4.2 Phase 2: Product excellence and trust
 
