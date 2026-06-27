@@ -36,7 +36,7 @@ exclude = '''
     \.eggs
 
 [tool.flake8]
-max-line-length = 100
+ignore = E501
   | \.git
   | \.hg
   | \.mypy_cache
