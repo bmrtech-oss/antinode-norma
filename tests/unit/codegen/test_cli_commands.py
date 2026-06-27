@@ -1,7 +1,7 @@
+import importlib
 import sys
 import types
 
-import pytest
 from click.testing import CliRunner
 from pathlib import Path
 from unittest.mock import patch
@@ -20,8 +20,8 @@ sys.modules["behave"] = behave_module
 sys.modules["behave.parser"] = behave_parser
 sys.modules["behave.model"] = behave_model
 
-from antinode_norma.codegen.cli.commands import cli
-from antinode_norma.codegen.config import CodegenConfig
+cli = importlib.import_module("antinode_norma.codegen.cli.commands").cli
+CodegenConfig = importlib.import_module("antinode_norma.codegen.config").CodegenConfig
 
 
 class TestCodegenCLIParallelGeneration:

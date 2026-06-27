@@ -10,9 +10,9 @@ A clear and concise description of the problem.
 
 ### Steps to reproduce
 
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 ### Expected behavior
 
@@ -24,9 +24,9 @@ What actually happened.
 
 ### Environment
 
-- OS: 
-- Python version: 
-- Antinode Norma version: 
+- OS:
+- Python version:
+- Antinode Norma version:
 
 ### Additional context
 

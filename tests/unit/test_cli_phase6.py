@@ -1,10 +1,8 @@
 """Tests for Phase 6 CLI and UX improvements."""
 
-import pytest
 from click.testing import CliRunner
-from pathlib import Path
-from antinode_norma.cli import cli, generate, learn
-from unittest.mock import patch, MagicMock
+from antinode_norma.cli import cli
+from unittest.mock import patch
 
 
 class TestCLIOutput:

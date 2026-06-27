@@ -34,7 +34,7 @@ jobs:
       - name: Lint with flake8
         run: |
           flake8 antinode_norma/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 antinode_norma/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          flake8 antinode_norma/ tests/ --count --exit-zero --ignore=E501 --max-complexity=10 --statistics
 
       - name: Check formatting with black
         # Only run Black on Python 3.12 to avoid AST parsing version mismatches

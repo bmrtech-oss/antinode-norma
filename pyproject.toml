@@ -34,9 +34,6 @@ include = '\.pyi?$'
 exclude = '''
 /(
     \.eggs
-
-[tool.flake8]
-ignore = E501
   | \.git
   | \.hg
   | \.mypy_cache
@@ -48,6 +45,9 @@ ignore = E501
   | dist
 )/
 '''
+
+[tool.flake8]
+ignore = "E501"
 
 [project.scripts]
 anorm = "antinode_norma.cli:main"

@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 
 import pytest
 
@@ -70,24 +69,20 @@ def test_store_playwright_failures_extracts_selector_and_step_text(tmp_path):
 
 def test_get_recent_failures_returns_stored_records(tmp_path):
     report_path = tmp_path / "playwright-report.json"
-    report_path.write_text(
-        json.dumps(
+    report_data = {
+        "tests": [
             {
-                "tests": [
+                "title": "Forgot password",
+                "results": [
                     {
-                        "title": "Forgot password",
-                        "results": [
-                            {
-                                "status": "failed",
-                                "error": "locator.click: waiting for locator('text=Forgot password')",
-                            }
-                        ],
+                        "status": "failed",
+                        "error": "locator.click: waiting for locator('text=Forgot password')",
                     }
-                ]
+                ],
             }
-        ),
-        encoding="utf-8",
-    )
+        ]
+    }
+    report_path.write_text(json.dumps(report_data), encoding="utf-8")
 
     failure_analyzer.store_playwright_failures(report_path)
     recent = failure_analyzer.get_recent_failures(limit=5)
@@ -157,26 +152,28 @@ def test_store_cypress_failures_extracts_selector_and_traceback(tmp_path):
         "});\n"
     )
 
-    report_path.write_text(
-        json.dumps(
+    report_data = {
+        "stats": {},
+        "tests": [
             {
-                "stats": {},
-                "tests": [
-                    {
-                        "title": "should fail to click login",
-                        "fullTitle": "Login should fail to click login",
-                        "file": str(spec_path),
-                        "state": "failed",
-                        "err": {
-                            "message": "Timed out retrying after 5000ms: Expected to find element: '#login-button', but never found it.",
-                            "stack": "Error: Timed out retrying after 5000ms: Expected to find element: '#login-button'\n    at Context.<anonymous> (C:/project/generated_tests/cypress/login.cy.js:5:12)",
-                        },
-                    }
-                ],
+                "title": "should fail to click login",
+                "fullTitle": "Login should fail to click login",
+                "file": str(spec_path),
+                "state": "failed",
+                "err": {
+                    "message": (
+                        "Timed out retrying after 5000ms: Expected to find element: '#login-button', "
+                        "but never found it."
+                    ),
+                    "stack": (
+                        "Error: Timed out retrying after 5000ms: Expected to find element: '#login-button'\n"
+                        "    at Context.<anonymous> (C:/project/generated_tests/cypress/login.cy.js:5:12)"
+                    ),
+                },
             }
-        ),
-        encoding="utf-8",
-    )
+        ],
+    }
+    report_path.write_text(json.dumps(report_data), encoding="utf-8")
 
     events = failure_analyzer.store_playwright_failures(report_path)
     assert len(events) == 1
@@ -193,22 +190,22 @@ def test_store_pytest_json_report_extracts_selector(tmp_path):
         "    assert False, 'NoSuchElementException: selector = \"#password\"'\n"
     )
 
-    report_path.write_text(
-        json.dumps(
+    longrepr = (
+        "Traceback (most recent call last):\n"
+        '  File "{}", line 2, in test_login\n'
+        "    assert False, 'NoSuchElementException: selector = \"#password\"'\n"
+        'AssertionError: NoSuchElementException: selector = "#password"'
+    ).format(str(spec_path))
+    report_data = {
+        "tests": [
             {
-                "tests": [
-                    {
-                        "nodeid": str(spec_path) + "::test_login",
-                        "outcome": "failed",
-                        "longrepr": 'Traceback (most recent call last):\n  File "{}", line 2, in test_login\n    assert False, \'NoSuchElementException: selector = "#password"\'\nAssertionError: NoSuchElementException: selector = "#password"'.format(
-                            str(spec_path)
-                        ),
-                    }
-                ]
+                "nodeid": str(spec_path) + "::test_login",
+                "outcome": "failed",
+                "longrepr": longrepr,
             }
-        ),
-        encoding="utf-8",
-    )
+        ]
+    }
+    report_path.write_text(json.dumps(report_data), encoding="utf-8")
 
     events = failure_analyzer.store_playwright_failures(report_path)
     assert len(events) == 1

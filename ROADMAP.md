@@ -1,6 +1,6 @@
 # Roadmap to Score 9/10: AI-Enhanced Test Generation
 
-## Current Score: 7.5/10  
+## Current Score: 7.5/10
 ## Target Score: 9/10
 
 This roadmap outlines **phased improvements** that will elevate the solution to compete with modern AI‑powered testing tools. Each phase includes **concrete tasks** that can be fed to Copilot for implementation.

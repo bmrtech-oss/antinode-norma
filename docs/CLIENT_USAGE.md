@@ -135,7 +135,7 @@ If you see this, your LLM integration is working.
 1. Log in to your JIRA Cloud instance.
 2. Navigate to your project and click **Create**.
 3. **Issue Type:** `Story`
-4. **Summary:**  
+4. **Summary:**
    `As a registered user, I want to reset my password via email so that I can regain access to my account.`
 5. **Description:** (paste the following)
    ```

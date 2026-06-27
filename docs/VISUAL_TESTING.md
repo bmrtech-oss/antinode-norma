@@ -73,4 +73,4 @@ npx playwright test generated_tests/playwright --project=chromium --update-snaps
 # This step is repository-specific. A simple approach is to copy all PNGs from *-snapshots/ folders into generated_tests/playwright/visual-snapshots/
 ```
 
-If you need help integrating visual testing into your CI pipeline, I can add a small helper script and CI job example. 
+If you need help integrating visual testing into your CI pipeline, I can add a small helper script and CI job example.

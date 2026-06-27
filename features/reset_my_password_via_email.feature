@@ -1,32 +1,28 @@
-Feature: Password reset via email
+# Feature: Password reset via email
+# This feature covers sending the reset link, using a valid token,
+# handling an invalid token, and ensuring the link expires after 30 minutes.
 
-  As a registered user
-  I want to reset my password using a link sent to my email
-  So that I can regain access to my account
+Feature: Password reset
 
-  @smoke
-  Scenario: Successful password reset within token validity period
+  Background:
     Given the user is on the login page
+
+  Scenario: Request password reset link
     When the user clicks 'Forgot password'
     Then a password reset email is sent
+
+  Scenario: Reset password with a valid token
     Given a valid reset token exists
-    When the user clicks the password reset link
-    And the user submits a new password
+    When the user submits a new password
     Then the password is updated
 
-  Scenario: Attempt to reset password with an invalid token
-    Given the user is on the login page
-    When the user clicks 'Forgot password'
-    Then a password reset email is sent
+  Scenario: Show error for invalid token
     Given an invalid reset token exists
-    When the user clicks the password reset link
-    Then the system should display an error message "Invalid or expired token"
+    When the user attempts to reset the password
+    Then the system displays an invalid token error message
 
-  Scenario: Reset link expires after 30 minutes
-    Given the user is on the login page
-    When the user clicks 'Forgot password'
-    Then a password reset email is sent
+  Scenario: Expire reset link after 30 minutes
     Given a valid reset token exists
-    And the token is older than 30 minutes
-    When the user clicks the password reset link
-    Then the system should display an error message "Invalid or expired token"
+    And 31 minutes have passed since the token was issued
+    When the user attempts to reset the password
+    Then the system displays a token expired error message

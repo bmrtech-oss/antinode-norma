@@ -156,7 +156,7 @@ You are a BDD automation assistant. Your goal: {self.state.goal}
 Available tools:
 {tools_desc}
 
-IMPORTANT: 
+IMPORTANT:
 - When calling submit_story, use parameter 'raw_text' for the story.
 - When calling improve_story, use parameter 'raw_text' for the story you want to improve.
 - If a tool returns an error, try a different approach or finish.

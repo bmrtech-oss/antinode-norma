@@ -118,7 +118,7 @@ You can set these variables in several ways:
 
 ### Important Note for Plugin Packaging
 
-> **Note for Plugin Packaging:**  
+> **Note for Plugin Packaging:**
 > When you pack the plugin with `mcpb pack`, the `.env` file is **not** included in the bundle. This is by design to avoid shipping secrets. Users must set the required environment variables themselves. The `manifest.json` already references `${OPENROUTER_API_KEY}` and others, so they will be resolved from the environment when Claude Desktop starts. This approach is secure and follows best practices.
 
 ---

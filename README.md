@@ -8,8 +8,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP](https://img.shields.io/badge/MCP-compatible-9B59B6)](https://github.com/modelcontextprotocol)
 
-BDD feature file generator with an INVEST quality gate.  
-Transform raw user stories into validated Gherkin `.feature` files.  
+BDD feature file generator with an INVEST quality gate.
+Transform raw user stories into validated Gherkin `.feature` files.
 **Now also generates executable test scripts** from those feature files.
 
 Built with a data-centric, functional philosophy – inspired by Rich Hickey.
@@ -285,7 +285,7 @@ orchestrator.generate(
 )
 ```
 
-For detailed step-by-step instructions with JIRA and OpenRouter, see the [Client Usage Guide](docs/CLIENT_USAGE.md).  
+For detailed step-by-step instructions with JIRA and OpenRouter, see the [Client Usage Guide](docs/CLIENT_USAGE.md).
 For full code generation documentation, see the [Code Generation Module README](antinode_norma/codegen/README.md).
 
 ---

@@ -1,6 +1,5 @@
 """Unit tests for INVEST quality checks."""
 
-import pytest
 from antinode_norma.core.quality import (
     is_independent,
     is_negotiable,
