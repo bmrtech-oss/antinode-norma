@@ -1,6 +1,9 @@
 # Antinode Norma
 
 [![CI](https://github.com/bmrtech-oss/antinode-norma/actions/workflows/ci.yml/badge.svg)](https://github.com/bmrtech-oss/antinode-norma/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/bmrtech-oss/antinode-norma.svg)](https://codecov.io/gh/bmrtech-oss/antinode-norma)
+[![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=bmrtech-oss_antinode-norma&metric=alert_status)](https://sonarcloud.io/dashboard?id=bmrtech-oss_antinode-norma)
+[![Dependabot](https://img.shields.io/github/dependabot/bmrtech-oss/antinode-norma?label=Dependabot&logo=dependabot)](https://github.com/bmrtech-oss/antinode-norma/network/alerts)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP](https://img.shields.io/badge/MCP-compatible-9B59B6)](https://github.com/modelcontextprotocol)
@@ -21,6 +24,8 @@ Works with **any LLM** (Claude, GPT, OpenRouter, local) and integrates via **MCP
 - [Client Usage Guide](docs/CLIENT_USAGE.md) – Step-by-step setup with JIRA and OpenRouter.
 - [Docker and Local Development](docs/DOCKER.md) – Run the full project locally with Docker/Podman.
 - [Testing Guide](docs/TESTING.md) – How to run and extend the test suite.
+- [Troubleshooting](TROUBLESHOOTING.md) – Common errors and recovery steps.
+- [Changelog](CHANGELOG.md) – Release history and version notes.
 - [Contributing Guide](CONTRIBUTING.md) – Guidelines for contributors.
 - [Code Generation Module](antinode_norma/codegen/README.md) – Generate Playwright, Cypress, and Selenium tests from Gherkin.
 - [End‑to‑End Workflow Guide](docs/E2E_WORKFLOW.md) – Complete BDD lifecycle from story to tests.
@@ -558,6 +563,20 @@ cp .env.docker.example .env
 
 ```bash
 docker compose build
+```
+
+### Zero-config Docker demo
+
+Run a complete mock generation cycle without external API keys:
+
+```bash
+docker compose run --rm app /bin/sh -lc "cp .env.docker.example .env && anorm generate 'As a user, I want to reset my password so that I can regain access.'"
+```
+
+For a free-tier OpenRouter demo, set your key and run:
+
+```bash
+docker compose run --rm app -e OPENROUTER_API_KEY=sk-or-... anorm generate "As a user, I want to reset my password so that I can regain access."
 ```
 
 ### Run the CLI
