@@ -70,7 +70,11 @@ async def test_run_agent_from_raw_generation():
 @pytest.mark.asyncio
 async def test_run_agent_from_raw_fails_quality():
     """Test that the runner returns an error when quality fails."""
-    story = UserStory(role="tester", action="test", benefit="learn", acceptance_criteria=["vague"])
+    story = UserStory(
+        role="tester",
+        action="test",
+        benefit="learn",
+        acceptance_criteria=["vague"])
     mock_report = QualityReport(
         passes_invest=False,
         invest_details={"testable": False},

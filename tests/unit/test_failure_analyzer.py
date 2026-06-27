@@ -42,14 +42,9 @@ def test_store_playwright_failures_extracts_selector_and_step_text(tmp_path):
                                     {
                                         "status": "failed",
                                         "error": "locator.fill: Test timeout of 30000ms exceeded. waiting for locator('#email')",
-                                    }
-                                ],
-                            }
-                        ],
-                    }
-                ]
-            }
-        ),
+                                    }],
+                            }],
+                    }]}),
         encoding="utf-8",
     )
 
@@ -91,9 +86,11 @@ def test_get_recent_failures_returns_stored_records(tmp_path):
     assert recent[0].selector == "text=Forgot password"
 
 
-def test_get_failure_suggestions_for_step_returns_fix_recommendations(tmp_path):
+def test_get_failure_suggestions_for_step_returns_fix_recommendations(
+        tmp_path):
     report_path = tmp_path / "playwright-report.json"
-    spec_path = tmp_path / "generated_tests" / "playwright" / "forgot_password.spec.ts"
+    spec_path = tmp_path / "generated_tests" / \
+        "playwright" / "forgot_password.spec.ts"
     spec_path.parent.mkdir(parents=True, exist_ok=True)
     spec_path.write_text(
         "import { test, expect } from '@playwright/test';\n"
@@ -102,34 +99,19 @@ def test_get_failure_suggestions_for_step_returns_fix_recommendations(tmp_path):
         "});\n"
     )
 
-    report_path.write_text(
-        json.dumps(
-            {
-                "suites": [
-                    {
-                        "title": "",
-                        "suites": [],
-                        "tests": [
-                            {
-                                "title": "Forgot password",
-                                "location": {
-                                    "file": str(spec_path),
-                                    "line": 3,
-                                },
-                                "results": [
-                                    {
-                                        "status": "failed",
-                                        "error": "locator.click: waiting for locator('text=Forgot password')",
-                                    }
-                                ],
-                            }
-                        ],
-                    }
-                ]
-            }
-        ),
-        encoding="utf-8",
-    )
+    report_path.write_text(json.dumps({"suites": [{"title": "",
+                                                   "suites": [],
+                                                   "tests": [{"title": "Forgot password",
+                                                              "location": {"file": str(spec_path),
+                                                                           "line": 3,
+                                                                           },
+                                                              "results": [{"status": "failed",
+                                                                           "error": "locator.click: waiting for locator('text=Forgot password')",
+                                                                           }],
+                                                              }],
+                                                   }]}),
+                           encoding="utf-8",
+                           )
 
     failure_analyzer.store_playwright_failures(report_path)
     suggestions = failure_analyzer.get_failure_suggestions_for_step(
@@ -163,15 +145,12 @@ def test_store_cypress_failures_extracts_selector_and_traceback(tmp_path):
                 "err": {
                     "message": (
                         "Timed out retrying after 5000ms: Expected to find element: '#login-button', "
-                        "but never found it."
-                    ),
+                        "but never found it."),
                     "stack": (
                         "Error: Timed out retrying after 5000ms: Expected to find element: '#login-button'\n"
-                        "    at Context.<anonymous> (C:/project/generated_tests/cypress/login.cy.js:5:12)"
-                    ),
+                        "    at Context.<anonymous> (C:/project/generated_tests/cypress/login.cy.js:5:12)"),
                 },
-            }
-        ],
+            }],
     }
     report_path.write_text(json.dumps(report_data), encoding="utf-8")
 
@@ -187,15 +166,14 @@ def test_store_pytest_json_report_extracts_selector(tmp_path):
     spec_path.parent.mkdir(parents=True, exist_ok=True)
     spec_path.write_text(
         "def test_login():\n"
-        "    assert False, 'NoSuchElementException: selector = \"#password\"'\n"
-    )
+        "    assert False, 'NoSuchElementException: selector = \"#password\"'\n")
 
     longrepr = (
         "Traceback (most recent call last):\n"
         '  File "{}", line 2, in test_login\n'
         "    assert False, 'NoSuchElementException: selector = \"#password\"'\n"
-        'AssertionError: NoSuchElementException: selector = "#password"'
-    ).format(str(spec_path))
+        'AssertionError: NoSuchElementException: selector = "#password"').format(
+        str(spec_path))
     report_data = {
         "tests": [
             {

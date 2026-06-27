@@ -21,13 +21,15 @@ sys.modules["behave.parser"] = behave_parser
 sys.modules["behave.model"] = behave_model
 
 cli = importlib.import_module("antinode_norma.codegen.cli.commands").cli
-CodegenConfig = importlib.import_module("antinode_norma.codegen.config").CodegenConfig
+CodegenConfig = importlib.import_module(
+    "antinode_norma.codegen.config").CodegenConfig
 
 
 class TestCodegenCLIParallelGeneration:
     @patch("antinode_norma.codegen.cli.commands.load_config")
     @patch("antinode_norma.codegen.cli.commands.Orchestrator")
-    def test_generate_multiple_features_in_parallel(self, mock_orchestrator_cls, mock_load_config):
+    def test_generate_multiple_features_in_parallel(
+            self, mock_orchestrator_cls, mock_load_config):
         config = CodegenConfig()
         config.default_framework = "playwright"
         config.output_dir = Path("generated_tests")
@@ -65,7 +67,8 @@ class TestCodegenCLIParallelGeneration:
 
     @patch("antinode_norma.codegen.cli.commands.load_config")
     @patch("antinode_norma.codegen.cli.commands.Orchestrator")
-    def test_generate_single_feature_still_works(self, mock_orchestrator_cls, mock_load_config):
+    def test_generate_single_feature_still_works(
+            self, mock_orchestrator_cls, mock_load_config):
         config = CodegenConfig()
         config.default_framework = "playwright"
         config.output_dir = Path("generated_tests")

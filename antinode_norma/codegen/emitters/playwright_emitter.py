@@ -4,8 +4,8 @@ Playwright (TypeScript) code generator.
 
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Set
-from ..models.test_model import TestSuite, TestCase, TestStep, ActionType
+from typing import Dict, List
+from ..models.test_model import TestSuite, TestStep, ActionType
 from .base import Emitter
 from ..utils.file_utils import ensure_directory, write_file
 from ..config import get_config
@@ -24,7 +24,8 @@ class PlaywrightEmitter(Emitter):
         ensure_directory(output_dir)
         self._collect_pages(suite)
         if self.quality.use_page_objects:
-            self._emit_page_objects(suite, output_dir / self.quality.page_object_dir)
+            self._emit_page_objects(
+                suite, output_dir / self.quality.page_object_dir)
         if self.quality.generate_step_defs:
             self._emit_step_defs(suite, output_dir / self.quality.step_def_dir)
         if self.quality.enable_self_healing:
@@ -68,7 +69,8 @@ class PlaywrightEmitter(Emitter):
     def _emit_page_objects(self, suite: TestSuite, pages_dir: Path) -> None:
         """Generate Page Object classes for each distinct page."""
         ensure_directory(pages_dir)
-        # For each page, create a class with methods for each action on that page
+        # For each page, create a class with methods for each action on that
+        # page
         for page_name, steps in self.pages.items():
             # Group steps by element selector
             selectors = {}
@@ -78,13 +80,14 @@ class PlaywrightEmitter(Emitter):
             content = self._render_page_object(page_name, selectors)
             write_file(pages_dir / f"{page_name.lower()}.page.ts", content)
 
-    def _render_page_object(self, page_name: str, selectors: Dict[str, ActionType]) -> str:
+    def _render_page_object(self, page_name: str,
+                            selectors: Dict[str, ActionType]) -> str:
         """Render a Page Object class for the given page."""
         lines = [
             "import { Page, Locator } from '@playwright/test';",
             "",
             f"export class {page_name} {{",
-            f"  constructor(private page: Page) {{}}",
+            "  constructor(private page: Page) {}",
             "",
         ]
         # Add goto method if there's a NAVIGATE step
@@ -116,7 +119,8 @@ class PlaywrightEmitter(Emitter):
         """Generate reusable step definition functions."""
         ensure_directory(steps_dir)
         # Analyse all steps and create a map of action->step pattern
-        # For simplicity, we'll generate common steps like fillField, clickElement, etc.
+        # For simplicity, we'll generate common steps like fillField,
+        # clickElement, etc.
         content = self._render_step_defs(suite)
         write_file(steps_dir / "common_steps.ts", content)
 
@@ -213,7 +217,11 @@ class PlaywrightEmitter(Emitter):
         lines.append("});")
         return "\n".join(lines)
 
-    def _translate_step(self, step: TestStep, use_po: bool, use_sd: bool) -> str:
+    def _translate_step(
+            self,
+            step: TestStep,
+            use_po: bool,
+            use_sd: bool) -> str:
         """Translate a TestStep to Playwright code, optionally using Page Objects or Step Defs."""
         action = step.action
         target = step.target
@@ -222,7 +230,8 @@ class PlaywrightEmitter(Emitter):
 
         helper_prefix = ""
         helper_target = None
-        if self.quality.enable_self_healing and target and self._needs_selector_healing(action):
+        if self.quality.enable_self_healing and target and self._needs_selector_healing(
+                action):
             escaped_target = self._escape_string(target)
             helper_prefix = f"const healed = await healSelector(page, '{escaped_target}', '{escaped_description}');\n"
             helper_target = "healed"
@@ -236,50 +245,83 @@ class PlaywrightEmitter(Emitter):
         if use_sd:
             if action == ActionType.NAVIGATE:
                 return (
-                    f"{helper_prefix}await steps.navigateTo(page, '{self._escape_string(value or '')}');"
-                    + self._render_visual_assertion(action, step)
-                )
+                    f"{helper_prefix}await steps.navigateTo(page, '{
+                        self._escape_string(
+                            value or '')}');" +
+                    self._render_visual_assertion(
+                        action,
+                        step))
             elif action == ActionType.CLICK:
-                selector = helper_target or f"'{self._escape_string(target or '')}'"
+                selector = helper_target or f"'{
+                    self._escape_string(
+                        target or '')}'"
                 return (
-                    f"{helper_prefix}await steps.clickElement(page, {selector});"
-                    + self._render_visual_assertion(action, step)
-                )
+                    f"{helper_prefix}await steps.clickElement(page, {selector});" +
+                    self._render_visual_assertion(
+                        action,
+                        step))
             elif action == ActionType.FILL:
-                selector = helper_target or f"'{self._escape_string(target or '')}'"
+                selector = helper_target or f"'{
+                    self._escape_string(
+                        target or '')}'"
                 return (
-                    f"{helper_prefix}await steps.fillField(page, {selector}, '{self._escape_string(value or '')}');"
-                    + self._render_visual_assertion(action, step)
-                )
+                    f"{helper_prefix}await steps.fillField(page, {selector}, '{
+                        self._escape_string(
+                            value or '')}');" +
+                    self._render_visual_assertion(
+                        action,
+                        step))
             elif action == ActionType.ASSERT_TEXT:
-                return f"await steps.assertText(page, '{self._escape_string(value or '')}');"
+                return f"await steps.assertText(page, '{
+                    self._escape_string(
+                        value or '')}');"
             elif action == ActionType.CHECK:
-                selector = helper_target or f"'{self._escape_string(target or '')}'"
+                selector = helper_target or f"'{
+                    self._escape_string(
+                        target or '')}'"
                 return (
-                    f"{helper_prefix}await steps.checkElement(page, {selector});"
-                    + self._render_visual_assertion(action, step)
-                )
+                    f"{helper_prefix}await steps.checkElement(page, {selector});" +
+                    self._render_visual_assertion(
+                        action,
+                        step))
             elif action == ActionType.UNCHECK:
-                selector = helper_target or f"'{self._escape_string(target or '')}'"
+                selector = helper_target or f"'{
+                    self._escape_string(
+                        target or '')}'"
                 return (
-                    f"{helper_prefix}await steps.uncheckElement(page, {selector});"
-                    + self._render_visual_assertion(action, step)
-                )
+                    f"{helper_prefix}await steps.uncheckElement(page, {selector});" +
+                    self._render_visual_assertion(
+                        action,
+                        step))
             elif action == ActionType.SELECT:
-                selector = helper_target or f"'{self._escape_string(target or '')}'"
+                selector = helper_target or f"'{
+                    self._escape_string(
+                        target or '')}'"
                 return (
-                    f"{helper_prefix}await steps.selectOption(page, {selector}, '{self._escape_string(value or '')}');"
-                    + self._render_visual_assertion(action, step)
-                )
+                    f"{helper_prefix}await steps.selectOption(page, {selector}, '{
+                        self._escape_string(
+                            value or '')}');" +
+                    self._render_visual_assertion(
+                        action,
+                        step))
             elif action == ActionType.SCREENSHOT:
-                return f"{helper_prefix}await steps.assertScreenshot(page, '{self.quality.visual_snapshot_dir}/{self._safe_filename(step.description or 'screenshot')}.png');"
+                return f"{helper_prefix}await steps.assertScreenshot(page, '{
+                    self.quality.visual_snapshot_dir}/{
+                    self._safe_filename(
+                        step.description or 'screenshot')}.png');"
             elif action in {ActionType.ASSERT_VISIBLE, ActionType.ASSERT_HIDDEN}:
-                selector = helper_target or f"'{self._escape_string(target or '')}'"
+                selector = helper_target or f"'{
+                    self._escape_string(
+                        target or '')}'"
                 method = "assertVisible" if action == ActionType.ASSERT_VISIBLE else "assertHidden"
                 return f"{helper_prefix}await steps.{method}(page, {selector});"
             elif action == ActionType.ASSERT_VALUE:
-                selector = helper_target or f"'{self._escape_string(target or '')}'"
-                return f"{helper_prefix}await steps.assertValue(page, {selector}, '{self._escape_string(value or '')}');"
+                selector = helper_target or f"'{
+                    self._escape_string(
+                        target or '')}'"
+                return f"{helper_prefix}await steps.assertValue(page, {selector}, '{
+                    self._escape_string(
+                        value or '')}');"
         # Fallback to inline code
         code = self._inline_translate(
             step, helper_prefix=helper_prefix, helper_target=helper_target
@@ -301,11 +343,17 @@ class PlaywrightEmitter(Emitter):
             ActionType.ASSERT_VALUE,
         }
 
-    def _render_visual_assertion(self, action: ActionType, step: TestStep) -> str:
+    def _render_visual_assertion(
+            self,
+            action: ActionType,
+            step: TestStep) -> str:
         if not self.quality.enable_visual_testing:
             return ""
         if action == ActionType.SCREENSHOT:
-            return f"\nawait expect(page).toHaveScreenshot('{self.quality.visual_snapshot_dir}/{self._safe_filename(step.description or 'screenshot')}.png');"
+            return f"\nawait expect(page).toHaveScreenshot('{
+                self.quality.visual_snapshot_dir}/{
+                self._safe_filename(
+                    step.description or 'screenshot')}.png');"
         if action not in {
             ActionType.NAVIGATE,
             ActionType.CLICK,
@@ -322,11 +370,21 @@ class PlaywrightEmitter(Emitter):
         return f"\nawait expect(page).toHaveScreenshot('{snapshot_dir}/{snapshot_name}.png');"
 
     def _escape_string(self, value: str) -> str:
-        return value.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ").replace("\r", " ")
+        return value.replace(
+            "\\",
+            "\\\\").replace(
+            "'",
+            "\\'").replace(
+            "\n",
+            " ").replace(
+                "\r",
+            " ")
 
     def _inline_translate(
-        self, step: TestStep, helper_prefix: str = "", helper_target: Optional[str] = None
-    ) -> str:
+            self,
+            step: TestStep,
+            helper_prefix: str = "",
+            helper_target: Optional[str] = None) -> str:
         """Original inline translation (unchanged)."""
         action = step.action
         if helper_target is not None:
@@ -335,7 +393,9 @@ class PlaywrightEmitter(Emitter):
             target_expr = f"'{self._escape_string(step.target or '')}'"
         value = step.value
         if action == ActionType.NAVIGATE:
-            return f"{helper_prefix}await page.goto('{self._escape_string(value or '')}');"
+            return f"{helper_prefix}await page.goto('{
+                self._escape_string(
+                    value or '')}');"
         elif action == ActionType.CLICK:
             if self.quality.add_explicit_waits:
                 return (
@@ -347,13 +407,18 @@ class PlaywrightEmitter(Emitter):
         elif action == ActionType.FILL:
             if self.quality.add_explicit_waits:
                 return (
-                    f"{helper_prefix}const locator = page.locator({target_expr});\n"
-                    f"    await locator.waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
-                    f"    await locator.fill('{self._escape_string(value or '')}');"
-                )
-            return f"{helper_prefix}await page.locator({target_expr}).fill('{self._escape_string(value or '')}');"
+                    f"{helper_prefix}const locator = page.locator({target_expr});\n" f"    await locator.waitFor({
+                        state: 'visible', timeout: {
+                            self.quality.wait_timeout} } );\n" f"    await locator.fill('{
+                        self._escape_string(
+                            value or '')}');")
+            return f"{helper_prefix}await page.locator({target_expr}).fill('{
+                self._escape_string(
+                    value or '')}');"
         elif action == ActionType.ASSERT_TEXT:
-            return f"{helper_prefix}await expect(page.locator('body')).toContainText('{self._escape_string(value or '')}');"
+            return f"{helper_prefix}await expect(page.locator('body')).toContainText('{
+                self._escape_string(
+                    value or '')}');"
         elif action == ActionType.CHECK:
             if self.quality.add_explicit_waits:
                 return (
@@ -373,11 +438,14 @@ class PlaywrightEmitter(Emitter):
         elif action == ActionType.SELECT:
             if self.quality.add_explicit_waits:
                 return (
-                    f"{helper_prefix}const locator = page.locator({target_expr});\n"
-                    f"    await locator.waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
-                    f"    await locator.selectOption('{self._escape_string(value or '')}');"
-                )
-            return f"{helper_prefix}await page.locator({target_expr}).selectOption('{self._escape_string(value or '')}');"
+                    f"{helper_prefix}const locator = page.locator({target_expr});\n" f"    await locator.waitFor({
+                        state: 'visible', timeout: {
+                            self.quality.wait_timeout} } );\n" f"    await locator.selectOption('{
+                        self._escape_string(
+                            value or '')}');")
+            return f"{helper_prefix}await page.locator({target_expr}).selectOption('{
+                self._escape_string(
+                    value or '')}');"
         elif action == ActionType.ASSERT_VISIBLE:
             if self.quality.add_explicit_waits:
                 return (
@@ -391,11 +459,14 @@ class PlaywrightEmitter(Emitter):
         elif action == ActionType.ASSERT_VALUE:
             if self.quality.add_explicit_waits:
                 return (
-                    f"{helper_prefix}const locator = page.locator({target_expr});\n"
-                    f"    await locator.waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
-                    f"    await expect(locator).toHaveValue('{self._escape_string(value or '')}');"
-                )
-            return f"{helper_prefix}await expect(page.locator({target_expr})).toHaveValue('{self._escape_string(value or '')}');"
+                    f"{helper_prefix}const locator = page.locator({target_expr});\n" f"    await locator.waitFor({
+                        state: 'visible', timeout: {
+                            self.quality.wait_timeout} } );\n" f"    await expect(locator).toHaveValue('{
+                        self._escape_string(
+                            value or '')}');")
+            return f"{helper_prefix}await expect(page.locator({target_expr})).toHaveValue('{
+                self._escape_string(
+                    value or '')}');"
         else:
             return (
                 f"{helper_prefix}// UNKNOWN ACTION: {self._escape_string(step.description or '')}"

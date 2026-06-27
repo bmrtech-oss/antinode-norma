@@ -7,7 +7,7 @@ these structures.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Any
+from typing import List, Optional
 from enum import Enum
 
 
@@ -43,8 +43,10 @@ class TestStep:
     action: ActionType
     target: Optional[str] = None  # CSS selector, XPath, URL, etc.
     value: Optional[str] = None  # text to fill, expected text, etc.
-    description: Optional[str] = None  # human‑readable step text (from Gherkin)
-    options: dict = field(default_factory=dict)  # extra parameters (timeout, etc.)
+    # human‑readable step text (from Gherkin)
+    description: Optional[str] = None
+    # extra parameters (timeout, etc.)
+    options: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -66,4 +68,5 @@ class TestSuite:
     cases: List[TestCase]
     description: Optional[str] = None
     tags: List[str] = field(default_factory=list)
-    background: Optional[List[TestStep]] = None  # global background for all scenarios
+    # global background for all scenarios
+    background: Optional[List[TestStep]] = None

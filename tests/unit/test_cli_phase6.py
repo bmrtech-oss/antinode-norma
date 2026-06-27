@@ -49,7 +49,8 @@ class TestCLIDryRun:
         }
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["generate", "As a user, I want to log in", "--dry-run"])
+        result = runner.invoke(
+            cli, ["generate", "As a user, I want to log in", "--dry-run"])
 
         assert result.exit_code == 0
         assert "Dry-run mode" in result.output
@@ -182,7 +183,8 @@ class TestCLIErrorHandling:
     def test_generate_with_nonexistent_file_shows_error(self):
         """Verify helpful error when file doesn't exist."""
         runner = CliRunner()
-        result = runner.invoke(cli, ["generate", "--file", "nonexistent_file.txt"])
+        result = runner.invoke(
+            cli, ["generate", "--file", "nonexistent_file.txt"])
         # Click's path validation should catch this
         assert result.exit_code != 0
 
@@ -203,10 +205,14 @@ class TestCLIQualityOutput:
     @patch("antinode_norma.cli.run_agent_from_raw")
     def test_quality_check_shows_colored_score(self, mock_run):
         """Verify quality score output with color indicators."""
-        mock_run.return_value = {"quality_score": 0.85, "passes_invest": True, "issues": []}
+        mock_run.return_value = {
+            "quality_score": 0.85,
+            "passes_invest": True,
+            "issues": []}
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["generate", "As a user, I want to log in", "--quality-only"])
+        result = runner.invoke(
+            cli, ["generate", "As a user, I want to log in", "--quality-only"])
 
         assert result.exit_code == 0
         assert "0.9" in result.output or "85" in result.output
@@ -222,7 +228,8 @@ class TestCLIQualityOutput:
         }
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["generate", "A large story", "--quality-only"])
+        result = runner.invoke(
+            cli, ["generate", "A large story", "--quality-only"])
 
         assert result.exit_code == 0
         assert "Quality issues found" in result.output

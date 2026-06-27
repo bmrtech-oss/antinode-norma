@@ -7,7 +7,6 @@ the `emit()` method.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional
 
 from ..models.test_model import TestSuite
 
@@ -29,7 +28,6 @@ class Emitter(ABC):
             suite: The TestSuite (IR) to generate tests from.
             output_dir: The directory where files should be written.
         """
-        pass
 
     def _ensure_output_dir(self, output_dir: Path) -> None:
         """Ensure the output directory exists."""

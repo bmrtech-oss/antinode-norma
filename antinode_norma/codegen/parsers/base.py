@@ -9,4 +9,3 @@ class Parser(ABC):
     @abstractmethod
     def parse(self, source: Path) -> TestSuite:
         """Parse a source file into a TestSuite."""
-        pass

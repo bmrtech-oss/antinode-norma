@@ -7,7 +7,8 @@ import pytest
 from tests.conftest import has_openrouter_key
 
 
-@pytest.mark.skipif(not has_openrouter_key(), reason="OPENROUTER_API_KEY not set")
+@pytest.mark.skipif(not has_openrouter_key(),
+                    reason="OPENROUTER_API_KEY not set")
 def test_cli_generate(sample_story_pass, tmp_features):
     """Test that the CLI generates a feature file."""
     cmd = [
@@ -35,7 +36,8 @@ def test_cli_generate(sample_story_pass, tmp_features):
         pytest.fail("No feature file path found in output")
 
 
-@pytest.mark.skipif(not has_openrouter_key(), reason="OPENROUTER_API_KEY not set")
+@pytest.mark.skipif(not has_openrouter_key(),
+                    reason="OPENROUTER_API_KEY not set")
 def test_cli_quality_only(sample_story_pass):
     cmd = [
         sys.executable,

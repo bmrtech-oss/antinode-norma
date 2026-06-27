@@ -9,8 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from antinode_norma.codegen import Orchestrator
-from antinode_norma.codegen.config import get_config, set_config, load_config
-from antinode_norma.codegen.engine.quality import QualityConfig
+from antinode_norma.codegen.config import get_config
 
 # Try to import MCP types; fall back to dict if not available
 try:
@@ -20,7 +19,10 @@ except ImportError:
     types = None
 
 
-def _format_result(success: bool, message: str, data: Optional[Dict] = None) -> str:
+def _format_result(
+        success: bool,
+        message: str,
+        data: Optional[Dict] = None) -> str:
     """Format a result as JSON for MCP response."""
     result = {
         "success": success,
@@ -31,7 +33,8 @@ def _format_result(success: bool, message: str, data: Optional[Dict] = None) -> 
     return json.dumps(result, indent=2)
 
 
-async def handle_generate_tests(arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
+async def handle_generate_tests(
+        arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Handle generate_tests MCP tool.
 
@@ -110,22 +113,16 @@ async def handle_generate_tests(arguments: Dict[str, Any]) -> List[Dict[str, Any
             },
         }
 
-        return [
-            {
-                "type": "text",
-                "text": _format_result(
-                    True, f"Tests generated successfully for {framework}", result_data
-                ),
-            }
-        ]
+        return [{"type": "text", "text": _format_result(
+            True, f"Tests generated successfully for {framework}", result_data), }]
 
     except Exception as e:
-        return [
-            {"type": "text", "text": _format_result(False, f"Error generating tests: {str(e)}")}
-        ]
+        return [{"type": "text", "text": _format_result(
+            False, f"Error generating tests: {str(e)}")}]
 
 
-async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
+async def handle_generate_page_objects(
+        arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Handle generate_page_objects MCP tool.
 
@@ -146,18 +143,13 @@ async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[s
     output_dir = arguments.get("output_dir")
 
     if not feature_path:
-        return [
-            {"type": "text", "text": _format_result(False, "Error: 'feature_path' is required")}
-        ]
+        return [{"type": "text", "text": _format_result(
+            False, "Error: 'feature_path' is required")}]
 
     feature_path = Path(feature_path)
     if not feature_path.exists():
-        return [
-            {
-                "type": "text",
-                "text": _format_result(False, f"Error: Feature file not found: {feature_path}"),
-            }
-        ]
+        return [{"type": "text", "text": _format_result(
+            False, f"Error: Feature file not found: {feature_path}"), }]
 
     try:
         # Load config and enable page objects
@@ -177,7 +169,8 @@ async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[s
         emitter = PageObjectEmitter()
         emitter.emit(suite, config.get_output_dir(framework))
 
-        output_path = config.get_output_dir(framework) / config.quality.page_object_dir
+        output_path = config.get_output_dir(
+            framework) / config.quality.page_object_dir
 
         result_data = {
             "feature_path": str(feature_path),
@@ -185,23 +178,16 @@ async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[s
             "page_object_dir": str(output_path),
         }
 
-        return [
-            {
-                "type": "text",
-                "text": _format_result(True, f"Page Objects generated successfully", result_data),
-            }
-        ]
+        return [{"type": "text", "text": _format_result(
+            True, f"Page Objects generated successfully", result_data), }]
 
     except Exception as e:
-        return [
-            {
-                "type": "text",
-                "text": _format_result(False, f"Error generating page objects: {str(e)}"),
-            }
-        ]
+        return [{"type": "text", "text": _format_result(
+            False, f"Error generating page objects: {str(e)}"), }]
 
 
-async def handle_generate_step_defs(arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
+async def handle_generate_step_defs(
+        arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Handle generate_step_defs MCP tool.
 
@@ -222,18 +208,13 @@ async def handle_generate_step_defs(arguments: Dict[str, Any]) -> List[Dict[str,
     output_dir = arguments.get("output_dir")
 
     if not feature_path:
-        return [
-            {"type": "text", "text": _format_result(False, "Error: 'feature_path' is required")}
-        ]
+        return [{"type": "text", "text": _format_result(
+            False, "Error: 'feature_path' is required")}]
 
     feature_path = Path(feature_path)
     if not feature_path.exists():
-        return [
-            {
-                "type": "text",
-                "text": _format_result(False, f"Error: Feature file not found: {feature_path}"),
-            }
-        ]
+        return [{"type": "text", "text": _format_result(
+            False, f"Error: Feature file not found: {feature_path}"), }]
 
     try:
         # Load config and enable step definitions
@@ -253,7 +234,8 @@ async def handle_generate_step_defs(arguments: Dict[str, Any]) -> List[Dict[str,
         emitter = StepDefEmitter()
         emitter.emit(suite, config.get_output_dir(framework))
 
-        output_path = config.get_output_dir(framework) / config.quality.step_def_dir
+        output_path = config.get_output_dir(
+            framework) / config.quality.step_def_dir
 
         result_data = {
             "feature_path": str(feature_path),
@@ -261,25 +243,16 @@ async def handle_generate_step_defs(arguments: Dict[str, Any]) -> List[Dict[str,
             "step_def_dir": str(output_path),
         }
 
-        return [
-            {
-                "type": "text",
-                "text": _format_result(
-                    True, f"Step definitions generated successfully", result_data
-                ),
-            }
-        ]
+        return [{"type": "text", "text": _format_result(
+            True, f"Step definitions generated successfully", result_data), }]
 
     except Exception as e:
-        return [
-            {
-                "type": "text",
-                "text": _format_result(False, f"Error generating step definitions: {str(e)}"),
-            }
-        ]
+        return [{"type": "text", "text": _format_result(
+            False, f"Error generating step definitions: {str(e)}"), }]
 
 
-async def handle_validate_feature(arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
+async def handle_validate_feature(
+        arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Handle validate_feature MCP tool.
 
@@ -298,18 +271,13 @@ async def handle_validate_feature(arguments: Dict[str, Any]) -> List[Dict[str, A
     check_invest = arguments.get("check_invest", True)
 
     if not feature_path:
-        return [
-            {"type": "text", "text": _format_result(False, "Error: 'feature_path' is required")}
-        ]
+        return [{"type": "text", "text": _format_result(
+            False, "Error: 'feature_path' is required")}]
 
     feature_path = Path(feature_path)
     if not feature_path.exists():
-        return [
-            {
-                "type": "text",
-                "text": _format_result(False, f"Error: Feature file not found: {feature_path}"),
-            }
-        ]
+        return [{"type": "text", "text": _format_result(
+            False, f"Error: Feature file not found: {feature_path}"), }]
 
     try:
         # Parse the feature file
@@ -356,19 +324,12 @@ async def handle_validate_feature(arguments: Dict[str, Any]) -> List[Dict[str, A
             "is_valid": len(issues) == 0,
         }
 
-        return [
-            {
-                "type": "text",
-                "text": _format_result(
-                    len(issues) == 0, "Feature validation completed", result_data
-                ),
-            }
-        ]
+        return [{"type": "text", "text": _format_result(
+            len(issues) == 0, "Feature validation completed", result_data), }]
 
     except Exception as e:
-        return [
-            {"type": "text", "text": _format_result(False, f"Error validating feature: {str(e)}")}
-        ]
+        return [{"type": "text", "text": _format_result(
+            False, f"Error validating feature: {str(e)}")}]
 
 
 # Tool definitions for MCP server

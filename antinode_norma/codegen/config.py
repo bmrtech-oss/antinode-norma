@@ -50,8 +50,11 @@ class CodegenConfig:
         # Convert quality dict to QualityConfig, filtering unknown keys
         if isinstance(self.quality, dict):
             # Get valid field names from QualityConfig
-            valid_keys = {f.name for f in QualityConfig.__dataclass_fields__.values()}
-            filtered = {k: v for k, v in self.quality.items() if k in valid_keys}
+            valid_keys = {
+                f.name for f in QualityConfig.__dataclass_fields__.values()}
+            filtered = {
+                k: v for k,
+                v in self.quality.items() if k in valid_keys}
             self.quality = QualityConfig(**filtered)
 
     def get_output_dir(self, framework: Optional[str] = None) -> Path:
@@ -129,7 +132,9 @@ def _clean_config_dict(config_dict: dict) -> dict:
     return config_dict
 
 
-def load_config(config_file: Optional[Path] = None, auto_discover: bool = True) -> CodegenConfig:
+def load_config(
+        config_file: Optional[Path] = None,
+        auto_discover: bool = True) -> CodegenConfig:
     """
     Load configuration from environment variables and optionally a YAML file.
     """
@@ -167,7 +172,7 @@ def load_config(config_file: Optional[Path] = None, auto_discover: bool = True) 
     env_prefix = "CODEGEN_"
     for key, value in os.environ.items():
         if key.startswith(env_prefix):
-            env_key = key[len(env_prefix) :].lower()
+            env_key = key[len(env_prefix):].lower()
             if env_key.startswith("quality_"):
                 env_key = f"quality.{env_key[len('quality_'):]}"
             elif env_key.startswith("parser_options_"):

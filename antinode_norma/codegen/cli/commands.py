@@ -5,44 +5,46 @@ Command‑line interface for the code generation module.
 
 import click
 from pathlib import Path
-from typing import Optional, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ..engine.orchestrator import Orchestrator
-from ..config import load_config, get_config, set_config
+from ..config import load_config, set_config
 from ..parsers.gherkin_parser import GherkinParser
 
 
 @click.group()
 def cli():
     """Antinode Norma – test code generator from Gherkin feature files."""
-    pass
 
 
 @cli.command()
-@click.option(
-    "--feature",
-    "-f",
-    "feature_paths",
-    required=True,
-    multiple=True,
-    type=click.Path(exists=True, dir_okay=False),
-    help="Path to one or more .feature files. Repeat this flag for multiple files.",
-)
-@click.option("--output", "-o", type=click.Path(), help="Output directory (overrides config).")
-@click.option(
-    "--framework", "-fw", default=None, help="Target framework: playwright, cypress, or selenium."
-)
+@click.option("--feature",
+              "-f",
+              "feature_paths",
+              required=True,
+              multiple=True,
+              type=click.Path(exists=True,
+                              dir_okay=False),
+              help="Path to one or more .feature files. Repeat this flag for multiple files.",
+              )
+@click.option("--output", "-o", type=click.Path(),
+              help="Output directory (overrides config).")
+@click.option("--framework", "-fw", default=None,
+              help="Target framework: playwright, cypress, or selenium.")
 @click.option(
     "--config-file",
     "-c",
     type=click.Path(exists=True, dir_okay=False),
     help="Optional YAML configuration file.",
 )
-@click.option("--use-page-objects", is_flag=True, help="Generate Page Object classes.")
-@click.option("--generate-step-defs", is_flag=True, help="Generate reusable step definitions.")
-@click.option("--enable-visual-testing", is_flag=True, help="Include visual snapshot assertions.")
-@click.option("--visual-snapshot-dir", type=click.Path(), help="Directory for baseline snapshots.")
+@click.option("--use-page-objects", is_flag=True,
+              help="Generate Page Object classes.")
+@click.option("--generate-step-defs", is_flag=True,
+              help="Generate reusable step definitions.")
+@click.option("--enable-visual-testing", is_flag=True,
+              help="Include visual snapshot assertions.")
+@click.option("--visual-snapshot-dir", type=click.Path(),
+              help="Directory for baseline snapshots.")
 @click.option(
     "--workers",
     default=1,
@@ -88,13 +90,15 @@ def generate(
 
     feature_paths = [Path(p) for p in feature_paths]
     framework_name = framework or cfg.default_framework
-    output_dir_path = Path(output) if output else cfg.get_output_dir(framework_name)
+    output_dir_path = Path(
+        output) if output else cfg.get_output_dir(framework_name)
 
     def process_feature(feature_path: Path) -> str:
         orch = Orchestrator()
         orch.generate(
-            feature_path=feature_path, output_dir=output_dir_path, framework=framework_name
-        )
+            feature_path=feature_path,
+            output_dir=output_dir_path,
+            framework=framework_name)
         return str(feature_path)
 
     results = []
@@ -103,7 +107,10 @@ def generate(
     if len(feature_paths) > 1 or workers > 1:
         workers = min(workers, len(feature_paths))
         with ThreadPoolExecutor(max_workers=workers) as executor:
-            futures = {executor.submit(process_feature, path): path for path in feature_paths}
+            futures = {
+                executor.submit(
+                    process_feature,
+                    path): path for path in feature_paths}
             for future in as_completed(futures):
                 path = futures[future]
                 try:
@@ -116,7 +123,8 @@ def generate(
         try:
             generated = process_feature(feature_paths[0])
             results.append(generated)
-            click.echo(f"✅ Tests generated successfully for '{generated}' → {output_dir_path}")
+            click.echo(
+                f"✅ Tests generated successfully for '{generated}' → {output_dir_path}")
         except Exception as e:
             click.echo(f"❌ Error generating tests: {e}", err=True)
             raise click.Abort()
@@ -125,11 +133,17 @@ def generate(
         raise click.Abort()
 
     if cfg.quality.use_page_objects:
-        click.echo(f"   📄 Page Objects generated in {cfg.quality.page_object_dir}/")
+        click.echo(
+            f"   📄 Page Objects generated in {
+                cfg.quality.page_object_dir}/")
     if cfg.quality.generate_step_defs:
-        click.echo(f"   📄 Step Definitions generated in {cfg.quality.step_def_dir}/")
+        click.echo(
+            f"   📄 Step Definitions generated in {
+                cfg.quality.step_def_dir}/")
     if cfg.quality.enable_visual_testing:
-        click.echo(f"   🖼️ Visual snapshots in {cfg.quality.visual_snapshot_dir}/")
+        click.echo(
+            f"   🖼️ Visual snapshots in {
+                cfg.quality.visual_snapshot_dir}/")
 
 
 @cli.command()
@@ -169,7 +183,9 @@ def validate(feature, check_invest, verbose):
         for case in suite.cases:
             # Independent – no steps? (simplified)
             if len(case.steps) == 0:
-                issues.append(f"Scenario '{case.name}' has no steps – not testable.")
+                issues.append(
+                    f"Scenario '{
+                        case.name}' has no steps – not testable.")
             # Estimable – too many steps?
             if len(case.steps) > 20:
                 issues.append(
@@ -182,12 +198,14 @@ def validate(feature, check_invest, verbose):
             # Testable – check if each step has a clear action (we already have actions)
             # Small – if there are too many criteria in one scenario?
             if len(case.steps) > 10:
-                warnings.append(f"Scenario '{case.name}' is quite long ({len(case.steps)} steps).")
+                warnings.append(
+                    f"Scenario '{case.name}' is quite long ({len(case.steps)} steps).")
 
     # Print results
     click.echo(f"\n📋 Validating: {feature}")
     click.echo(f"   Scenarios: {len(suite.cases)}")
-    click.echo(f"   Total steps: {sum(len(case.steps) for case in suite.cases)}")
+    click.echo(
+        f"   Total steps: {sum(len(case.steps) for case in suite.cases)}")
     click.echo(f"   Tags: {suite.tags or 'none'}")
 
     if verbose:

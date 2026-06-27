@@ -9,7 +9,10 @@ class CodeFormatter:
     def __init__(self, tool: Optional[str] = None):
         self.tool = tool
 
-    def format_files(self, file_paths: List[Path], verbose: bool = False) -> bool:
+    def format_files(
+            self,
+            file_paths: List[Path],
+            verbose: bool = False) -> bool:
         """Run the formatter on the given files. Returns True on success."""
         if not file_paths:
             return True
@@ -40,13 +43,15 @@ class CodeFormatter:
         if ext in [".js", ".ts", ".tsx", ".jsx"]:
             # Check if prettier is available
             try:
-                subprocess.run(["prettier", "--version"], check=True, capture_output=True)
+                subprocess.run(["prettier", "--version"],
+                               check=True, capture_output=True)
                 return "prettier"
             except (subprocess.CalledProcessError, FileNotFoundError):
                 pass
         elif ext == ".py":
             try:
-                subprocess.run(["black", "--version"], check=True, capture_output=True)
+                subprocess.run(["black", "--version"],
+                               check=True, capture_output=True)
                 return "black"
             except (subprocess.CalledProcessError, FileNotFoundError):
                 pass

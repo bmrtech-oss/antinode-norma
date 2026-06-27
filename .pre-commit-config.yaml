@@ -5,6 +5,20 @@ repos:
       - id: black
         language_version: python3.12
         additional_dependencies: []
+  - repo: https://github.com/pre-commit/mirrors-autoflake
+    rev: v2.3.3
+    hooks:
+      - id: autoflake
+        language_version: python3.12
+        additional_dependencies: []
+        args: ["--remove-all-unused-imports"]
+  - repo: https://github.com/pre-commit/mirrors-autopep8
+    rev: v2.3.2
+    hooks:
+      - id: autopep8
+        language_version: python3.12
+        additional_dependencies: []
+        args: ["--aggressive", "--aggressive"]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:

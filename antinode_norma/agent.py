@@ -13,7 +13,8 @@ class AgentState:
     goal: str
     history: List[Dict] = field(default_factory=list)
     current_story_id: Optional[str] = None
-    current_story_text: Optional[str] = None  # store the last submitted story text
+    # store the last submitted story text
+    current_story_text: Optional[str] = None
     current_story: Optional[Dict] = None
     feature_path: Optional[str] = None
     test_results: Optional[Dict] = None
@@ -25,9 +26,12 @@ class AgentState:
 
 
 class BDDAgent:
-    def __init__(
-        self, llm_config: Dict[str, Any], tool_registry: Dict[str, Any], max_iterations: int = 10
-    ):
+    def __init__(self,
+                 llm_config: Dict[str,
+                                  Any],
+                 tool_registry: Dict[str,
+                                     Any],
+                 max_iterations: int = 10):
         self.llm = create_llm_callable(llm_config)
         self.tools = tool_registry
         self.max_iterations = max_iterations
@@ -41,7 +45,8 @@ class BDDAgent:
             if action.get("type") == "finish":
                 self.state.done = True
                 break
-            # Auto‑fix common issues: if improve_story is called without raw_text, inject it from state
+            # Auto‑fix common issues: if improve_story is called without
+            # raw_text, inject it from state
             if action.get("tool") == "improve_story":
                 args = action.get("args", {})
                 if "raw_text" not in args and "story" not in args and "text" not in args:
@@ -91,7 +96,9 @@ class BDDAgent:
                     return json.loads(match.group())
                 except json.JSONDecodeError:
                     pass
-            return {"type": "finish", "reason": "Could not parse LLM response."}
+            return {
+                "type": "finish",
+                "reason": "Could not parse LLM response."}
 
     def _execute(self, action: Dict) -> Any:
         logging.basicConfig(level=logging.DEBUG)
@@ -142,7 +149,7 @@ class BDDAgent:
         history = (
             "\n".join(
                 [
-                    f"Step {i+1}: {h['action'].get('tool', 'unknown')} -> {str(h['result'])[:200]}"
+                    f"Step {i + 1}: {h['action'].get('tool', 'unknown')} -> {str(h['result'])[:200]}"
                     for i, h in enumerate(self.state.history)
                 ]
             )

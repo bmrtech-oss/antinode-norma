@@ -1,8 +1,7 @@
 import os
-import json
 import subprocess
 import asyncio
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 from pathlib import Path
 from .runner import run_agent_from_raw
 from .utils.file_writer import write_feature_file
@@ -45,8 +44,11 @@ try:
 except ImportError:
 
     def add_test_case(
-        section_id: int, title: str, description: str = "", case_type: int = 1, priority_id: int = 2
-    ):
+            section_id: int,
+            title: str,
+            description: str = "",
+            case_type: int = 1,
+            priority_id: int = 2):
         return {"error": "TestRail connector not installed"}
 
     def add_test_result(test_id: int, status_id: int, comment: str = ""):
@@ -77,7 +79,7 @@ except ImportError:
 
 # Git operations (if gitpython installed)
 try:
-    from git import Repo, Remote
+    from git import Repo
 
     def create_pull_request(
         pr_title: str, pr_body: str, base: str = "main", head: str = None
@@ -85,7 +87,9 @@ try:
         repo = Repo(os.getcwd())
         if not head:
             head = repo.active_branch.name
-        return {"pr_url": f"https://github.com/example/pr/1", "status": "created"}
+        return {
+            "pr_url": f"https://github.com/example/pr/1",
+            "status": "created"}
 
 except ImportError:
 
@@ -118,11 +122,11 @@ def fetch_jira_story(**kwargs) -> Dict:
 def submit_story(**kwargs) -> Dict:
     """Submit a user story and return quality report."""
     # Try common parameter names
-    text = (
-        kwargs.get("raw_text") or kwargs.get("story") or kwargs.get("title") or kwargs.get("text")
-    )
+    text = (kwargs.get("raw_text") or kwargs.get("story")
+            or kwargs.get("title") or kwargs.get("text"))
     if not text:
-        return {"error": "No story text provided. Provide 'raw_text', 'story', or 'title'."}
+        return {
+            "error": "No story text provided. Provide 'raw_text', 'story', or 'title'."}
 
     try:
         result = asyncio.run(run_agent_from_raw(text, quality_only=True))
@@ -131,7 +135,9 @@ def submit_story(**kwargs) -> Dict:
 
     # Parse the story to get structured data
     llm_config = {
-        "provider": os.getenv("LLM_PROVIDER", "openrouter"),
+        "provider": os.getenv(
+            "LLM_PROVIDER",
+            "openrouter"),
         "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY"),
     }
     llm = create_llm_callable(llm_config)
@@ -150,7 +156,8 @@ def submit_story(**kwargs) -> Dict:
 def improve_story(**kwargs) -> Dict:
     """Improve a story based on suggestions."""
     # Get story text from various possible parameter names
-    story_text = kwargs.get("raw_text") or kwargs.get("story") or kwargs.get("text")
+    story_text = kwargs.get("raw_text") or kwargs.get(
+        "story") or kwargs.get("text")
     suggestions = kwargs.get("suggestions", [])
     story_id = kwargs.get("story_id")
 
@@ -159,7 +166,9 @@ def improve_story(**kwargs) -> Dict:
 
     # Use LLM to improve the story
     llm_config = {
-        "provider": os.getenv("LLM_PROVIDER", "openrouter"),
+        "provider": os.getenv(
+            "LLM_PROVIDER",
+            "openrouter"),
         "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY"),
     }
     llm = create_llm_callable(llm_config)
@@ -181,14 +190,17 @@ Return the improved story with the same format (As a... I want... so that... Acc
 
 
 def _load_story_from_kwargs(kwargs: Dict[str, Any]) -> UserStory:
-    story_input = kwargs.get("story") or kwargs.get("raw_text") or kwargs.get("text")
+    story_input = kwargs.get("story") or kwargs.get(
+        "raw_text") or kwargs.get("text")
     if isinstance(story_input, UserStory):
         return story_input
     if isinstance(story_input, dict):
         return UserStory(**story_input)
     if isinstance(story_input, str) and story_input.strip():
         llm_config = {
-            "provider": os.getenv("LLM_PROVIDER", "openrouter"),
+            "provider": os.getenv(
+                "LLM_PROVIDER",
+                "openrouter"),
             "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY"),
         }
         llm = create_llm_callable(llm_config)
@@ -199,7 +211,8 @@ def _load_story_from_kwargs(kwargs: Dict[str, Any]) -> UserStory:
 def generate_feature(**kwargs) -> Dict:
     """Generate a .feature file from a story."""
     step_defs = kwargs.get("step_definitions", [])
-    output_dir = kwargs.get("output_dir") or os.getenv("NORMA_OUTPUT_DIR") or "features"
+    output_dir = kwargs.get("output_dir") or os.getenv(
+        "NORMA_OUTPUT_DIR") or "features"
 
     try:
         story = _load_story_from_kwargs(kwargs)
@@ -209,7 +222,9 @@ def generate_feature(**kwargs) -> Dict:
         return {"error": f"Failed to parse story: {str(exc)}"}
 
     llm_config = {
-        "provider": os.getenv("LLM_PROVIDER", "openrouter"),
+        "provider": os.getenv(
+            "LLM_PROVIDER",
+            "openrouter"),
         "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY"),
     }
     llm = create_llm_callable(llm_config)
@@ -217,7 +232,9 @@ def generate_feature(**kwargs) -> Dict:
 
     validation = validate_gherkin(gherkin)
     if not validation.valid:
-        return {"error": "Generated Gherkin failed validation.", "errors": validation.errors}
+        return {
+            "error": "Generated Gherkin failed validation.",
+            "errors": validation.errors}
 
     try:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -243,7 +260,10 @@ def run_tests(**kwargs) -> Dict:
         result = subprocess.run(
             ["behave", feature_path], capture_output=True, text=True, cwd=os.getcwd()
         )
-        return {"passed": result.returncode == 0, "stdout": result.stdout, "stderr": result.stderr}
+        return {
+            "passed": result.returncode == 0,
+            "stdout": result.stdout,
+            "stderr": result.stderr}
     except FileNotFoundError:
         return {"passed": False, "error": "behave not found"}
     except Exception as e:
@@ -260,7 +280,9 @@ def fix_feature(**kwargs) -> Dict:
         with open(feature_path, "r") as f:
             content = f.read()
         llm_config = {
-            "provider": os.getenv("LLM_PROVIDER", "openrouter"),
+            "provider": os.getenv(
+                "LLM_PROVIDER",
+                "openrouter"),
             "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY"),
         }
         llm = create_llm_callable(llm_config)
@@ -325,8 +347,11 @@ def upload_testrail_case(**kwargs) -> Dict:
     if section_id is None or not title:
         return {"error": "section_id and title are required."}
     return add_test_case(
-        int(section_id), title, description, case_type=1, priority_id=int(priority_id)
-    )
+        int(section_id),
+        title,
+        description,
+        case_type=1,
+        priority_id=int(priority_id))
 
 
 def add_testrail_result(**kwargs) -> Dict:

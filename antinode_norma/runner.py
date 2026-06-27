@@ -1,17 +1,15 @@
+from .utils.file_writer import write_feature_file
+from .utils.llm_factory import create_llm_callable
+from .core.validator import validate_gherkin
+from .core.gherkin_generator import generate_gherkin
+from .core.parser import parse_story
+from .core.quality import compute_quality
 import os
-import asyncio
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from .core.schemas import UserStory, QualityReport
-from .core.quality import compute_quality
-from .core.parser import parse_story
-from .core.gherkin_generator import generate_gherkin
-from .core.validator import validate_gherkin
-from .utils.llm_factory import create_llm_callable
-from .utils.file_writer import write_feature_file
 
 # Load LLM config once
 LLM_CONFIG = {
@@ -43,7 +41,8 @@ def get_step_definitions(keyword: str = None):
     return steps
 
 
-async def run_agent_from_raw(raw_story: str, quality_only: bool = False) -> Dict[str, Any]:
+async def run_agent_from_raw(
+        raw_story: str, quality_only: bool = False) -> Dict[str, Any]:
     """Run the Norma agent from raw story text."""
     # Parse
     llm_call = get_llm_callable()
@@ -68,7 +67,9 @@ async def run_agent_from_raw(raw_story: str, quality_only: bool = False) -> Dict
     gherkin = generate_gherkin(story, step_defs, llm_call)
     validation = validate_gherkin(gherkin)
     if not validation.valid:
-        return {"error": "Gherkin validation failed", "errors": validation.errors}
+        return {
+            "error": "Gherkin validation failed",
+            "errors": validation.errors}
     # Write file
     output_dir = os.getenv("NORMA_OUTPUT_DIR", "features")
     safe_action = story.action.lower().replace(" ", "_")

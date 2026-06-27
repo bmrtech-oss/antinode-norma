@@ -116,7 +116,9 @@ def prompt_user_mapping(
             pass
         return choice
     else:
-        return click.prompt("[cyan]Enter a Playwright mapping[/cyan]", type=str)
+        return click.prompt(
+            "[cyan]Enter a Playwright mapping[/cyan]",
+            type=str)
 
 
 def error_context(error: Exception, context: str = "") -> None:

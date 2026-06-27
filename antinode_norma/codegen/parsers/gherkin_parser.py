@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Callable, List, Optional
 
 from behave.parser import parse_feature
-from behave.model import Feature, Scenario, Step
+from behave.model import Feature, Step
 
 from .base import Parser
 from ..models.test_model import TestSuite, TestCase, TestStep
@@ -39,7 +39,8 @@ class GherkinParser(Parser):
             raise ValueError(f"Failed to read file {source}: {e}")
 
         try:
-            # behave's parse_feature expects the feature text string, not the path
+            # behave's parse_feature expects the feature text string, not the
+            # path
             feature: Feature = parse_feature(content)
         except Exception as e:
             raise ValueError(f"Failed to parse {source} with behave: {e}")
@@ -50,7 +51,8 @@ class GherkinParser(Parser):
         """Convert a behave Feature to our TestSuite."""
         background_steps: List[TestStep] = []
         if feature.background:
-            background_steps = self._behave_steps_to_teststeps(feature.background.steps)
+            background_steps = self._behave_steps_to_teststeps(
+                feature.background.steps)
 
         cases = []
         for scenario in feature.scenarios:
@@ -59,11 +61,11 @@ class GherkinParser(Parser):
                 TestCase(
                     name=scenario.name or "Untitled Scenario",
                     steps=steps,
-                    tags=[self._tag_text(tag) for tag in scenario.tags],
+                    tags=[
+                        self._tag_text(tag) for tag in scenario.tags],
                     description=scenario.description or "",
                     background=background_steps if feature.background else None,
-                )
-            )
+                ))
 
         return TestSuite(
             name=feature.name or "Untitled Feature",
@@ -77,7 +79,8 @@ class GherkinParser(Parser):
         """Return the tag name text for behave Tag objects."""
         return getattr(tag, "name", getattr(tag, "text", str(tag)))
 
-    def _behave_steps_to_teststeps(self, behave_steps: List[Step]) -> List[TestStep]:
+    def _behave_steps_to_teststeps(
+            self, behave_steps: List[Step]) -> List[TestStep]:
         """Convert behave Step objects to our TestStep model."""
         result = []
         for step in behave_steps:

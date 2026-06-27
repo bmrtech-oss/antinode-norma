@@ -24,6 +24,7 @@ Works with **any LLM** (Claude, GPT, OpenRouter, local) and integrates via **MCP
 - [Client Usage Guide](docs/CLIENT_USAGE.md) – Step-by-step setup with JIRA and OpenRouter.
 - [Docker and Local Development](docs/DOCKER.md) – Run the full project locally with Docker/Podman.
 - [Testing Guide](docs/TESTING.md) – How to run and extend the test suite.
+- [Autofix Guide](docs/AUTOFIX.md) – Commands to fix lint issues automatically.
 - [Troubleshooting](TROUBLESHOOTING.md) – Common errors and recovery steps.
 - [Changelog](CHANGELOG.md) – Release history and version notes.
 - [Contributing Guide](CONTRIBUTING.md) – Guidelines for contributors.

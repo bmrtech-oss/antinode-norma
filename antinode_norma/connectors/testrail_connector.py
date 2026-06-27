@@ -45,19 +45,28 @@ def add_test_case(
         "priority_id": priority_id,
         "custom_expected": description,
     }
-    response = session.post(_api_url(f"add_case/{section_id}"), json=payload, timeout=30)
+    response = session.post(
+        _api_url(
+            f"add_case/{section_id}"),
+        json=payload,
+        timeout=30)
     if not response.ok:
         raise TestRailError(f"Failed to add test case: {response.text}")
     return response.json()
 
 
-def add_test_result(test_id: int, status_id: int, comment: str = "") -> Dict[str, Any]:
+def add_test_result(test_id: int, status_id: int,
+                    comment: str = "") -> Dict[str, Any]:
     """Add a result to a TestRail test case."""
     if not test_id or not status_id:
         raise ValueError("test_id and status_id are required.")
     session = get_testrail_session()
     payload = {"status_id": status_id, "comment": comment}
-    response = session.post(_api_url(f"add_result/{test_id}"), json=payload, timeout=30)
+    response = session.post(
+        _api_url(
+            f"add_result/{test_id}"),
+        json=payload,
+        timeout=30)
     if not response.ok:
         raise TestRailError(f"Failed to add test result: {response.text}")
     return response.json()
@@ -83,7 +92,11 @@ def create_test_run(
     }
     if case_ids:
         payload["case_ids"] = case_ids
-    response = session.post(_api_url(f"add_run/{project_id}"), json=payload, timeout=30)
+    response = session.post(
+        _api_url(
+            f"add_run/{project_id}"),
+        json=payload,
+        timeout=30)
     if not response.ok:
         raise TestRailError(f"Failed to create test run: {response.text}")
     return response.json()

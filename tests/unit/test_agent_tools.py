@@ -28,7 +28,9 @@ def test_generate_feature_from_raw_text(tmp_path):
         mock_validate.return_value.valid = True
         mock_validate.return_value.errors = []
 
-        result = generate_feature(raw_text=story.raw_text, output_dir=str(tmp_path))
+        result = generate_feature(
+            raw_text=story.raw_text,
+            output_dir=str(tmp_path))
 
     assert result["feature_path"].startswith(str(tmp_path))
     assert result["validation_passed"] is True

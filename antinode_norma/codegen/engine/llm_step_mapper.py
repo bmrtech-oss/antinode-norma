@@ -15,7 +15,8 @@ from .rules import RuleEngine
 
 _LOGGER = logging.getLogger(__name__)
 _CACHE_FILE = Path.home() / ".antinode_norma_llm_step_cache.json"
-_CACHE: Dict[str, Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]] = {}
+_CACHE: Dict[str, Tuple[ActionType, Optional[str],
+                        Optional[str], Dict[str, Any]]] = {}
 _CACHE_ORDER: list[str] = []
 
 
@@ -27,7 +28,8 @@ def _normalize_action(action_value: str) -> ActionType:
     try:
         return ActionType[normalized]
     except KeyError as exc:
-        raise ValueError(f"Unsupported action from LLM: {action_value}") from exc
+        raise ValueError(
+            f"Unsupported action from LLM: {action_value}") from exc
 
 
 def _build_prompt(step_text: str) -> str:
@@ -175,7 +177,7 @@ def _extract_json_object(raw: str) -> str:
     end = raw.rfind("}")
     if start == -1 or end == -1 or end < start:
         raise ValueError("LLM response does not contain a valid JSON object")
-    return raw[start : end + 1]
+    return raw[start: end + 1]
 
 
 def _parse_llm_output(raw: str) -> Dict[str, Any]:
@@ -239,12 +241,18 @@ def _persist_cache() -> None:
     try:
         _CACHE_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
     except Exception as exc:
-        _LOGGER.debug("Unable to persist LLM cache to %s: %s", _CACHE_FILE, exc)
+        _LOGGER.debug(
+            "Unable to persist LLM cache to %s: %s",
+            _CACHE_FILE,
+            exc)
 
 
-def _add_to_cache(
-    step_text: str, mapping: Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]
-) -> None:
+def _add_to_cache(step_text: str,
+                  mapping: Tuple[ActionType,
+                                 Optional[str],
+                                 Optional[str],
+                                 Dict[str,
+                                      Any]]) -> None:
     key = _cache_key(step_text)
     quality = get_config().quality
     if key in _CACHE_ORDER:
@@ -266,9 +274,11 @@ def _build_llm_config_from_env() -> Dict[str, Any]:
 
     return {
         "provider": provider,
-        "api_key": os.getenv("ANTHROPIC_API_KEY")
-        or os.getenv("OPENAI_API_KEY")
-        or os.getenv("OPENROUTER_API_KEY"),
+        "api_key": (
+            os.getenv("ANTHROPIC_API_KEY")
+            or os.getenv("OPENAI_API_KEY")
+            or os.getenv("OPENROUTER_API_KEY")
+        ),
         "model": os.getenv("LLM_MODEL") or None,
         "temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
         "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "1024")),
@@ -302,11 +312,13 @@ async def map_step_with_llm(
         raw_output = await asyncio.wait_for(_call_llm(prompt, llm_config), timeout=timeout)
         mapping = _parse_llm_output(raw_output)
     except Exception as exc:
-        _LOGGER.debug("LLM mapping failed on first attempt for '%s': %s", step_text, exc)
+        _LOGGER.debug(
+            "LLM mapping failed on first attempt for '%s': %s",
+            step_text,
+            exc)
         retry_prompt = (
-            prompt
-            + "\n\nIMPORTANT: Please respond with valid JSON only. The JSON object must include action, target, value, and options."
-        )
+            prompt +
+            "\n\nIMPORTANT: Please respond with valid JSON only. The JSON object must include action, target, value, and options.")
         try:
             raw_output = await asyncio.wait_for(
                 _call_llm(retry_prompt, llm_config), timeout=timeout
@@ -314,14 +326,16 @@ async def map_step_with_llm(
             mapping = _parse_llm_output(raw_output)
         except Exception as retry_exc:
             raise ValueError(
-                f"LLM mapping failed for step '{step_text}'. Raw output: {raw_output!r}. Error: {retry_exc}"
-            ) from retry_exc
+                f"LLM mapping failed for step '{step_text}'. Raw output: {
+                    raw_output!r}. Error: {retry_exc}") from retry_exc
 
     if not isinstance(mapping, dict):
         raise ValueError("LLM response must be a JSON object")
 
-    action = _normalize_action(mapping.get("action") or mapping.get("Action") or "")
-    target = mapping.get("target") if mapping.get("target") is not None else None
+    action = _normalize_action(
+        mapping.get("action") or mapping.get("Action") or "")
+    target = mapping.get("target") if mapping.get(
+        "target") is not None else None
     value = mapping.get("value") if mapping.get("value") is not None else None
     options = mapping.get("options") or {}
     if not isinstance(options, dict):
@@ -332,17 +346,23 @@ async def map_step_with_llm(
     return result
 
 
-def map_step(
-    step_text: str,
-    use_llm: bool = True,
-    fallback_to_rules: bool = True,
-    fallback_engine: Optional[RuleEngine] = None,
-    interactive_callback: Optional[
-        Callable[
-            [str, str, list[str]], Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]
-        ]
-    ] = None,
-) -> Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]:
+def map_step(step_text: str,
+             use_llm: bool = True,
+             fallback_to_rules: bool = True,
+             fallback_engine: Optional[RuleEngine] = None,
+             interactive_callback: Optional[Callable[[str,
+                                                      str,
+                                                      list[str]],
+                                            Tuple[ActionType,
+                                                  Optional[str],
+                                                  Optional[str],
+                                                  Dict[str,
+                                                       Any]]]] = None,
+             ) -> Tuple[ActionType,
+                        Optional[str],
+                        Optional[str],
+                        Dict[str,
+                             Any]]:
     if not use_llm:
         return (fallback_engine or RuleEngine()).map_step(step_text)
 
@@ -361,11 +381,14 @@ def map_step(
                 return (fallback_engine or RuleEngine()).map_step(step_text)
             except ValueError as rules_exc:
                 if interactive_callback is not None:
-                    _LOGGER.debug("Invoking interactive callback for step: %s", step_text)
+                    _LOGGER.debug(
+                        "Invoking interactive callback for step: %s", step_text)
                     return interactive_callback(step_text, str(rules_exc), [])
                 raise
         if interactive_callback is not None:
-            _LOGGER.debug("Invoking interactive callback after LLM failure for step: %s", step_text)
+            _LOGGER.debug(
+                "Invoking interactive callback after LLM failure for step: %s",
+                step_text)
             return interactive_callback(step_text, str(exc), [])
         raise
 

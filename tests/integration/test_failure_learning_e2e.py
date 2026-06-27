@@ -1,15 +1,12 @@
 """End-to-end test for Phase 5 failure learning integration."""
 
 import json
-from pathlib import Path
-
 import pytest
 
 from antinode_norma.core import failure_analyzer
 from antinode_norma.codegen.parsers.gherkin_parser import GherkinParser
 from antinode_norma.codegen.config import CodegenConfig
 from antinode_norma.codegen.engine.quality import QualityConfig
-from antinode_norma.core.failure_analyzer import FailureEvent
 
 
 @pytest.fixture(autouse=True)
@@ -20,7 +17,8 @@ def use_temp_db(monkeypatch, tmp_path):
     yield
 
 
-def test_e2e_failure_learning_influences_gherkin_parsing(tmp_path, monkeypatch):
+def test_e2e_failure_learning_influences_gherkin_parsing(
+        tmp_path, monkeypatch):
     """
     Test the full Phase 5 workflow:
     1. Parse a Playwright JSON report with failures
@@ -61,14 +59,9 @@ def test_e2e_failure_learning_influences_gherkin_parsing(tmp_path, monkeypatch):
                                     {
                                         "status": "failed",
                                         "error": "locator.click: waiting for locator('#login-button'). Timeout 30000ms exceeded.",
-                                    }
-                                ],
-                            }
-                        ],
-                    }
-                ]
-            }
-        ),
+                                    }],
+                            }],
+                    }]}),
         encoding="utf-8",
     )
 
@@ -97,7 +90,9 @@ def test_e2e_failure_learning_influences_gherkin_parsing(tmp_path, monkeypatch):
         failure_learning_max_examples=2,
     )
     config = CodegenConfig(quality=quality)
-    monkeypatch.setattr("antinode_norma.codegen.config._default_config", config)
+    monkeypatch.setattr(
+        "antinode_norma.codegen.config._default_config",
+        config)
 
     # Step 4: Parse the feature (this will use map_step internally)
     parser = GherkinParser(quality_config=quality)
@@ -111,7 +106,8 @@ def test_e2e_failure_learning_influences_gherkin_parsing(tmp_path, monkeypatch):
     assert case.steps[3].description == 'And I click on "#login-button"'
 
     # Step 5: Verify that failure examples were in the database
-    examples = failure_analyzer.get_failure_examples_for_step('When I click on "#login-button"')
+    examples = failure_analyzer.get_failure_examples_for_step(
+        'When I click on "#login-button"')
     assert len(examples) >= 1
     assert "#login-button" in examples[0].selector or examples[0].selector == "#login-button"
     assert "waiting for locator" in examples[0].error_message
@@ -123,7 +119,8 @@ def test_e2e_failure_suggestions_and_cli_integration(tmp_path, monkeypatch):
     """
     # Create and store a failure
     report_path = tmp_path / "playwright-report.json"
-    spec_path = tmp_path / "generated_tests" / "playwright" / "password_reset.spec.ts"
+    spec_path = tmp_path / "generated_tests" / \
+        "playwright" / "password_reset.spec.ts"
     spec_path.parent.mkdir(parents=True, exist_ok=True)
     spec_path.write_text(
         "import { test, expect } from '@playwright/test';\n"
@@ -142,12 +139,8 @@ def test_e2e_failure_suggestions_and_cli_integration(tmp_path, monkeypatch):
                             {
                                 "status": "failed",
                                 "error": "locator.click: waiting for locator('text=Forgot password?'). Element not found.",
-                            }
-                        ],
-                    }
-                ]
-            }
-        ),
+                            }],
+                    }]}),
         encoding="utf-8",
     )
 

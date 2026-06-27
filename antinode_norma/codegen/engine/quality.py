@@ -1,7 +1,7 @@
 """Quality configuration and helper functions."""
 
-from dataclasses import dataclass, field
-from typing import Optional, List
+from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -72,13 +72,15 @@ class QualityConfig:
 
         if isinstance(self.failure_learning_max_examples, str):
             try:
-                self.failure_learning_max_examples = int(self.failure_learning_max_examples)
+                self.failure_learning_max_examples = int(
+                    self.failure_learning_max_examples)
             except ValueError:
                 self.failure_learning_max_examples = 2
 
         if isinstance(self.visual_snapshot_dir, str):
             self.visual_snapshot_dir = self.visual_snapshot_dir.strip() or "visual-snapshots"
-            self.visual_snapshot_dir = self.visual_snapshot_dir.replace("\\", "/")
+            self.visual_snapshot_dir = self.visual_snapshot_dir.replace(
+                "\\", "/")
 
         if isinstance(self.llm_mapping_cache_size, str):
             try:
@@ -88,7 +90,8 @@ class QualityConfig:
 
         if isinstance(self.selector_healing_cache_size, str):
             try:
-                self.selector_healing_cache_size = int(self.selector_healing_cache_size)
+                self.selector_healing_cache_size = int(
+                    self.selector_healing_cache_size)
             except ValueError:
                 self.selector_healing_cache_size = 1000
 

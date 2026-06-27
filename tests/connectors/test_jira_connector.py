@@ -113,7 +113,8 @@ def test_jira_comment_on_issue_posts_comment(MockJIRA):
         result = comment_on_issue("JIRA-123", "This is a test comment.")
 
     mock_jira.issue.assert_called_once_with("JIRA-123")
-    mock_jira.add_comment.assert_called_once_with(issue, "This is a test comment.")
+    mock_jira.add_comment.assert_called_once_with(
+        issue, "This is a test comment.")
     assert result["comment_id"] == "10001"
     assert result["status"] == "posted"
 

@@ -9,7 +9,8 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
     if provider == "anthropic":
         from anthropic import Anthropic
 
-        client = Anthropic(api_key=config.get("api_key") or os.getenv("ANTHROPIC_API_KEY"))
+        client = Anthropic(api_key=config.get("api_key")
+                           or os.getenv("ANTHROPIC_API_KEY"))
         model = config.get("model", "claude-3-5-sonnet-20241022")
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
@@ -28,7 +29,8 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
     elif provider == "openai":
         from openai import OpenAI
 
-        client = OpenAI(api_key=config.get("api_key") or os.getenv("OPENAI_API_KEY"))
+        client = OpenAI(api_key=config.get("api_key")
+                        or os.getenv("OPENAI_API_KEY"))
         model = config.get("model", "gpt-4o")
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
@@ -50,7 +52,8 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         base_url = config.get("base_url", "https://openrouter.ai/api/v1")
         api_key = config.get("api_key") or os.getenv("OPENROUTER_API_KEY")
         if not api_key:
-            raise ValueError("OPENROUTER_API_KEY is required for openrouter provider")
+            raise ValueError(
+                "OPENROUTER_API_KEY is required for openrouter provider")
         client = OpenAI(base_url=base_url, api_key=api_key)
         model = config.get("model", "openai/gpt-oss-120b:free")
         temperature = config.get("temperature", 0.2)
@@ -80,7 +83,11 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         max_tokens = config.get("max_tokens", 1024)
 
         def local_call(prompt: str) -> str:
-            resp = requests.post(url, json={"prompt": prompt, "max_tokens": max_tokens})
+            resp = requests.post(
+                url,
+                json={
+                    "prompt": prompt,
+                    "max_tokens": max_tokens})
             return resp.json()["response"]
 
         return local_call
@@ -112,7 +119,11 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
                 action = text.split(".")[0].strip()
             return role, action, benefit
 
-        def _build_feature(role: str, action: str, benefit: str, criteria: list[str]):
+        def _build_feature(
+                role: str,
+                action: str,
+                benefit: str,
+                criteria: list[str]):
             feature_title = f"{action.capitalize()}"
             scenario_title = f"Generate a feature for {action}"
             steps = [
@@ -149,8 +160,10 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
                 )
             if "Output ONLY a valid Gherkin feature file" in prompt:
                 role = _extract_block(prompt, "Role:").splitlines()[0].strip()
-                action = _extract_block(prompt, "Action:").splitlines()[0].strip()
-                benefit = _extract_block(prompt, "Benefit:").splitlines()[0].strip()
+                action = _extract_block(
+                    prompt, "Action:").splitlines()[0].strip()
+                benefit = _extract_block(
+                    prompt, "Benefit:").splitlines()[0].strip()
                 criteria_block = _extract_block(prompt, "Acceptance criteria:")
                 criteria = [
                     line.strip()[2:].strip()

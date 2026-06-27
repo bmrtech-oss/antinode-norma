@@ -32,7 +32,8 @@ def test_validate_gherkin_missing_scenario():
     Given something"""
     result = validate_gherkin(content)
     assert result.valid is False
-    # The validator returns a combined message for missing Scenario/Scenario Outline
+    # The validator returns a combined message for missing Scenario/Scenario
+    # Outline
     assert "Missing 'Scenario:' or 'Scenario Outline:'" in result.errors
 
 

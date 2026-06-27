@@ -13,11 +13,13 @@ from mcp.client.stdio import stdio_client
 
 def get_jira_client() -> JIRA:
     if JIRA is None:
-        raise ImportError("The jira package is required for the JIRA connector.")
+        raise ImportError(
+            "The jira package is required for the JIRA connector.")
     server = os.getenv("JIRA_SERVER")
     token = os.getenv("JIRA_TOKEN")
     if not server or not token:
-        raise EnvironmentError("JIRA_SERVER and JIRA_TOKEN must be set to use the JIRA connector.")
+        raise EnvironmentError(
+            "JIRA_SERVER and JIRA_TOKEN must be set to use the JIRA connector.")
     return JIRA(server=server, token_auth=token)
 
 
@@ -72,8 +74,7 @@ def transition_issue(issue_key: str, transition_name: str) -> Dict:
     if transition is None:
         available = [t["name"] for t in transitions]
         raise ValueError(
-            f"Transition '{transition_name}' not found. Available transitions: {available}"
-        )
+            f"Transition '{transition_name}' not found. Available transitions: {available}")
     jira.transition_issue(issue, transition["id"])
     return {
         "issue_key": issue_key,

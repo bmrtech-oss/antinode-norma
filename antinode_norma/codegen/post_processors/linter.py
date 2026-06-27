@@ -9,7 +9,11 @@ class CodeLinter:
     def __init__(self, tool: Optional[str] = None):
         self.tool = tool
 
-    def lint_files(self, file_paths: List[Path], fix: bool = False, verbose: bool = False) -> bool:
+    def lint_files(
+            self,
+            file_paths: List[Path],
+            fix: bool = False,
+            verbose: bool = False) -> bool:
         """Run linter on the given files. Returns True if no issues found."""
         if not file_paths:
             return True
@@ -38,19 +42,25 @@ class CodeLinter:
         if ext in [".js", ".ts", ".tsx", ".jsx"]:
             # ESLint
             try:
-                subprocess.run(["eslint", "--version"], check=True, capture_output=True)
+                subprocess.run(["eslint", "--version"],
+                               check=True, capture_output=True)
                 return "eslint"
             except (subprocess.CalledProcessError, FileNotFoundError):
                 pass
         elif ext == ".py":
             try:
-                subprocess.run(["flake8", "--version"], check=True, capture_output=True)
+                subprocess.run(["flake8", "--version"],
+                               check=True, capture_output=True)
                 return "flake8"
             except (subprocess.CalledProcessError, FileNotFoundError):
                 pass
         return None
 
-    def _build_command(self, tool: str, files: List[Path], fix: bool) -> List[str]:
+    def _build_command(
+            self,
+            tool: str,
+            files: List[Path],
+            fix: bool) -> List[str]:
         if tool == "eslint":
             cmd = ["eslint"]
             if fix:

@@ -2,11 +2,19 @@ from typing import List, Union
 from .schemas import UserStory, QualityReport
 import re
 
-VAGUE_WORDS = {"etc", "various", "handle", "properly", "many", "some", "multiple"}
+VAGUE_WORDS = {
+    "etc",
+    "various",
+    "handle",
+    "properly",
+    "many",
+    "some",
+    "multiple"}
 IMPL_WORDS = {"sql", "database", "rest", "api", "class", "method"}
 SYSTEM_WORDS = {"call", "update", "insert", "delete", "compute"}
 
-# Only consider criteria testable when they contain a concrete assertion or measurable outcome.
+# Only consider criteria testable when they contain a concrete assertion
+# or measurable outcome.
 TESTABLE_PATTERNS = [
     r"\bshould\b",
     r"\breturn(s?)\b",
@@ -99,10 +107,12 @@ def compute_quality(story: UserStory) -> QualityReport:
             issues.append(f"Fails '{k}': {_suggestion_for(k)}")
             suggestions.append(_suggestion_for(k))
         elif v == "needs_review":
-            issues.append(f"'{k}' needs review – implementation details present")
+            issues.append(
+                f"'{k}' needs review – implementation details present")
             suggestions.append(_suggestion_for(k))
 
-    numeric = [1 if x is True else 0 if x is False else 0.5 for x in invest.values()]
+    numeric = [
+        1 if x is True else 0 if x is False else 0.5 for x in invest.values()]
     score = sum(numeric) / len(numeric)
 
     return QualityReport(

@@ -2,7 +2,6 @@
 
 import os
 import pytest
-from pathlib import Path
 from dotenv import load_dotenv
 from antinode_norma.core.schemas import UserStory
 
@@ -22,8 +21,7 @@ def sample_story_pass() -> str:
         "- The system should send a password reset link to the user's registered email. "
         "- The user should be able to click the link and set a new password. "
         "- The system should display an error message when an invalid token is used. "
-        "- The system should expire the reset link after 30 minutes."
-    )
+        "- The system should expire the reset link after 30 minutes.")
 
 
 @pytest.fixture
@@ -57,8 +55,7 @@ def mock_llm_call():
     def _mock(prompt: str) -> str:
         return (
             '{"role": "tester", "action": "test action", "benefit": "test benefit", '
-            '"acceptance_criteria": ["criterion one", "criterion two"]}'
-        )
+            '"acceptance_criteria": ["criterion one", "criterion two"]}')
 
     return _mock
 

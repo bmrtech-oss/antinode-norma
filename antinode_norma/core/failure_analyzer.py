@@ -10,8 +10,10 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 DB_FILE: Path = Path(
-    os.getenv("ANTINODE_FAILURE_DB_FILE", Path.home() / ".antinode_norma_failures.db")
-)
+    os.getenv(
+        "ANTINODE_FAILURE_DB_FILE",
+        Path.home() /
+        ".antinode_norma_failures.db"))
 _TABLE_NAME = "failure_events"
 
 _SELECTOR_PATTERNS = [
@@ -50,7 +52,8 @@ def set_db_file(path: Path | str) -> None:
 
 
 def _get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(_get_db_file()), detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = sqlite3.connect(str(_get_db_file()),
+                           detect_types=sqlite3.PARSE_DECLTYPES)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -76,7 +79,8 @@ def _extract_error_message(result: Any) -> str:
     if isinstance(result, dict):
         error = result.get("error") or result.get("err") or result
         if isinstance(error, dict):
-            return error.get("message") or error.get("stack") or json.dumps(error)
+            return error.get("message") or error.get(
+                "stack") or json.dumps(error)
         if isinstance(error, list):
             return "\n".join(str(item) for item in error)
         if isinstance(error, str):
@@ -106,7 +110,8 @@ def _extract_selector(text: str) -> Optional[str]:
     return None
 
 
-def _extract_location_from_traceback(traceback: str) -> tuple[Optional[str], Optional[int]]:
+def _extract_location_from_traceback(
+        traceback: str) -> tuple[Optional[str], Optional[int]]:
     if not traceback:
         return None, None
     match = re.search(r'File "([^"]+)", line (\d+)', traceback)
@@ -115,7 +120,10 @@ def _extract_location_from_traceback(traceback: str) -> tuple[Optional[str], Opt
     return None, None
 
 
-def _read_snippet_from_file(file_path: str, line: Optional[int], context: int = 2) -> Optional[str]:
+def _read_snippet_from_file(
+        file_path: str,
+        line: Optional[int],
+        context: int = 2) -> Optional[str]:
     if not file_path or line is None:
         return None
     try:
@@ -143,13 +151,16 @@ def _infer_step_text_from_code(snippet: Optional[str]) -> Optional[str]:
             return match.group(1).strip()
         return snippet
     if "locator(" in snippet or ".locator(" in snippet:
-        match = re.search(r"([A-Za-z0-9_\s\.-]*locator\([^\n]*\)[\s\S]*?)$", snippet)
+        match = re.search(
+            r"([A-Za-z0-9_\s\.-]*locator\([^\n]*\)[\s\S]*?)$",
+            snippet)
         if match:
             return match.group(1).strip()
     return None
 
 
-def _recursively_collect_tests(node: Dict[str, Any]) -> Iterable[Dict[str, Any]]:
+def _recursively_collect_tests(
+        node: Dict[str, Any]) -> Iterable[Dict[str, Any]]:
     for test in node.get("tests", []):
         yield test
     for suite in node.get("suites", []):
@@ -161,9 +172,11 @@ def _detect_report_type(data: Any, raw_text: str) -> str:
         return "junit-xml"
 
     if isinstance(data, dict):
-        if any(test.get("results") is not None for test in _recursively_collect_tests(data)):
+        if any(test.get("results")
+               is not None for test in _recursively_collect_tests(data)):
             return "playwright"
-        if any(test.get("err") is not None for test in _recursively_collect_tests(data)):
+        if any(test.get("err")
+                is not None for test in _recursively_collect_tests(data)):
             return "cypress"
         if isinstance(data.get("tests"), list) and any(
             "outcome" in test for test in data.get("tests", [])
@@ -191,7 +204,8 @@ def _parse_playwright_report_data(data: Dict[str, Any]) -> List[FailureEvent]:
                 file_path = location.get("file")
                 line = _parse_int(location.get("line"))
             selector = _extract_selector(error_message)
-            snippet = _read_snippet_from_file(file_path, line) if file_path else None
+            snippet = _read_snippet_from_file(
+                file_path, line) if file_path else None
             step_text = _infer_step_text_from_code(snippet)
             failures.append(
                 FailureEvent(
@@ -207,7 +221,8 @@ def _parse_playwright_report_data(data: Dict[str, Any]) -> List[FailureEvent]:
     return failures
 
 
-def _recursively_collect_cypress_tests(node: Dict[str, Any]) -> Iterable[Dict[str, Any]]:
+def _recursively_collect_cypress_tests(
+        node: Dict[str, Any]) -> Iterable[Dict[str, Any]]:
     for test in node.get("tests", []):
         yield test
     for suite in node.get("suites", []):
@@ -220,7 +235,8 @@ def _parse_cypress_report_data(data: Dict[str, Any]) -> List[FailureEvent]:
         status = test.get("state") or test.get("status")
         if status != "failed":
             continue
-        error_message = _extract_error_message(test.get("err") or test.get("error") or "")
+        error_message = _extract_error_message(
+            test.get("err") or test.get("error") or "")
         file_path = test.get("file")
         line = None
         if isinstance(test.get("err"), dict):
@@ -228,11 +244,13 @@ def _parse_cypress_report_data(data: Dict[str, Any]) -> List[FailureEvent]:
             if not line:
                 line = _parse_int(test["err"].get("line"))
             if not file_path and test["err"].get("stack"):
-                file_path, line = _extract_location_from_traceback(test["err"].get("stack", ""))
+                file_path, line = _extract_location_from_traceback(
+                    test["err"].get("stack", ""))
         if not file_path and isinstance(error_message, str):
             file_path, line = _extract_location_from_traceback(error_message)
         selector = _extract_selector(error_message)
-        snippet = _read_snippet_from_file(file_path, line) if file_path else None
+        snippet = _read_snippet_from_file(
+            file_path, line) if file_path else None
         step_text = _infer_step_text_from_code(snippet)
         failures.append(
             FailureEvent(
@@ -243,8 +261,7 @@ def _parse_cypress_report_data(data: Dict[str, Any]) -> List[FailureEvent]:
                 selector=selector,
                 error_message=error_message.strip(),
                 created_at="",
-            )
-        )
+            ))
     return failures
 
 
@@ -258,7 +275,10 @@ def _parse_pytest_json_report_data(data: Dict[str, Any]) -> List[FailureEvent]:
         )
         file_path = None
         line = None
-        if isinstance(test.get("location"), list) and len(test["location"]) >= 2:
+        if isinstance(
+                test.get("location"),
+                list) and len(
+                test["location"]) >= 2:
             file_path = str(test["location"][0])
             line = _parse_int(test["location"][1])
         if not file_path and isinstance(test.get("nodeid"), str):
@@ -266,7 +286,8 @@ def _parse_pytest_json_report_data(data: Dict[str, Any]) -> List[FailureEvent]:
         if not line:
             _, line = _extract_location_from_traceback(error_message)
         selector = _extract_selector(error_message)
-        snippet = _read_snippet_from_file(file_path, line) if file_path else None
+        snippet = _read_snippet_from_file(
+            file_path, line) if file_path else None
         step_text = _infer_step_text_from_code(snippet)
         failures.append(
             FailureEvent(
@@ -289,18 +310,19 @@ def _parse_pytest_junit_report_text(raw_text: str) -> List[FailureEvent]:
         failure_element = testcase.find("failure") or testcase.find("error")
         if failure_element is None:
             continue
-        error_message = (failure_element.text or "").strip() or failure_element.attrib.get(
-            "message", ""
-        )
+        error_message = (failure_element.text or "").strip(
+        ) or failure_element.attrib.get("message", "")
         file_path = testcase.attrib.get("file")
         line = _parse_int(testcase.attrib.get("line"))
         if not file_path or not line:
             traceback_text = error_message
-            extracted_file, extracted_line = _extract_location_from_traceback(traceback_text)
+            extracted_file, extracted_line = _extract_location_from_traceback(
+                traceback_text)
             file_path = file_path or extracted_file
             line = line or extracted_line
         selector = _extract_selector(error_message)
-        snippet = _read_snippet_from_file(file_path, line) if file_path else None
+        snippet = _read_snippet_from_file(
+            file_path, line) if file_path else None
         step_text = _infer_step_text_from_code(snippet)
         failures.append(
             FailureEvent(
@@ -353,14 +375,13 @@ def store_test_failures(report_path: Path) -> List[FailureEvent]:
         for failure in failures:
             conn.execute(
                 f"INSERT INTO {_TABLE_NAME} (step_text, test_title, file_path, line, selector, error_message) VALUES (?, ?, ?, ?, ?, ?)",
-                (
-                    failure.step_text,
+                (failure.step_text,
                     failure.test_title,
                     failure.file_path,
                     failure.line,
                     failure.selector,
                     failure.error_message,
-                ),
+                 ),
             )
             inserted.append(failure)
         conn.commit()
@@ -372,7 +393,8 @@ def store_playwright_failures(report_path: Path) -> List[FailureEvent]:
     return store_test_failures(report_path)
 
 
-def _query_failures(where_clause: str, params: tuple[Any, ...], limit: int) -> List[FailureEvent]:
+def _query_failures(where_clause: str,
+                    params: tuple[Any, ...], limit: int) -> List[FailureEvent]:
     _ensure_database()
     with _get_connection() as conn:
         cursor = conn.execute(
@@ -388,28 +410,37 @@ def get_recent_failures(limit: int = 10) -> List[FailureEvent]:
     return _query_failures("1=1", (), limit)
 
 
-def get_failure_examples_for_step(step_text: str, max_examples: int = 2) -> List[FailureEvent]:
+def get_failure_examples_for_step(
+        step_text: str,
+        max_examples: int = 2) -> List[FailureEvent]:
     selector = _extract_selector(step_text)
     if selector:
         examples = _query_failures("selector = ?", (selector,), max_examples)
         if examples:
             return examples
-        examples = _query_failures("selector LIKE ?", (f"%{selector}%",), max_examples)
+        examples = _query_failures(
+            "selector LIKE ?", (f"%{selector}%",), max_examples)
         if examples:
             return examples
 
-    exact_text_examples = _query_failures("step_text = ?", (step_text,), max_examples)
+    exact_text_examples = _query_failures(
+        "step_text = ?", (step_text,), max_examples)
     if exact_text_examples:
         return exact_text_examples
-    return _query_failures("step_text LIKE ?", (f"%{step_text}%",), max_examples)
+    return _query_failures(
+        "step_text LIKE ?", (f"%{step_text}%",), max_examples)
 
 
-def get_failure_suggestions_for_step(step_text: str, max_suggestions: int = 3) -> List[str]:
+def get_failure_suggestions_for_step(
+        step_text: str,
+        max_suggestions: int = 3) -> List[str]:
     selector = _extract_selector(step_text)
     if selector:
-        failures = _query_failures("selector = ?", (selector,), max_suggestions)
+        failures = _query_failures(
+            "selector = ?", (selector,), max_suggestions)
     else:
-        failures = _query_failures("step_text = ?", (step_text,), max_suggestions)
+        failures = _query_failures(
+            "step_text = ?", (step_text,), max_suggestions)
 
     suggestions: List[str] = []
     for failure in failures:
@@ -417,10 +448,8 @@ def get_failure_suggestions_for_step(step_text: str, max_suggestions: int = 3) -
         error_line = failure.error_message.splitlines()[0]
         if selector:
             suggestions.append(
-                f"Previous failure with selector '{summary_key}': {error_line}. Consider using a more robust selector, adding an explicit wait, or reordering the action."
-            )
+                f"Previous failure with selector '{summary_key}': {error_line}. Consider using a more robust selector, adding an explicit wait, or reordering the action.")
         else:
             suggestions.append(
-                f"Previous failure for step '{summary_key}': {error_line}. Consider rephrasing the step or choosing a more specific locator."
-            )
+                f"Previous failure for step '{summary_key}': {error_line}. Consider rephrasing the step or choosing a more specific locator.")
     return suggestions

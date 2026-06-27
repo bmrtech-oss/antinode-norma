@@ -10,7 +10,11 @@ from antinode_norma.codegen.engine.rules import RuleEngine
 
 @pytest.fixture(autouse=True)
 def clear_llm_cache(monkeypatch, tmp_path):
-    monkeypatch.setattr(llm_step_mapper, "_CACHE_FILE", tmp_path / "llm_step_cache.json")
+    monkeypatch.setattr(
+        llm_step_mapper,
+        "_CACHE_FILE",
+        tmp_path /
+        "llm_step_cache.json")
     llm_step_mapper._CACHE.clear()
     llm_step_mapper._CACHE_ORDER.clear()
     yield
@@ -92,7 +96,8 @@ def test_rule_engine_respects_codegen_base_url(monkeypatch):
     )
 
     engine = RuleEngine()
-    action, target, value, options = engine.map_step("Given the user is on the login page")
+    action, target, value, options = engine.map_step(
+        "Given the user is on the login page")
 
     assert action.name == "NAVIGATE"
     assert value == "https://myapp.local/login"
@@ -135,7 +140,8 @@ def test_map_step_cache_prevents_duplicate_llm_calls(monkeypatch):
 
     assert first == second
     assert call_count["count"] == 1
-    assert llm_step_mapper._CACHE.get('When I click on "#login-button"') is not None
+    assert llm_step_mapper._CACHE.get(
+        'When I click on "#login-button"') is not None
 
 
 def test_build_prompt_includes_failure_context(monkeypatch):
@@ -167,12 +173,14 @@ def test_build_prompt_skips_failure_context_when_disabled(monkeypatch):
         failure_learning_max_examples = 2
 
     monkeypatch.setattr(
-        llm_step_mapper, "get_config", lambda: type("C", (), {"quality": DummyQuality})()
-    )
+        llm_step_mapper, "get_config", lambda: type(
+            "C", (), {
+                "quality": DummyQuality})())
     monkeypatch.setattr(
         llm_step_mapper,
         "get_failure_examples_for_step",
-        lambda step_text, max_examples=2: [
+        lambda step_text,
+        max_examples=2: [
             FailureEvent(
                 step_text="await steps.clickElement(page, '#login-button')",
                 test_title="User Login › click login",
@@ -181,8 +189,7 @@ def test_build_prompt_skips_failure_context_when_disabled(monkeypatch):
                 selector="#login-button",
                 error_message="locator.click: waiting for locator('#login-button')",
                 created_at="2026-06-25 00:00:00",
-            )
-        ],
+            )],
     )
 
     prompt = llm_step_mapper._build_prompt('When I click on "#login-button"')

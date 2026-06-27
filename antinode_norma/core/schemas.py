@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field, validator
 from typing import List, Optional
-from enum import Enum
 
 
 class UserStory(BaseModel):
@@ -22,7 +21,8 @@ class UserStory(BaseModel):
     @validator("acceptance_criteria")
     def criteria_not_empty(cls, v):
         if not v or all(not c.strip() for c in v):
-            raise ValueError("At least one non‑empty acceptance criterion required")
+            raise ValueError(
+                "At least one non‑empty acceptance criterion required")
         return v
 
 
