@@ -4,6 +4,7 @@ import json
 import os
 import re
 import sqlite3
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -16,8 +17,13 @@ _TABLE_NAME = "failure_events"
 _SELECTOR_PATTERNS = [
     r"locator\(['\"](.+?)['\"]\)",
     r"page\.locator\(['\"](.+?)['\"]\)",
+    r"cy\.get\(['\"](.+?)['\"]\)",
+    r"cy\.contains\(['\"](.+?)['\"]\)",
     r"Selector:\s*['\"](.+?)['\"]",
     r"Unable to find element with selector ['\"](.+?)['\"]",
+    r"Unable to locate element: \{\"method\":\"css selector\",\"selector\":\"(.+?)\"\}",
+    r"Expected to find element: ['\"](.+?)['\"]",
+    r"NoSuchElementException:.*?selector\s*[:=]\s*['\"](.+?)['\"]",
     r"['\"](#[^'\"]+)['\"]",
     r"['\"](text=[^'\"]+)['\"]",
 ]
@@ -66,15 +72,30 @@ def _ensure_database() -> None:
         conn.commit()
 
 
-def _extract_error_message(result: Dict[str, Any]) -> str:
-    error = result.get("error")
-    if isinstance(error, dict):
-        return error.get("message") or json.dumps(error)
-    if isinstance(error, list):
-        return "\n".join(str(item) for item in error)
-    if isinstance(error, str):
-        return error
+def _extract_error_message(result: Any) -> str:
+    if isinstance(result, dict):
+        error = result.get("error") or result.get("err") or result
+        if isinstance(error, dict):
+            return error.get("message") or error.get("stack") or json.dumps(error)
+        if isinstance(error, list):
+            return "\n".join(str(item) for item in error)
+        if isinstance(error, str):
+            return error
+        return json.dumps(error)
+
+    if isinstance(result, list):
+        return "\n".join(str(item) for item in result)
+    if isinstance(result, str):
+        return result
     return json.dumps(result)
+
+
+def _parse_int(value: Any) -> Optional[int]:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.isdigit():
+        return int(value)
+    return None
 
 
 def _extract_selector(text: str) -> Optional[str]:
@@ -83,6 +104,15 @@ def _extract_selector(text: str) -> Optional[str]:
         if match:
             return match.group(1).strip()
     return None
+
+
+def _extract_location_from_traceback(traceback: str) -> tuple[Optional[str], Optional[int]]:
+    if not traceback:
+        return None, None
+    match = re.search(r'File "([^"]+)", line (\d+)', traceback)
+    if match:
+        return match.group(1), int(match.group(2))
+    return None, None
 
 
 def _read_snippet_from_file(file_path: str, line: Optional[int], context: int = 2) -> Optional[str]:
@@ -126,8 +156,22 @@ def _recursively_collect_tests(node: Dict[str, Any]) -> Iterable[Dict[str, Any]]
         yield from _recursively_collect_tests(suite)
 
 
-def parse_playwright_report(report_path: Path) -> List[FailureEvent]:
-    data = json.loads(report_path.read_text(encoding="utf-8"))
+def _detect_report_type(data: Any, raw_text: str) -> str:
+    if raw_text.lstrip().startswith("<"):
+        return "junit-xml"
+
+    if isinstance(data, dict):
+        if any(test.get("results") is not None for test in _recursively_collect_tests(data)):
+            return "playwright"
+        if any(test.get("err") is not None for test in _recursively_collect_tests(data)):
+            return "cypress"
+        if isinstance(data.get("tests"), list) and any("outcome" in test for test in data.get("tests", [])):
+            return "pytest-json"
+
+    raise ValueError("Unable to detect report format from the provided file.")
+
+
+def _parse_playwright_report_data(data: Dict[str, Any]) -> List[FailureEvent]:
     tests = list(_recursively_collect_tests(data))
     if not tests and isinstance(data, dict) and "tests" in data:
         tests = list(data.get("tests", []))
@@ -143,11 +187,7 @@ def parse_playwright_report(report_path: Path) -> List[FailureEvent]:
             location = test.get("location") or result.get("location") or {}
             if isinstance(location, dict):
                 file_path = location.get("file")
-                line = location.get("line")
-                if isinstance(line, str) and line.isdigit():
-                    line = int(line)
-                elif not isinstance(line, int):
-                    line = None
+                line = _parse_int(location.get("line"))
             selector = _extract_selector(error_message)
             snippet = _read_snippet_from_file(file_path, line) if file_path else None
             step_text = _infer_step_text_from_code(snippet)
@@ -165,9 +205,138 @@ def parse_playwright_report(report_path: Path) -> List[FailureEvent]:
     return failures
 
 
-def store_playwright_failures(report_path: Path) -> List[FailureEvent]:
+def _recursively_collect_cypress_tests(node: Dict[str, Any]) -> Iterable[Dict[str, Any]]:
+    for test in node.get("tests", []):
+        yield test
+    for suite in node.get("suites", []):
+        yield from _recursively_collect_cypress_tests(suite)
+
+
+def _parse_cypress_report_data(data: Dict[str, Any]) -> List[FailureEvent]:
+    failures: List[FailureEvent] = []
+    for test in _recursively_collect_cypress_tests(data):
+        status = test.get("state") or test.get("status")
+        if status != "failed":
+            continue
+        error_message = _extract_error_message(test.get("err") or test.get("error") or "")
+        file_path = test.get("file")
+        line = None
+        if isinstance(test.get("err"), dict):
+            file_path = file_path or test["err"].get("file")
+            if not line:
+                line = _parse_int(test["err"].get("line"))
+            if not file_path and test["err"].get("stack"):
+                file_path, line = _extract_location_from_traceback(test["err"].get("stack", ""))
+        if not file_path and isinstance(error_message, str):
+            file_path, line = _extract_location_from_traceback(error_message)
+        selector = _extract_selector(error_message)
+        snippet = _read_snippet_from_file(file_path, line) if file_path else None
+        step_text = _infer_step_text_from_code(snippet)
+        failures.append(
+            FailureEvent(
+                step_text=step_text,
+                test_title=test.get("fullTitle") or test.get("title") or "<unknown>",
+                file_path=file_path,
+                line=line,
+                selector=selector,
+                error_message=error_message.strip(),
+                created_at="",
+            )
+        )
+    return failures
+
+
+def _parse_pytest_json_report_data(data: Dict[str, Any]) -> List[FailureEvent]:
+    failures: List[FailureEvent] = []
+    for test in data.get("tests", []):
+        if test.get("outcome") != "failed":
+            continue
+        error_message = _extract_error_message(test.get("longrepr") or test.get("longreprrepr") or "")
+        file_path = None
+        line = None
+        if isinstance(test.get("location"), list) and len(test["location"]) >= 2:
+            file_path = str(test["location"][0])
+            line = _parse_int(test["location"][1])
+        if not file_path and isinstance(test.get("nodeid"), str):
+            file_path = test["nodeid"].split("::", 1)[0]
+        if not line:
+            _, line = _extract_location_from_traceback(error_message)
+        selector = _extract_selector(error_message)
+        snippet = _read_snippet_from_file(file_path, line) if file_path else None
+        step_text = _infer_step_text_from_code(snippet)
+        failures.append(
+            FailureEvent(
+                step_text=step_text,
+                test_title=test.get("nodeid", "<unknown>"),
+                file_path=file_path,
+                line=line,
+                selector=selector,
+                error_message=error_message.strip(),
+                created_at="",
+            )
+        )
+    return failures
+
+
+def _parse_pytest_junit_report_text(raw_text: str) -> List[FailureEvent]:
+    root = ET.fromstring(raw_text)
+    failures: List[FailureEvent] = []
+    for testcase in root.iter("testcase"):
+        failure_element = testcase.find("failure") or testcase.find("error")
+        if failure_element is None:
+            continue
+        error_message = (failure_element.text or "").strip() or failure_element.attrib.get("message", "")
+        file_path = testcase.attrib.get("file")
+        line = _parse_int(testcase.attrib.get("line"))
+        if not file_path or not line:
+            traceback_text = error_message
+            extracted_file, extracted_line = _extract_location_from_traceback(traceback_text)
+            file_path = file_path or extracted_file
+            line = line or extracted_line
+        selector = _extract_selector(error_message)
+        snippet = _read_snippet_from_file(file_path, line) if file_path else None
+        step_text = _infer_step_text_from_code(snippet)
+        failures.append(
+            FailureEvent(
+                step_text=step_text,
+                test_title=testcase.attrib.get("name") or testcase.attrib.get("classname") or "<unknown>",
+                file_path=file_path,
+                line=line,
+                selector=selector,
+                error_message=error_message.strip(),
+                created_at="",
+            )
+        )
+    return failures
+
+
+def parse_test_report(report_path: Path) -> List[FailureEvent]:
+    raw_text = report_path.read_text(encoding="utf-8")
+    if not raw_text.strip():
+        return []
+
+    if raw_text.lstrip().startswith("<"):
+        return _parse_pytest_junit_report_text(raw_text)
+
+    data = json.loads(raw_text)
+    report_type = _detect_report_type(data, raw_text)
+    if report_type == "playwright":
+        return _parse_playwright_report_data(data)
+    if report_type == "cypress":
+        return _parse_cypress_report_data(data)
+    if report_type == "pytest-json":
+        return _parse_pytest_json_report_data(data)
+
+    raise ValueError("Unable to parse failure report.")
+
+
+def parse_playwright_report(report_path: Path) -> List[FailureEvent]:
+    return parse_test_report(report_path)
+
+
+def store_test_failures(report_path: Path) -> List[FailureEvent]:
     _ensure_database()
-    failures = parse_playwright_report(report_path)
+    failures = parse_test_report(report_path)
     if not failures:
         return []
 
@@ -189,6 +358,10 @@ def store_playwright_failures(report_path: Path) -> List[FailureEvent]:
         conn.commit()
 
     return inserted
+
+
+def store_playwright_failures(report_path: Path) -> List[FailureEvent]:
+    return store_test_failures(report_path)
 
 
 def _query_failures(where_clause: str, params: tuple[Any, ...], limit: int) -> List[FailureEvent]:

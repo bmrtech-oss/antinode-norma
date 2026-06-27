@@ -329,7 +329,7 @@ def learn(report_file, db_file, show_recent, show_suggestions):
         get_failure_suggestions_for_step,
         get_recent_failures,
         set_db_file,
-        store_playwright_failures,
+        store_test_failures,
     )
 
     if db_file:
@@ -337,11 +337,11 @@ def learn(report_file, db_file, show_recent, show_suggestions):
         info_message(f"Using custom database: {db_file}")
 
     try:
-        section_header("Learning from Failures")
+        section_header("Learning from Test Failures")
 
         with progress_bar(description="Processing test report...") as progress:
             task = progress.add_task("[cyan]Reading report...", total=None)
-            failures = store_playwright_failures(Path(report_file))
+            failures = store_test_failures(Path(report_file))
             progress.update(task, completed=True)
 
         success_message(f"Stored {len(failures)} failure event(s) from {report_file}")

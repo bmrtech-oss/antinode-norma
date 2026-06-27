@@ -1,0 +1,28 @@
+# GitHub label definitions for Antinode Norma community contributions
+# Use this file as a label manifest for manual review or automation.
+
+labels:
+  - name: bug
+    color: d73a4a
+    description: Bugs, errors, or unexpected behavior
+  - name: enhancement
+    color: a2eeef
+    description: New features or improvements
+  - name: roadmap
+    color: 0e8a16
+    description: Proposed roadmap initiatives and community contributions
+  - name: help wanted
+    color: 008672
+    description: Good issues for community contributors
+  - name: good first issue
+    color: 7057ff
+    description: Easy starter tasks for new contributors
+  - name: documentation
+    color: 0075ca
+    description: Documentation and guide improvements
+  - name: dependencies
+    color: 0075ca
+    description: Dependency updates managed by Dependabot
+  - name: discussion
+    color: 6f42c1
+    description: General discussion and community planning

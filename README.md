@@ -27,6 +27,7 @@ Works with **any LLM** (Claude, GPT, OpenRouter, local) and integrates via **MCP
 - [Troubleshooting](TROUBLESHOOTING.md) – Common errors and recovery steps.
 - [Changelog](CHANGELOG.md) – Release history and version notes.
 - [Contributing Guide](CONTRIBUTING.md) – Guidelines for contributors.
+- [Roadmap](ROADMAP.md) – Public product and community roadmap.
 - [Code Generation Module](antinode_norma/codegen/README.md) – Generate Playwright, Cypress, and Selenium tests from Gherkin.
 - [End‑to‑End Workflow Guide](docs/E2E_WORKFLOW.md) – Complete BDD lifecycle from story to tests.
 - [Visual Testing (Phase 4)](docs/VISUAL_TESTING.md) – Playwright snapshot guidance and CLI flags.
@@ -69,7 +70,7 @@ python -m antinode_norma.codegen.cli.commands generate -f features/reset_passwor
 - **Provider-agnostic LLM** – Switch between Anthropic, OpenAI, OpenRouter, or local models via configuration.
 - **CLI and library** – Use as a command-line tool or import into your own system.
 - **Quality-first** – Rejects stories that don't meet INVEST criteria, with actionable suggestions.
-- **Learning from failures** – Capture Playwright test failures and use them to improve future generation. Use `anorm learn --show-suggestions` to surface failure-driven healing recommendations.
+- **Learning from failures** – Capture Playwright, Cypress, or pytest/JUnit test failures and use them to improve future generation. Use `anorm learn --show-suggestions` to surface failure-driven healing recommendations.
 - **Interactive CLI** – Retry failed generation or resolve unmapped steps on the fly using `--interactive`.
 - **Shell completion** – Generate completion scripts for bash, zsh, or PowerShell with `anorm completion <shell>`.
 - **Batch generation** – Generate tests for multiple feature files in parallel with configurable workers.
@@ -79,6 +80,7 @@ python -m antinode_norma.codegen.cli.commands generate -f features/reset_passwor
 
 ### Code Generation (NEW!)
 - **Framework-agnostic** – Generate tests for Playwright, Cypress, or Selenium from the same feature files.
+- **Community friendly** – Roadmap issues and `roadmap initiative` templates help contributors align with the public product plan.
 - **Quality enhancements** – Page Objects, reusable step definitions, Scenario Outlines, and data-driven testing.
 - **AI-powered step mapping** – Natural language Gherkin is mapped to Playwright actions with optional LLM fallback to the RuleEngine.
 - **Configurable** – Control output quality via `codegen.yaml`, `.env`, or environment variables.

@@ -72,6 +72,7 @@ This document aligns Antinode Norma’s marketing and product roadmap with the s
 1. Add a `docs/PROFILE.md` or `docs/CONTRIBUTING.md` entry describing how contributors should reference the playbook when proposing roadmap changes.
 2. Add a simple GitHub issue template for `roadmap initiative` requests.
 3. Keep `docs/MARKETING_COMPETITIVE_AND_TRENDS_GUIDE.md` and `docs/PLAYBOOK_ALIGNMENT.md` in sync with quarterly roadmap updates.
+4. Add a `roadmap initiative` issue template to make it easy for contributors to propose aligned work.
 
 ---
 

@@ -336,11 +336,11 @@ npx playwright test generated_tests/playwright --project=chromium --update-snaps
 
 **Playwright — Learning from Failures (Phase 5)**
 
-After running Playwright with `--reporter=json`, you can import failure data into Norma and persist it for future test generation.
+After running a supported test runner with a JSON or JUnit report, you can import failure data into Norma and persist it for future test generation.
 
 ```bash
-npx playwright test generated_tests/playwright --project=chromium --reporter=json > playwright-report.json
-python -m antinode_norma.cli learn --report-file playwright-report.json --show-recent --show-suggestions
+npx playwright test generated_tests/playwright --project=chromium --reporter=json > test-report.json
+python -m antinode_norma.cli learn --report-file test-report.json --show-recent --show-suggestions
 ```
 
 This stores failure patterns in a local SQLite database and provides the generator with negative examples to avoid flakier step mappings. The `--show-suggestions` flag also prints healing recommendations for selectors and step mappings derived from the learned failures.

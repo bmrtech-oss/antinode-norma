@@ -42,6 +42,12 @@ jobs:
         run: |
           black --check antinode_norma/ tests/
 
+      - name: Run pre-commit hooks
+        if: matrix.python-version == '3.12'
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files
+
       - name: Run unit tests (no integration)
         run: |
           pytest -m "not integration" --cov=antinode_norma --cov-report=xml --cov-report=term

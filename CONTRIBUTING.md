@@ -22,7 +22,10 @@ If you're stuck on a technical issue, please open a [GitHub Issue](https://githu
 - **Improve the INVEST quality checks** – Enhance `quality.py` with better heuristics or new criteria.
 - **Add a new connector** – Contribute connectors for Azure Boards, GitHub Issues, Trello, etc., by implementing the connector pattern.
 - **Improve documentation** – Clarify usage, add examples, or translate guides.
-- **Report outdated information** – Open an issue.- Use the issue templates in `.github/ISSUE_TEMPLATE/` for bugs and feature requests.
+- **Report outdated information** – Open an issue.
+- **Suggest roadmap initiatives** – Use the `roadmap initiative` template to propose phased community contributions or product improvements.
+
+Use the issue templates in `.github/ISSUE_TEMPLATE/` for bugs, feature requests, and roadmap initiatives.
 ---
 
 ## Development Workflow
@@ -53,6 +56,11 @@ If you're stuck on a technical issue, please open a [GitHub Issue](https://githu
 - **Formatting** – Use `black` for consistent formatting:
   ```bash
   black antinode_norma/ tests/
+  ```
+- **Pre-commit** – Run hooks before committing code:
+  ```bash
+  pre-commit install
+  pre-commit run --all-files
   ```
 - **Linting** – Run `flake8` and `mypy` to catch issues.
 - **Type hints** – Use type annotations for all function signatures.
