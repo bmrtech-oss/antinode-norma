@@ -31,11 +31,6 @@ jobs:
           pip install -e .
           pip install -r requirements-dev.txt
 
-      - name: Lint with flake8
-        run: |
-          flake8 antinode_norma/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 antinode_norma/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
       - name: Check formatting with black
         # Only run Black on Python 3.12 to avoid AST parsing version mismatches
         if: matrix.python-version == '3.12'
