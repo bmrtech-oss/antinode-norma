@@ -4,7 +4,7 @@ Playwright (TypeScript) code generator.
 
 import re
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 from ..models.test_model import TestSuite, TestStep, ActionType
 from .base import Emitter
 from ..utils.file_utils import ensure_directory, write_file
@@ -245,83 +245,54 @@ class PlaywrightEmitter(Emitter):
         if use_sd:
             if action == ActionType.NAVIGATE:
                 return (
-                    f"{helper_prefix}await steps.navigateTo(page, '{
-                        self._escape_string(
-                            value or '')}');" +
-                    self._render_visual_assertion(
-                        action,
-                        step))
+                    f"{helper_prefix}await steps.navigateTo(page, '{self._escape_string(value or '')}');"
+                    + self._render_visual_assertion(action, step)
+                )
             elif action == ActionType.CLICK:
-                selector = helper_target or f"'{
-                    self._escape_string(
-                        target or '')}'"
+                selector = helper_target or f"'{self._escape_string(target or '')}'"
                 return (
-                    f"{helper_prefix}await steps.clickElement(page, {selector});" +
-                    self._render_visual_assertion(
-                        action,
-                        step))
+                    f"{helper_prefix}await steps.clickElement(page, {selector});"
+                    + self._render_visual_assertion(action, step)
+                )
             elif action == ActionType.FILL:
-                selector = helper_target or f"'{
-                    self._escape_string(
-                        target or '')}'"
+                selector = helper_target or f"'{self._escape_string(target or '')}'"
                 return (
-                    f"{helper_prefix}await steps.fillField(page, {selector}, '{
-                        self._escape_string(
-                            value or '')}');" +
-                    self._render_visual_assertion(
-                        action,
-                        step))
+                    f"{helper_prefix}await steps.fillField(page, {selector}, '{self._escape_string(value or '')}');"
+                    + self._render_visual_assertion(action, step)
+                )
             elif action == ActionType.ASSERT_TEXT:
-                return f"await steps.assertText(page, '{
-                    self._escape_string(
-                        value or '')}');"
+                return f"await steps.assertText(page, '{self._escape_string(value or '')}');"
             elif action == ActionType.CHECK:
-                selector = helper_target or f"'{
-                    self._escape_string(
-                        target or '')}'"
+                selector = helper_target or f"'{self._escape_string(target or '')}'"
                 return (
-                    f"{helper_prefix}await steps.checkElement(page, {selector});" +
-                    self._render_visual_assertion(
-                        action,
-                        step))
+                    f"{helper_prefix}await steps.checkElement(page, {selector});"
+                    + self._render_visual_assertion(action, step)
+                )
             elif action == ActionType.UNCHECK:
-                selector = helper_target or f"'{
-                    self._escape_string(
-                        target or '')}'"
+                selector = helper_target or f"'{self._escape_string(target or '')}'"
                 return (
-                    f"{helper_prefix}await steps.uncheckElement(page, {selector});" +
-                    self._render_visual_assertion(
-                        action,
-                        step))
+                    f"{helper_prefix}await steps.uncheckElement(page, {selector});"
+                    + self._render_visual_assertion(action, step)
+                )
             elif action == ActionType.SELECT:
-                selector = helper_target or f"'{
-                    self._escape_string(
-                        target or '')}'"
+                selector = helper_target or f"'{self._escape_string(target or '')}'"
                 return (
-                    f"{helper_prefix}await steps.selectOption(page, {selector}, '{
-                        self._escape_string(
-                            value or '')}');" +
-                    self._render_visual_assertion(
-                        action,
-                        step))
+                    f"{helper_prefix}await steps.selectOption(page, {selector}, '{self._escape_string(value or '')}');"
+                    + self._render_visual_assertion(action, step)
+                )
             elif action == ActionType.SCREENSHOT:
-                return f"{helper_prefix}await steps.assertScreenshot(page, '{
-                    self.quality.visual_snapshot_dir}/{
-                    self._safe_filename(
-                        step.description or 'screenshot')}.png');"
+                screenshot_path = (
+                    f"{self.quality.visual_snapshot_dir}/"
+                    f"{self._safe_filename(step.description or 'screenshot')}.png"
+                )
+                return f"{helper_prefix}await steps.assertScreenshot(page, '{screenshot_path}');"
             elif action in {ActionType.ASSERT_VISIBLE, ActionType.ASSERT_HIDDEN}:
-                selector = helper_target or f"'{
-                    self._escape_string(
-                        target or '')}'"
+                selector = helper_target or f"'{self._escape_string(target or '')}'"
                 method = "assertVisible" if action == ActionType.ASSERT_VISIBLE else "assertHidden"
                 return f"{helper_prefix}await steps.{method}(page, {selector});"
             elif action == ActionType.ASSERT_VALUE:
-                selector = helper_target or f"'{
-                    self._escape_string(
-                        target or '')}'"
-                return f"{helper_prefix}await steps.assertValue(page, {selector}, '{
-                    self._escape_string(
-                        value or '')}');"
+                selector = helper_target or f"'{self._escape_string(target or '')}'"
+                return f"{helper_prefix}await steps.assertValue(page, {selector}, '{self._escape_string(value or '')}');"
         # Fallback to inline code
         code = self._inline_translate(
             step, helper_prefix=helper_prefix, helper_target=helper_target
@@ -407,18 +378,13 @@ class PlaywrightEmitter(Emitter):
         elif action == ActionType.FILL:
             if self.quality.add_explicit_waits:
                 return (
-                    f"{helper_prefix}const locator = page.locator({target_expr});\n" f"    await locator.waitFor({
-                        state: 'visible', timeout: {
-                            self.quality.wait_timeout} } );\n" f"    await locator.fill('{
-                        self._escape_string(
-                            value or '')}');")
-            return f"{helper_prefix}await page.locator({target_expr}).fill('{
-                self._escape_string(
-                    value or '')}');"
+                    f"{helper_prefix}const locator = page.locator({target_expr});\n"
+                    f"    await locator.waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
+                    f"    await locator.fill('{self._escape_string(value or '')}');"
+                )
+            return f"{helper_prefix}await page.locator({target_expr}).fill('{self._escape_string(value or '')}');"
         elif action == ActionType.ASSERT_TEXT:
-            return f"{helper_prefix}await expect(page.locator('body')).toContainText('{
-                self._escape_string(
-                    value or '')}');"
+            return f"{helper_prefix}await expect(page.locator('body')).toContainText('{self._escape_string(value or '')}');"
         elif action == ActionType.CHECK:
             if self.quality.add_explicit_waits:
                 return (
@@ -438,14 +404,11 @@ class PlaywrightEmitter(Emitter):
         elif action == ActionType.SELECT:
             if self.quality.add_explicit_waits:
                 return (
-                    f"{helper_prefix}const locator = page.locator({target_expr});\n" f"    await locator.waitFor({
-                        state: 'visible', timeout: {
-                            self.quality.wait_timeout} } );\n" f"    await locator.selectOption('{
-                        self._escape_string(
-                            value or '')}');")
-            return f"{helper_prefix}await page.locator({target_expr}).selectOption('{
-                self._escape_string(
-                    value or '')}');"
+                    f"{helper_prefix}const locator = page.locator({target_expr});\n"
+                    f"    await locator.waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
+                    f"    await locator.selectOption('{self._escape_string(value or '')}');"
+                )
+            return f"{helper_prefix}await page.locator({target_expr}).selectOption('{self._escape_string(value or '')}');"
         elif action == ActionType.ASSERT_VISIBLE:
             if self.quality.add_explicit_waits:
                 return (
@@ -459,14 +422,11 @@ class PlaywrightEmitter(Emitter):
         elif action == ActionType.ASSERT_VALUE:
             if self.quality.add_explicit_waits:
                 return (
-                    f"{helper_prefix}const locator = page.locator({target_expr});\n" f"    await locator.waitFor({
-                        state: 'visible', timeout: {
-                            self.quality.wait_timeout} } );\n" f"    await expect(locator).toHaveValue('{
-                        self._escape_string(
-                            value or '')}');")
-            return f"{helper_prefix}await expect(page.locator({target_expr})).toHaveValue('{
-                self._escape_string(
-                    value or '')}');"
+                    f"{helper_prefix}const locator = page.locator({target_expr});\n"
+                    f"    await locator.waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
+                    f"    await expect(locator).toHaveValue('{self._escape_string(value or '')}');"
+                )
+            return f"{helper_prefix}await expect(page.locator({target_expr})).toHaveValue('{self._escape_string(value or '')}');"
         else:
             return (
                 f"{helper_prefix}// UNKNOWN ACTION: {self._escape_string(step.description or '')}"

@@ -98,8 +98,7 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
                 score = result.get("quality_score", 0)
                 score_color = "green" if score >= 0.8 else "yellow" if score >= 0.6 else "red"
                 click.echo(
-                    f"Quality score: [{score_color}]{
-                        score:.1%}[/{score_color}]")
+                    f"Quality score: [{score_color}]{score:.1%}[/{score_color}]")
                 click.echo(f"Passes INVEST: {result['passes_invest']}")
 
                 if result.get("issues"):

@@ -326,8 +326,7 @@ async def map_step_with_llm(
             mapping = _parse_llm_output(raw_output)
         except Exception as retry_exc:
             raise ValueError(
-                f"LLM mapping failed for step '{step_text}'. Raw output: {
-                    raw_output!r}. Error: {retry_exc}") from retry_exc
+                f"LLM mapping failed for step '{step_text}'. Raw output: {raw_output!r}. Error: {retry_exc}") from retry_exc
 
     if not isinstance(mapping, dict):
         raise ValueError("LLM response must be a JSON object")

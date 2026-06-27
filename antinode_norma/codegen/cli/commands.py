@@ -134,16 +134,13 @@ def generate(
 
     if cfg.quality.use_page_objects:
         click.echo(
-            f"   📄 Page Objects generated in {
-                cfg.quality.page_object_dir}/")
+            f"   📄 Page Objects generated in {cfg.quality.page_object_dir}/")
     if cfg.quality.generate_step_defs:
         click.echo(
-            f"   📄 Step Definitions generated in {
-                cfg.quality.step_def_dir}/")
+            f"   📄 Step Definitions generated in {cfg.quality.step_def_dir}/")
     if cfg.quality.enable_visual_testing:
         click.echo(
-            f"   🖼️ Visual snapshots in {
-                cfg.quality.visual_snapshot_dir}/")
+            f"   🖼️ Visual snapshots in {cfg.quality.visual_snapshot_dir}/")
 
 
 @cli.command()

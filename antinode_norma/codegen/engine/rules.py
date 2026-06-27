@@ -64,8 +64,7 @@ class RuleEngine:
         self.add_rule(
             r"^(?:When |And )?I click the \"(?P<text>[^\"]*)\" (?:link|button)",
             ActionType.CLICK,
-            lambda m: f"text={
-                m.group('text')}",
+            lambda m: f"text={m.group('text')}",
             lambda m: None,
             lambda m: {},
         )
