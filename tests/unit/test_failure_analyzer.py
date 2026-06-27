@@ -144,6 +144,7 @@ def test_get_failure_suggestions_for_step_returns_fix_recommendations(tmp_path):
     assert len(suggestions) == 1
     assert "Consider using a more robust selector" in suggestions[0]
 
+
 def test_store_cypress_failures_extracts_selector_and_traceback(tmp_path):
     report_path = tmp_path / "cypress-report.json"
     spec_path = tmp_path / "generated_tests" / "cypress" / "login.cy.js"
@@ -199,7 +200,9 @@ def test_store_pytest_json_report_extracts_selector(tmp_path):
                     {
                         "nodeid": str(spec_path) + "::test_login",
                         "outcome": "failed",
-                        "longrepr": "Traceback (most recent call last):\n  File \"{}\", line 2, in test_login\n    assert False, 'NoSuchElementException: selector = \"#password\"'\nAssertionError: NoSuchElementException: selector = \"#password\"".format(str(spec_path)),
+                        "longrepr": 'Traceback (most recent call last):\n  File "{}", line 2, in test_login\n    assert False, \'NoSuchElementException: selector = "#password"\'\nAssertionError: NoSuchElementException: selector = "#password"'.format(
+                            str(spec_path)
+                        ),
                     }
                 ]
             }

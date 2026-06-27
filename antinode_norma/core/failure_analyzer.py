@@ -165,7 +165,9 @@ def _detect_report_type(data: Any, raw_text: str) -> str:
             return "playwright"
         if any(test.get("err") is not None for test in _recursively_collect_tests(data)):
             return "cypress"
-        if isinstance(data.get("tests"), list) and any("outcome" in test for test in data.get("tests", [])):
+        if isinstance(data.get("tests"), list) and any(
+            "outcome" in test for test in data.get("tests", [])
+        ):
             return "pytest-json"
 
     raise ValueError("Unable to detect report format from the provided file.")
@@ -251,7 +253,9 @@ def _parse_pytest_json_report_data(data: Dict[str, Any]) -> List[FailureEvent]:
     for test in data.get("tests", []):
         if test.get("outcome") != "failed":
             continue
-        error_message = _extract_error_message(test.get("longrepr") or test.get("longreprrepr") or "")
+        error_message = _extract_error_message(
+            test.get("longrepr") or test.get("longreprrepr") or ""
+        )
         file_path = None
         line = None
         if isinstance(test.get("location"), list) and len(test["location"]) >= 2:
@@ -285,7 +289,9 @@ def _parse_pytest_junit_report_text(raw_text: str) -> List[FailureEvent]:
         failure_element = testcase.find("failure") or testcase.find("error")
         if failure_element is None:
             continue
-        error_message = (failure_element.text or "").strip() or failure_element.attrib.get("message", "")
+        error_message = (failure_element.text or "").strip() or failure_element.attrib.get(
+            "message", ""
+        )
         file_path = testcase.attrib.get("file")
         line = _parse_int(testcase.attrib.get("line"))
         if not file_path or not line:
@@ -299,7 +305,9 @@ def _parse_pytest_junit_report_text(raw_text: str) -> List[FailureEvent]:
         failures.append(
             FailureEvent(
                 step_text=step_text,
-                test_title=testcase.attrib.get("name") or testcase.attrib.get("classname") or "<unknown>",
+                test_title=testcase.attrib.get("name")
+                or testcase.attrib.get("classname")
+                or "<unknown>",
                 file_path=file_path,
                 line=line,
                 selector=selector,
