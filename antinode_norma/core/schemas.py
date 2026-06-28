@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field, validator
 from typing import List, Optional
-from enum import Enum
 
 
 class UserStory(BaseModel):

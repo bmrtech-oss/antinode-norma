@@ -4,10 +4,26 @@ import subprocess
 import sys
 from pathlib import Path
 import pytest
-from tests.conftest import has_openrouter_key
 
 
-@pytest.mark.skipif(not has_openrouter_key(), reason="OPENROUTER_API_KEY not set")
+def _skip_on_transient_cli_failure(result):
+    stderr = result.stderr.lower() if result.stderr else ""
+    transient_markers = [
+        "rate limit",
+        "rate_limit",
+        "service unavailable",
+        "timeout",
+        "connection error",
+        "network error",
+        "temporarily unavailable",
+    ]
+    if any(marker in stderr for marker in transient_markers):
+        pytest.skip(
+            f"Skipped due to transient LLM provider issue: {result.stderr.strip()}"
+        )
+
+
+@pytest.mark.external_integration
 def test_cli_generate(sample_story_pass, tmp_features):
     """Test that the CLI generates a feature file."""
     cmd = [
@@ -20,6 +36,8 @@ def test_cli_generate(sample_story_pass, tmp_features):
         str(tmp_features),
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    if result.returncode != 0:
+        _skip_on_transient_cli_failure(result)
     assert result.returncode == 0, f"CLI failed: {result.stderr}"
     assert "Feature file written" in result.stdout
 
@@ -35,7 +53,7 @@ def test_cli_generate(sample_story_pass, tmp_features):
         pytest.fail("No feature file path found in output")
 
 
-@pytest.mark.skipif(not has_openrouter_key(), reason="OPENROUTER_API_KEY not set")
+@pytest.mark.external_integration
 def test_cli_quality_only(sample_story_pass):
     cmd = [
         sys.executable,
@@ -46,6 +64,8 @@ def test_cli_quality_only(sample_story_pass):
         sample_story_pass,
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    if result.returncode != 0:
+        _skip_on_transient_cli_failure(result)
     assert result.returncode == 0
     assert "Quality score:" in result.stdout
     assert "Passes INVEST: True" in result.stdout

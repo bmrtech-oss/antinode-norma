@@ -5,11 +5,10 @@ Command‑line interface for the code generation module.
 
 import click
 from pathlib import Path
-from typing import Optional, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ..engine.orchestrator import Orchestrator
-from ..config import load_config, get_config, set_config
+from ..config import load_config, set_config
 from ..parsers.gherkin_parser import GherkinParser
 
 
@@ -29,9 +28,14 @@ def cli():
     type=click.Path(exists=True, dir_okay=False),
     help="Path to one or more .feature files. Repeat this flag for multiple files.",
 )
-@click.option("--output", "-o", type=click.Path(), help="Output directory (overrides config).")
 @click.option(
-    "--framework", "-fw", default=None, help="Target framework: playwright, cypress, or selenium."
+    "--output", "-o", type=click.Path(), help="Output directory (overrides config)."
+)
+@click.option(
+    "--framework",
+    "-fw",
+    default=None,
+    help="Target framework: playwright, cypress, or selenium.",
 )
 @click.option(
     "--config-file",
@@ -40,9 +44,15 @@ def cli():
     help="Optional YAML configuration file.",
 )
 @click.option("--use-page-objects", is_flag=True, help="Generate Page Object classes.")
-@click.option("--generate-step-defs", is_flag=True, help="Generate reusable step definitions.")
-@click.option("--enable-visual-testing", is_flag=True, help="Include visual snapshot assertions.")
-@click.option("--visual-snapshot-dir", type=click.Path(), help="Directory for baseline snapshots.")
+@click.option(
+    "--generate-step-defs", is_flag=True, help="Generate reusable step definitions."
+)
+@click.option(
+    "--enable-visual-testing", is_flag=True, help="Include visual snapshot assertions."
+)
+@click.option(
+    "--visual-snapshot-dir", type=click.Path(), help="Directory for baseline snapshots."
+)
 @click.option(
     "--workers",
     default=1,
@@ -93,7 +103,9 @@ def generate(
     def process_feature(feature_path: Path) -> str:
         orch = Orchestrator()
         orch.generate(
-            feature_path=feature_path, output_dir=output_dir_path, framework=framework_name
+            feature_path=feature_path,
+            output_dir=output_dir_path,
+            framework=framework_name,
         )
         return str(feature_path)
 
@@ -103,7 +115,9 @@ def generate(
     if len(feature_paths) > 1 or workers > 1:
         workers = min(workers, len(feature_paths))
         with ThreadPoolExecutor(max_workers=workers) as executor:
-            futures = {executor.submit(process_feature, path): path for path in feature_paths}
+            futures = {
+                executor.submit(process_feature, path): path for path in feature_paths
+            }
             for future in as_completed(futures):
                 path = futures[future]
                 try:
@@ -116,7 +130,9 @@ def generate(
         try:
             generated = process_feature(feature_paths[0])
             results.append(generated)
-            click.echo(f"✅ Tests generated successfully for '{generated}' → {output_dir_path}")
+            click.echo(
+                f"✅ Tests generated successfully for '{generated}' → {output_dir_path}"
+            )
         except Exception as e:
             click.echo(f"❌ Error generating tests: {e}", err=True)
             raise click.Abort()
@@ -182,7 +198,9 @@ def validate(feature, check_invest, verbose):
             # Testable – check if each step has a clear action (we already have actions)
             # Small – if there are too many criteria in one scenario?
             if len(case.steps) > 10:
-                warnings.append(f"Scenario '{case.name}' is quite long ({len(case.steps)} steps).")
+                warnings.append(
+                    f"Scenario '{case.name}' is quite long ({len(case.steps)} steps)."
+                )
 
     # Print results
     click.echo(f"\n📋 Validating: {feature}")

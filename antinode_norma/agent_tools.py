@@ -1,8 +1,7 @@
 import os
-import json
 import subprocess
 import asyncio
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 from pathlib import Path
 from .runner import run_agent_from_raw
 from .utils.file_writer import write_feature_file
@@ -41,11 +40,19 @@ except ImportError:
 
 # TestRail connector (optional)
 try:
-    from .connectors.testrail_connector import add_test_case, add_test_result, create_test_run
+    from .connectors.testrail_connector import (
+        add_test_case,
+        add_test_result,
+        create_test_run,
+    )
 except ImportError:
 
     def add_test_case(
-        section_id: int, title: str, description: str = "", case_type: int = 1, priority_id: int = 2
+        section_id: int,
+        title: str,
+        description: str = "",
+        case_type: int = 1,
+        priority_id: int = 2,
     ):
         return {"error": "TestRail connector not installed"}
 
@@ -77,7 +84,7 @@ except ImportError:
 
 # Git operations (if gitpython installed)
 try:
-    from git import Repo, Remote
+    from git import Repo
 
     def create_pull_request(
         pr_title: str, pr_body: str, base: str = "main", head: str = None
@@ -85,7 +92,7 @@ try:
         repo = Repo(os.getcwd())
         if not head:
             head = repo.active_branch.name
-        return {"pr_url": f"https://github.com/example/pr/1", "status": "created"}
+        return {"pr_url": "https://github.com/example/pr/1", "status": "created"}
 
 except ImportError:
 
@@ -119,10 +126,15 @@ def submit_story(**kwargs) -> Dict:
     """Submit a user story and return quality report."""
     # Try common parameter names
     text = (
-        kwargs.get("raw_text") or kwargs.get("story") or kwargs.get("title") or kwargs.get("text")
+        kwargs.get("raw_text")
+        or kwargs.get("story")
+        or kwargs.get("title")
+        or kwargs.get("text")
     )
     if not text:
-        return {"error": "No story text provided. Provide 'raw_text', 'story', or 'title'."}
+        return {
+            "error": "No story text provided. Provide 'raw_text', 'story', or 'title'."
+        }
 
     try:
         result = asyncio.run(run_agent_from_raw(text, quality_only=True))
@@ -189,7 +201,8 @@ def _load_story_from_kwargs(kwargs: Dict[str, Any]) -> UserStory:
     if isinstance(story_input, str) and story_input.strip():
         llm_config = {
             "provider": os.getenv("LLM_PROVIDER", "openrouter"),
-            "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY"),
+            "api_key": os.getenv("OPENROUTER_API_KEY")
+            or os.getenv("ANTHROPIC_API_KEY"),
         }
         llm = create_llm_callable(llm_config)
         return parse_story(story_input, llm)
@@ -217,7 +230,10 @@ def generate_feature(**kwargs) -> Dict:
 
     validation = validate_gherkin(gherkin)
     if not validation.valid:
-        return {"error": "Generated Gherkin failed validation.", "errors": validation.errors}
+        return {
+            "error": "Generated Gherkin failed validation.",
+            "errors": validation.errors,
+        }
 
     try:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -243,7 +259,11 @@ def run_tests(**kwargs) -> Dict:
         result = subprocess.run(
             ["behave", feature_path], capture_output=True, text=True, cwd=os.getcwd()
         )
-        return {"passed": result.returncode == 0, "stdout": result.stdout, "stderr": result.stderr}
+        return {
+            "passed": result.returncode == 0,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+        }
     except FileNotFoundError:
         return {"passed": False, "error": "behave not found"}
     except Exception as e:
@@ -261,7 +281,8 @@ def fix_feature(**kwargs) -> Dict:
             content = f.read()
         llm_config = {
             "provider": os.getenv("LLM_PROVIDER", "openrouter"),
-            "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY"),
+            "api_key": os.getenv("OPENROUTER_API_KEY")
+            or os.getenv("ANTHROPIC_API_KEY"),
         }
         llm = create_llm_callable(llm_config)
         prompt = f"""Fix the following Gherkin feature file so it passes validation.

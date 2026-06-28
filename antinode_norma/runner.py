@@ -1,11 +1,9 @@
 import os
-import asyncio
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from .core.schemas import UserStory, QualityReport
 from .core.quality import compute_quality
 from .core.parser import parse_story
 from .core.gherkin_generator import generate_gherkin
@@ -43,7 +41,9 @@ def get_step_definitions(keyword: str = None):
     return steps
 
 
-async def run_agent_from_raw(raw_story: str, quality_only: bool = False) -> Dict[str, Any]:
+async def run_agent_from_raw(
+    raw_story: str, quality_only: bool = False
+) -> Dict[str, Any]:
     """Run the Norma agent from raw story text."""
     # Parse
     llm_call = get_llm_callable()

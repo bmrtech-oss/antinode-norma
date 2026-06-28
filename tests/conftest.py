@@ -2,7 +2,6 @@
 
 import os
 import pytest
-from pathlib import Path
 from dotenv import load_dotenv
 from antinode_norma.core.schemas import UserStory
 
@@ -85,10 +84,45 @@ def has_openrouter_key() -> bool:
     return bool(os.getenv("OPENROUTER_API_KEY"))
 
 
+def has_llm_key() -> bool:
+    return bool(
+        os.getenv("OPENROUTER_API_KEY")
+        or os.getenv("OPENAI_API_KEY")
+        or os.getenv("ANTHROPIC_API_KEY")
+    )
+
+
 def has_jira_creds() -> bool:
     return bool(os.getenv("JIRA_SERVER") and os.getenv("JIRA_TOKEN"))
 
 
-pytest.mark.integration = pytest.mark.skipif(
-    not has_openrouter_key(), reason="OPENROUTER_API_KEY not set"
+def maybe_skip_transient_llm_error(exc: Exception) -> None:
+    message = str(exc).lower()
+    transient_markers = [
+        "rate limit",
+        "rate_limit",
+        "service unavailable",
+        "429",
+        "503",
+        "timeout",
+        "connection error",
+        "network error",
+        "temporarily unavailable",
+    ]
+    if any(marker in message for marker in transient_markers):
+        pytest.skip(f"Skipped due to transient LLM provider issue: {exc}")
+    if exc.__class__.__name__ in (
+        "RateLimitError",
+        "RateLimitExceededError",
+        "APIConnectionError",
+        "Timeout",
+        "ServiceUnavailableError",
+        "OpenAIError",
+        "OpenAIAPIError",
+    ):
+        pytest.skip(f"Skipped due to transient LLM provider issue: {exc}")
+
+
+pytest.mark.external_integration = pytest.mark.skipif(
+    not has_llm_key(), reason="LLM API key not set"
 )

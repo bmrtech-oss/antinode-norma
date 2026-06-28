@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 
 from .base import Emitter
-from ..models.test_model import TestSuite, TestCase, TestStep, ActionType
+from ..models.test_model import TestSuite, TestStep, ActionType
 from ..utils.file_utils import ensure_directory, write_file
 
 
@@ -51,7 +51,7 @@ class CypressEmitter(Emitter):
         elif action == ActionType.ASSERT_HIDDEN:
             return f"cy.get('{target}').should('not.be.visible');"
         elif action == ActionType.WAIT:
-            return f"cy.wait({int(value)*1000});"
+            return f"cy.wait({int(value) * 1000});"
         elif action == ActionType.CHECK:
             return f"cy.get('{target}').check();"
         elif action == ActionType.UNCHECK:

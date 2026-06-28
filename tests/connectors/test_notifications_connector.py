@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import Mock, patch
 
-from antinode_norma.connectors.notifications import post_slack_message, post_teams_message
+from antinode_norma.connectors.notifications import (
+    post_slack_message,
+    post_teams_message,
+)
 
 
 @patch("antinode_norma.connectors.notifications.requests.post")
@@ -12,7 +14,9 @@ def test_post_slack_message_sends_payload(MockPost):
     mock_response.raise_for_status.return_value = None
     MockPost.return_value = mock_response
 
-    result = post_slack_message("https://hooks.slack.com/services/T/123/abc", "Hello world")
+    result = post_slack_message(
+        "https://hooks.slack.com/services/T/123/abc", "Hello world"
+    )
 
     MockPost.assert_called_once()
     assert result["status"] == "sent"

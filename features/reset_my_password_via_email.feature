@@ -1,32 +1,26 @@
-Feature: Password reset via email
+# Feature: Password reset via email for registered users
+# This feature covers requesting a reset link, using a valid token, handling an invalid token,
+# and ensuring the reset link expires after 30 minutes.
 
-  As a registered user
-  I want to reset my password using a link sent to my email
-  So that I can regain access to my account
+Feature: Password reset
 
-  @smoke
-  Scenario: Successful password reset within token validity period
+  Scenario: Request password reset link
     Given the user is on the login page
     When the user clicks 'Forgot password'
     Then a password reset email is sent
+
+  Scenario: Reset password with a valid token
     Given a valid reset token exists
-    When the user clicks the password reset link
-    And the user submits a new password
+    When the user submits a new password
     Then the password is updated
 
-  Scenario: Attempt to reset password with an invalid token
-    Given the user is on the login page
-    When the user clicks 'Forgot password'
-    Then a password reset email is sent
-    Given an invalid reset token exists
-    When the user clicks the password reset link
-    Then the system should display an error message "Invalid or expired token"
+  Scenario: Show error for invalid token
+    Given the user has an invalid reset token
+    When the user attempts to reset the password
+    Then the system displays an invalid token error message
 
-  Scenario: Reset link expires after 30 minutes
-    Given the user is on the login page
-    When the user clicks 'Forgot password'
-    Then a password reset email is sent
+  Scenario: Expired reset link cannot be used
     Given a valid reset token exists
-    And the token is older than 30 minutes
-    When the user clicks the password reset link
-    Then the system should display an error message "Invalid or expired token"
+    And the reset token is older than 30 minutes
+    When the user attempts to reset the password
+    Then the system displays a token expired error message

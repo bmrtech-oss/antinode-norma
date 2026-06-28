@@ -1,10 +1,8 @@
 """Tests for Phase 6 CLI and UX improvements."""
 
-import pytest
 from click.testing import CliRunner
-from pathlib import Path
-from antinode_norma.cli import cli, generate, learn
-from unittest.mock import patch, MagicMock
+from antinode_norma.cli import cli
+from unittest.mock import patch
 
 
 class TestCLIOutput:
@@ -51,7 +49,9 @@ class TestCLIDryRun:
         }
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["generate", "As a user, I want to log in", "--dry-run"])
+        result = runner.invoke(
+            cli, ["generate", "As a user, I want to log in", "--dry-run"]
+        )
 
         assert result.exit_code == 0
         assert "Dry-run mode" in result.output
@@ -205,10 +205,16 @@ class TestCLIQualityOutput:
     @patch("antinode_norma.cli.run_agent_from_raw")
     def test_quality_check_shows_colored_score(self, mock_run):
         """Verify quality score output with color indicators."""
-        mock_run.return_value = {"quality_score": 0.85, "passes_invest": True, "issues": []}
+        mock_run.return_value = {
+            "quality_score": 0.85,
+            "passes_invest": True,
+            "issues": [],
+        }
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["generate", "As a user, I want to log in", "--quality-only"])
+        result = runner.invoke(
+            cli, ["generate", "As a user, I want to log in", "--quality-only"]
+        )
 
         assert result.exit_code == 0
         assert "0.9" in result.output or "85" in result.output

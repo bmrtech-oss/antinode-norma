@@ -16,21 +16,23 @@ unit_tests:
     - python -m pip install --upgrade pip
     - pip install -e .
     - pip install -r requirements-dev.txt
+    - python -m ruff check . --select F401
     - pytest -m "not integration"
 
 integration_tests:
   image: python:3.12
   stage: integration
-  only:
-    - main
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: on_success
+    - when: manual
   script:
     - python -m pip install --upgrade pip
     - pip install -e .
     - pip install -r requirements-dev.txt
-    - pytest -m integration
+    - pytest -m "integration or external_integration"
   variables:
     TESTRAIL_URL: "$TESTRAIL_URL"
     TESTRAIL_USER: "$TESTRAIL_USER"
     TESTRAIL_TOKEN: "$TESTRAIL_TOKEN"
     OPENROUTER_API_KEY: "$OPENROUTER_API_KEY"
-  when: on_success

@@ -4,6 +4,7 @@ from antinode_norma.agent import BDDAgent
 from antinode_norma.agent_tools import AGENT_TOOLS
 
 
+@pytest.mark.integration
 @pytest.mark.asyncio
 async def test_agent_simple_goal():
     # Mock the LLM to return a specific action

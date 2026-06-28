@@ -5,7 +5,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from ...utils.llm_factory import create_llm_callable
 
@@ -34,7 +34,9 @@ def _load_cache() -> None:
 
 def _persist_cache() -> None:
     try:
-        data = {"entries": [{"key": key, "selector": _CACHE[key]} for key in _CACHE_ORDER]}
+        data = {
+            "entries": [{"key": key, "selector": _CACHE[key]} for key in _CACHE_ORDER]
+        }
         _CACHE_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
     except Exception as exc:
         _LOGGER.debug("Unable to persist selector healing cache: %s", exc)
@@ -44,7 +46,9 @@ def _cache_key(old_selector: str, step_context: str) -> str:
     return f"{old_selector.strip()}|{step_context.strip()}"
 
 
-def _add_to_cache(key: str, selector: str, cache_size: int = _DEFAULT_CACHE_SIZE) -> None:
+def _add_to_cache(
+    key: str, selector: str, cache_size: int = _DEFAULT_CACHE_SIZE
+) -> None:
     if key in _CACHE_ORDER:
         _CACHE_ORDER.remove(key)
     _CACHE[key] = selector

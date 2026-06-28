@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-from typing import Any
 
 from mcp.server import Server, NotificationOptions
 from mcp.server.models import InitializationOptions
@@ -10,9 +9,6 @@ import mcp.types as types
 import mcp.server.stdio
 
 from antinode_norma.runner import run_agent_from_raw, run_bdd_agent
-from antinode_norma.core.quality import QualityReport
-from antinode_norma.core.parser import parse_story
-from antinode_norma.core.gherkin_generator import GherkinGenerator
 
 # Import codegen tools
 from .tools import (
@@ -37,7 +33,10 @@ async def list_tools() -> list[types.Tool]:
                 "type": "object",
                 "properties": {
                     "story": {"type": "string", "description": "The user story text"},
-                    "file_path": {"type": "string", "description": "Optional output file path"},
+                    "file_path": {
+                        "type": "string",
+                        "description": "Optional output file path",
+                    },
                 },
                 "required": ["story"],
             },
@@ -61,7 +60,10 @@ async def list_tools() -> list[types.Tool]:
                 "type": "object",
                 "properties": {
                     "story": {"type": "string", "description": "The user story text"},
-                    "file_path": {"type": "string", "description": "Optional output file path"},
+                    "file_path": {
+                        "type": "string",
+                        "description": "Optional output file path",
+                    },
                 },
                 "required": ["story"],
             },
@@ -85,13 +87,19 @@ async def list_tools() -> list[types.Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "feature_path": {"type": "string", "description": "Path to the .feature file"},
+                    "feature_path": {
+                        "type": "string",
+                        "description": "Path to the .feature file",
+                    },
                     "framework": {
                         "type": "string",
                         "enum": ["playwright", "cypress", "selenium"],
                         "default": "playwright",
                     },
-                    "output_dir": {"type": "string", "description": "Output directory (optional)"},
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Output directory (optional)",
+                    },
                     "use_page_objects": {"type": "boolean", "default": False},
                     "generate_step_defs": {"type": "boolean", "default": False},
                     "verbose": {"type": "boolean", "default": False},
@@ -105,13 +113,19 @@ async def list_tools() -> list[types.Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "feature_path": {"type": "string", "description": "Path to the .feature file"},
+                    "feature_path": {
+                        "type": "string",
+                        "description": "Path to the .feature file",
+                    },
                     "framework": {
                         "type": "string",
                         "enum": ["playwright", "cypress", "selenium"],
                         "default": "playwright",
                     },
-                    "output_dir": {"type": "string", "description": "Output directory (optional)"},
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Output directory (optional)",
+                    },
                 },
                 "required": ["feature_path"],
             },
@@ -122,13 +136,19 @@ async def list_tools() -> list[types.Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "feature_path": {"type": "string", "description": "Path to the .feature file"},
+                    "feature_path": {
+                        "type": "string",
+                        "description": "Path to the .feature file",
+                    },
                     "framework": {
                         "type": "string",
                         "enum": ["playwright", "cypress", "selenium"],
                         "default": "playwright",
                     },
-                    "output_dir": {"type": "string", "description": "Output directory (optional)"},
+                    "output_dir": {
+                        "type": "string",
+                        "description": "Output directory (optional)",
+                    },
                 },
                 "required": ["feature_path"],
             },
@@ -139,7 +159,10 @@ async def list_tools() -> list[types.Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "feature_path": {"type": "string", "description": "Path to the .feature file"},
+                    "feature_path": {
+                        "type": "string",
+                        "description": "Path to the .feature file",
+                    },
                     "check_invest": {"type": "boolean", "default": True},
                 },
                 "required": ["feature_path"],
@@ -162,7 +185,9 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
         story = arguments.get("story")
         issues = arguments.get("issues", [])
         # Implementation for improvement...
-        return [types.TextContent(type="text", text="Improvement suggestions generated.")]
+        return [
+            types.TextContent(type="text", text="Improvement suggestions generated.")
+        ]
 
     elif name == "generate_feature":
         story = arguments.get("story")

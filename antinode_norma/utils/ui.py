@@ -1,33 +1,45 @@
 """CLI UI utilities for color-coded output and progress tracking."""
 
+from contextlib import contextmanager
 from typing import Optional
 import click
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TimeRemainingColumn
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    BarColumn,
+    TextColumn,
+    TimeRemainingColumn,
+)
 from rich.panel import Panel
 from rich.table import Table
 
-console = Console()
+console = Console(emoji=False, color_system=None, force_terminal=False)
+SUPPORTS_UNICODE = console.encoding is not None and "UTF-8" in console.encoding.upper()
+CHECK_MARK = "✓" if SUPPORTS_UNICODE else "v"
+CROSS_MARK = "✗" if SUPPORTS_UNICODE else "x"
+WARNING_SIGN = "⚠" if SUPPORTS_UNICODE else "!"
+INFO_SIGN = "ℹ" if SUPPORTS_UNICODE else "i"
 
 
 def success_message(text: str) -> None:
     """Print a green success message."""
-    console.print(f"[green]✓[/green] {text}")
+    console.print(f"[green]{CHECK_MARK}[/green] {text}")
 
 
 def error_message(text: str) -> None:
     """Print a red error message."""
-    console.print(f"[red]✗[/red] {text}")
+    console.print(f"[red]{CROSS_MARK}[/red] {text}")
 
 
 def warning_message(text: str) -> None:
     """Print a yellow warning message."""
-    console.print(f"[yellow]⚠[/yellow] {text}")
+    console.print(f"[yellow]{WARNING_SIGN}[/yellow] {text}")
 
 
 def info_message(text: str) -> None:
     """Print a cyan info message."""
-    console.print(f"[cyan]ℹ[/cyan] {text}")
+    console.print(f"[cyan]{INFO_SIGN}[/cyan] {text}")
 
 
 def section_header(text: str) -> None:
@@ -54,11 +66,30 @@ def table_output(headers: list[str], rows: list[list[str]]) -> None:
     console.print(table)
 
 
+class DummyProgress:
+    def add_task(self, *args, **kwargs):
+        return None
+
+    def update(self, *args, **kwargs):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return False
+
+
+@contextmanager
 def progress_bar(
     description: str = "Processing",
     total: Optional[int] = None,
-) -> Progress:
+):
     """Create and return a progress bar context manager."""
+    if not console.is_terminal:
+        yield DummyProgress()
+        return
+
     progress = Progress(
         TextColumn("[cyan]{task.description}"),
         BarColumn(),
@@ -66,7 +97,8 @@ def progress_bar(
         TimeRemainingColumn() if total else SpinnerColumn(),
         console=console,
     )
-    return progress
+    with progress as p:
+        yield p
 
 
 def prompt_user_choice(
