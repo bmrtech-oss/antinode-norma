@@ -1,3 +1,4 @@
+import importlib
 import sys
 import types
 
@@ -19,8 +20,10 @@ sys.modules["behave"] = behave_module
 sys.modules["behave.parser"] = behave_parser
 sys.modules["behave.model"] = behave_model
 
-from antinode_norma.codegen.cli.commands import cli
-from antinode_norma.codegen.config import CodegenConfig
+cli_module = importlib.import_module("antinode_norma.codegen.cli.commands")
+cli = cli_module.cli
+config_module = importlib.import_module("antinode_norma.codegen.config")
+CodegenConfig = config_module.CodegenConfig
 
 
 class TestCodegenCLIParallelGeneration:

@@ -9,7 +9,9 @@ class CodeLinter:
     def __init__(self, tool: Optional[str] = None):
         self.tool = tool
 
-    def lint_files(self, file_paths: List[Path], fix: bool = False, verbose: bool = False) -> bool:
+    def lint_files(
+        self, file_paths: List[Path], fix: bool = False, verbose: bool = False
+    ) -> bool:
         """Run linter on the given files. Returns True if no issues found."""
         if not file_paths:
             return True

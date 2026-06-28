@@ -129,7 +129,9 @@ def _clean_config_dict(config_dict: dict) -> dict:
     return config_dict
 
 
-def load_config(config_file: Optional[Path] = None, auto_discover: bool = True) -> CodegenConfig:
+def load_config(
+    config_file: Optional[Path] = None, auto_discover: bool = True
+) -> CodegenConfig:
     """
     Load configuration from environment variables and optionally a YAML file.
     """
@@ -169,11 +171,11 @@ def load_config(config_file: Optional[Path] = None, auto_discover: bool = True) 
         if key.startswith(env_prefix):
             env_key = key[len(env_prefix) :].lower()
             if env_key.startswith("quality_"):
-                env_key = f"quality.{env_key[len('quality_'):]}"
+                env_key = f"quality.{env_key[len('quality_') :]}"
             elif env_key.startswith("parser_options_"):
-                env_key = f"parser_options.{env_key[len('parser_options_'):]}"
+                env_key = f"parser_options.{env_key[len('parser_options_') :]}"
             elif env_key.startswith("emitter_options_"):
-                env_key = f"emitter_options.{env_key[len('emitter_options_'):]}"
+                env_key = f"emitter_options.{env_key[len('emitter_options_') :]}"
             elif "__" in env_key:
                 env_key = env_key.replace("__", ".")
             _set_nested(config_dict, env_key, _parse_env_value(value))

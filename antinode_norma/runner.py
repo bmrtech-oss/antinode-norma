@@ -2,14 +2,14 @@ import os
 from typing import Dict, Any
 from dotenv import load_dotenv
 
-load_dotenv()
-
 from .core.quality import compute_quality
 from .core.parser import parse_story
 from .core.gherkin_generator import generate_gherkin
 from .core.validator import validate_gherkin
 from .utils.llm_factory import create_llm_callable
 from .utils.file_writer import write_feature_file
+
+load_dotenv()
 
 # Load LLM config once
 LLM_CONFIG = {

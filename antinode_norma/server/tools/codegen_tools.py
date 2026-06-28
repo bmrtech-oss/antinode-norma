@@ -56,7 +56,6 @@ async def handle_generate_tests(arguments: Dict[str, Any]) -> List[Dict[str, Any
     generate_step_defs = arguments.get("generate_step_defs", False)
     enable_visual_testing = arguments.get("enable_visual_testing", None)
     visual_snapshot_dir = arguments.get("visual_snapshot_dir", None)
-    verbose = arguments.get("verbose", False)
 
     # Validate required arguments
     if not feature_path:

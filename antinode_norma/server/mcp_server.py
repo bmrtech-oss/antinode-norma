@@ -183,7 +183,6 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
 
     elif name == "improve_story":
         story = arguments.get("story")
-        issues = arguments.get("issues", [])
         # Implementation for improvement...
         return [
             types.TextContent(type="text", text="Improvement suggestions generated.")

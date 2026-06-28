@@ -38,7 +38,8 @@ def test_jira_fetch_issues_uses_label_filter(MockJIRA):
     MockJIRA.return_value = mock_jira
 
     with patch.dict(
-        os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}
+        os.environ,
+        {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"},
     ):
         results = fetch_issues()
 
@@ -64,7 +65,8 @@ def test_jira_search_stories_returns_issue_list(MockJIRA):
     MockJIRA.return_value = mock_jira
 
     with patch.dict(
-        os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}
+        os.environ,
+        {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"},
     ):
         result = search_jira_stories()
 
@@ -84,7 +86,8 @@ def test_jira_fetch_issue_returns_issue_fields(MockJIRA):
     MockJIRA.return_value = mock_jira
 
     with patch.dict(
-        os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}
+        os.environ,
+        {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"},
     ):
         result = fetch_issue("JIRA-123")
 
@@ -108,7 +111,8 @@ def test_jira_comment_on_issue_posts_comment(MockJIRA):
     MockJIRA.return_value = mock_jira
 
     with patch.dict(
-        os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}
+        os.environ,
+        {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"},
     ):
         result = comment_on_issue("JIRA-123", "This is a test comment.")
 
@@ -131,7 +135,8 @@ def test_jira_transition_issue_applies_transition(MockJIRA):
     MockJIRA.return_value = mock_jira
 
     with patch.dict(
-        os.environ, {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"}
+        os.environ,
+        {"JIRA_SERVER": "https://example.atlassian.net", "JIRA_TOKEN": "token"},
     ):
         result = transition_issue("JIRA-123", "Done")
 

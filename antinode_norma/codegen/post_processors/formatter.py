@@ -40,7 +40,9 @@ class CodeFormatter:
         if ext in [".js", ".ts", ".tsx", ".jsx"]:
             # Check if prettier is available
             try:
-                subprocess.run(["prettier", "--version"], check=True, capture_output=True)
+                subprocess.run(
+                    ["prettier", "--version"], check=True, capture_output=True
+                )
                 return "prettier"
             except (subprocess.CalledProcessError, FileNotFoundError):
                 pass
