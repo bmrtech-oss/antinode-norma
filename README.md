@@ -231,6 +231,20 @@ anorm generate --interactive "My story..."
 
 If generation fails, the CLI can prompt you to retry with corrected story text.
 
+### CLI – Initialize project configuration
+
+```bash
+anorm init
+```
+
+Run the interactive wizard to create `norma.config.yml` in the current working directory. The command prompts for LLM provider, test framework, generated test output directory, page object and step definition settings, and formatter choices.
+
+To overwrite an existing config file, use:
+
+```bash
+anorm init --force
+```
+
 ### CLI – Parse a feature file
 
 ```bash

@@ -514,6 +514,68 @@ def serve(transport):
         sys.exit(1)
 
 
+@cli.command()
+@click.option("--force", is_flag=True, help="Overwrite existing config if present.")
+def init(force):
+    """Interactive wizard to create a norma.config.yml file in the current directory.
+
+    The wizard prompts for minimal project settings and writes a templated YAML file.
+    """
+    try:
+        from jinja2 import Template
+
+        # Gather answers
+        llm_provider = click.prompt(
+            "LLM provider",
+            type=click.Choice(["openrouter", "anthropic", "openai", "local"], case_sensitive=False),
+            default="openrouter",
+        )
+        api_var = "OPENROUTER_API_KEY" if llm_provider == "openrouter" else (
+            "ANTHROPIC_API_KEY" if llm_provider == "anthropic" else "OPENAI_API_KEY"
+        )
+        default_framework = click.prompt(
+            "Default test framework",
+            type=click.Choice(["playwright", "cypress", "selenium"], case_sensitive=False),
+            default="playwright",
+        )
+        output_dir = click.prompt("Output directory for generated tests", default="generated_tests")
+
+        use_page_objects = click.confirm("Generate Page Object classes by default?", default=True)
+        generate_step_defs = click.confirm("Generate reusable step definitions?", default=True)
+        run_formatter = click.confirm("Run formatter on generated code?", default=True)
+        formatter_tool = click.prompt(
+            "Formatter tool",
+            type=click.Choice(["prettier", "ruff", "none"], case_sensitive=False),
+            default=("prettier" if default_framework in ("playwright", "cypress") else "ruff"),
+        )
+
+        # Render template
+        tmpl_path = Path(__file__).parent / "templates" / "norma.config.yml.j2"
+        tmpl_text = tmpl_path.read_text(encoding="utf-8")
+        tmpl = Template(tmpl_text)
+        rendered = tmpl.render(
+            llm_provider=llm_provider,
+            api_key_env_var=api_var,
+            default_framework=default_framework,
+            output_dir=output_dir,
+            use_page_objects=str(use_page_objects).lower(),
+            generate_step_defs=str(generate_step_defs).lower(),
+            run_formatter=str(run_formatter).lower(),
+            formatter_tool=formatter_tool,
+        )
+
+        target = Path.cwd() / "norma.config.yml"
+        if target.exists() and not force:
+            click.echo(f"Config {target} already exists. Use --force to overwrite.")
+            return
+
+        target.write_text(rendered, encoding="utf-8")
+        success_message(f"Wrote configuration to {target}")
+    except Exception as e:
+        error_context(e, "Failed to create configuration file")
+        sys.exit(1)
+
+
 def main():
     cli()
 
