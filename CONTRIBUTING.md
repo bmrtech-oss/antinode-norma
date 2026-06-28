@@ -50,11 +50,11 @@ If you're stuck on a technical issue, please open a [GitHub Issue](https://githu
 ## Code Style & Quality
 
 - **Python** – Follow [PEP 8](https://peps.python.org/pep-0008/).
-- **Formatting** – Use `black` for consistent formatting:
+- **Formatting** – Use `ruff` for consistent formatting:
   ```bash
-  black antinode_norma/ tests/
+  python -m ruff format antinode_norma/ tests/
   ```
-- **Linting** – Run `flake8` and `mypy` to catch issues.
+- **Linting** – Run `ruff` and `mypy` to catch issues.
 - **Type hints** – Use type annotations for all function signatures.
 - **Docstrings** – Write clear docstrings for public functions and classes.
 

@@ -82,7 +82,7 @@ python -m antinode_norma.codegen.cli.commands generate -f features/reset_passwor
 - **Quality enhancements** – Page Objects, reusable step definitions, Scenario Outlines, and data-driven testing.
 - **AI-powered step mapping** – Natural language Gherkin is mapped to Playwright actions with optional LLM fallback to the RuleEngine.
 - **Configurable** – Control output quality via `codegen.yaml`, `.env`, or environment variables.
-- **Post‑processing** – Auto-format and lint generated code with Prettier, Black, ESLint, or flake8.
+- **Post‑processing** – Auto-format and lint generated code with Prettier, Ruff, or ESLint.
 - **Extensible** – Add support for new frameworks with a simple emitter interface.
 - **Rich Hickey-inspired design** – Data-driven pipeline with immutable models and pure functions.
 

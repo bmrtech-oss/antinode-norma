@@ -1,4 +1,4 @@
-"""Apply code formatting (e.g., Prettier, Black) to generated files."""
+"""Apply code formatting (e.g., Prettier, Ruff) to generated files."""
 
 import subprocess
 from pathlib import Path
@@ -48,16 +48,26 @@ class CodeFormatter:
                 pass
         elif ext == ".py":
             try:
-                subprocess.run(["black", "--version"], check=True, capture_output=True)
-                return "black"
+                subprocess.run(["ruff", "--version"], check=True, capture_output=True)
+                return "ruff"
             except (subprocess.CalledProcessError, FileNotFoundError):
                 pass
         return None
 
-    def _build_command(self, tool: str, files: List[Path]) -> List[str]:
+    def _build_command(
+        self, tool: str, files: List[Path], check: bool = False
+    ) -> List[str]:
         """Build the command line for the formatter."""
         if tool == "prettier":
-            return ["prettier", "--write"] + [str(f) for f in files]
-        elif tool == "black":
-            return ["black"] + [str(f) for f in files]
+            cmd = ["prettier", "--write"]
+            if check:
+                cmd = ["prettier", "--check"]
+            cmd.extend([str(f) for f in files])
+            return cmd
+        elif tool == "ruff":
+            cmd = ["ruff", "format"]
+            if check:
+                cmd = ["ruff", "check"]
+            cmd.extend([str(f) for f in files])
+            return cmd
         return []

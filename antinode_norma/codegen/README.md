@@ -65,8 +65,8 @@ flowchart LR
     end
 
     subgraph PostProc["🧹 Post‑Processing"]
-        H1[CodeFormatter<br/><code>prettier</code> / <code>black</code>]
-        H2[CodeLinter<br/><code>eslint</code> / <code>flake8</code>]
+        H1[CodeFormatter<br/><code>prettier</code> / <code>ruff</code>]
+        H2[CodeLinter<br/><code>eslint</code> / <code>ruff</code>]
     end
 
     subgraph Output["📁 Output"]
@@ -125,7 +125,7 @@ flowchart LR
 | **`engine/`** | `RuleEngine` – declarative mapping from Gherkin steps to actions. `Orchestrator` – pipeline coordinator. `QualityConfig` – settings for quality enhancements. |
 | **`emitters/`** | Framework‑specific emitters (`PlaywrightEmitter`, `CypressEmitter`, `SeleniumEmitter`), plus specialised emitters for Page Objects, Step Definitions, and Scenario Outlines. |
 | **`templates/`** | Jinja2 templates for advanced code customisation (optional). |
-| **`post_processors/`** | `CodeFormatter` and `CodeLinter` – run Prettier/Black and ESLint/flake8 on generated code. |
+| **`post_processors/`** | `CodeFormatter` and `CodeLinter` – run Prettier/Ruff and ESLint/Ruff on generated code. |
 | **`cli/`** | Click‑based CLI commands. |
 | **`utils/`** | File I/O, logging helpers. |
 | **`config.py`** | Configuration management with auto‑discovery of `codegen.yaml` and `.env` files. |
@@ -238,9 +238,9 @@ CODEGEN_VERBOSE=true
 | `CODEGEN_QUALITY_ADD_EXPLICIT_WAITS` | Add `waitForSelector` before interactions | `true` |
 | `CODEGEN_QUALITY_ENABLE_SCENARIO_OUTLINES` | Support Scenario Outlines | `true` |
 | `CODEGEN_QUALITY_RUN_FORMATTER` | Run code formatter after generation | `true` |
-| `CODEGEN_QUALITY_FORMATTER_TOOL` | Formatter tool: `prettier`, `black`, or auto‑detect | `null` |
+| `CODEGEN_QUALITY_FORMATTER_TOOL` | Formatter tool: `prettier`, `ruff`, or auto‑detect | `null` |
 | `CODEGEN_QUALITY_RUN_LINTER` | Run linter after generation | `false` |
-| `CODEGEN_QUALITY_LINTER_TOOL` | Linter tool: `eslint`, `flake8`, or auto‑detect | `null` |
+| `CODEGEN_QUALITY_LINTER_TOOL` | Linter tool: `eslint`, `ruff`, or auto‑detect | `null` |
 | `CODEGEN_QUALITY_PAGE_OBJECT_DIR` | Sub‑folder for Page Objects | `pages` |
 | `CODEGEN_BASE_URL` | Base URL used for generated navigation steps | `https://example.com` |
 | `CODEGEN_QUALITY_STEP_DEF_DIR` | Sub‑folder for step definitions | `steps` |
@@ -260,8 +260,8 @@ The generator can produce **production‑ready** test code by enabling the follo
 | **Scenario Outlines** | Supports data‑driven testing with `Examples` tables. |
 | **Explicit Waits** | Adds `waitForSelector` before interactions for robustness. |
 | **Selector Strategy** | Prefers `data-testid` attributes when available. |
-| **Code Formatting** | Runs Prettier (JS/TS) or Black (Python) on generated files. |
-| **Linting** | Optionally runs ESLint or flake8 with auto‑fix. |
+| **Code Formatting** | Runs Prettier (JS/TS) or Ruff (Python) on generated files. |
+| **Linting** | Optionally runs ESLint or Ruff with auto‑fix. |
 
 ### Example Generated Page Object (Playwright)
 
