@@ -58,6 +58,28 @@ SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T/123/ABC
 TEAMS_WEBHOOK_URL=https://outlook.office.com/webhook/...
 ```
 
+## 3.1 Initialize Norma configuration
+
+Once your `.env` file is ready, run:
+
+```bash
+anorm init
+```
+
+The wizard interactively creates `norma.config.yml` in the current directory. It asks for:
+
+- LLM provider (`openrouter`, `anthropic`, `openai`, or `local`)
+- default test framework (`playwright`, `cypress`, or `selenium`)
+- output directory for generated tests
+- whether to generate Page Objects and reusable step definitions
+- whether to run a formatter on generated code and which tool to use
+
+If you already have a configuration file and want to regenerate it, use:
+
+```bash
+anorm init --force
+```
+
 ## 4. Generate a feature file from a user story
 
 Use the CLI to generate a Gherkin feature file from natural language:
