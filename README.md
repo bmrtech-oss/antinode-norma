@@ -86,6 +86,34 @@ python -m antinode_norma.codegen.cli.commands generate -f features/reset_passwor
 - **Extensible** – Add support for new frameworks with a simple emitter interface.
 - **Rich Hickey-inspired design** – Data-driven pipeline with immutable models and pure functions.
 
+## Autocorrect tool
+
+`generate_and_autocorrect` is an MCP tool that will generate tests from a Gherkin feature, run Playwright, analyze failures, and ask the configured LLM to propose fixes.
+
+Key options:
+
+- `feature_path` (required): path to the `.feature` file.
+- `run_tests` (default `true`): whether to run Playwright after generating.
+- `non_destructive` (default `false`): when `true` writes fixes to `<name>.autocorrected.feature` instead of overwriting.
+- `create_branch` (default `false`): when `true` attempts to create a local git branch and commit applied fixes.
+- `confirm_before_apply` (default `false`): prompt interactively to apply fixes; in non-interactive mode set `approve: true`.
+- `max_iterations` (default `2`): how many generate->run->fix iterations to attempt.
+
+Environment:
+
+- `LLM_PROVIDER` and `OPENROUTER_API_KEY` or `ANTHROPIC_API_KEY` must be set for auto-fixing.
+
+Usage example (MCP or CLI wrapper):
+
+```json
+{
+    "feature_path": "features/login.feature",
+    "non_destructive": true,
+    "approve": true,
+    "max_iterations": 2
+}
+```
+
 ---
 
 ## Installation
