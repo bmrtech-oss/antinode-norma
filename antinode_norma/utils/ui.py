@@ -14,8 +14,14 @@ from rich.progress import (
 from rich.panel import Panel
 from rich.table import Table
 
-console = Console(emoji=False, color_system=None, force_terminal=False)
+console = Console(
+    emoji=False,
+    color_system=None,
+    force_terminal=False,
+    legacy_windows=False,
+)
 SUPPORTS_UNICODE = console.encoding is not None and "UTF-8" in console.encoding.upper()
+HORIZONTAL_LINE = "─" if SUPPORTS_UNICODE else "-"
 CHECK_MARK = "✓" if SUPPORTS_UNICODE else "v"
 CROSS_MARK = "✗" if SUPPORTS_UNICODE else "x"
 WARNING_SIGN = "⚠" if SUPPORTS_UNICODE else "!"
@@ -45,7 +51,7 @@ def info_message(text: str) -> None:
 def section_header(text: str) -> None:
     """Print a section header with styling."""
     console.print(f"\n[bold cyan]{text}[/bold cyan]")
-    console.print("[dim]" + "─" * len(text) + "[/dim]")
+    console.print("[dim]" + HORIZONTAL_LINE * len(text) + "[/dim]")
 
 
 def code_block(text: str, language: str = "python") -> None:

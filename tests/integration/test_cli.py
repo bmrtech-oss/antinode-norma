@@ -1,26 +1,32 @@
 """Integration tests for the CLI using the real LLM and file system."""
 
+import os
 import subprocess
 import sys
 from pathlib import Path
 import pytest
 
+from tests.conftest import is_transient_llm_error_message
+
+
+def _run_cli(cmd, timeout=60):
+    env = os.environ.copy()
+    env.setdefault("PYTHONIOENCODING", "utf-8")
+    env.setdefault("PYTHONUTF8", "1")
+    return subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=env,
+        timeout=timeout,
+    )
+
 
 def _skip_on_transient_cli_failure(result):
-    stderr = result.stderr.lower() if result.stderr else ""
-    transient_markers = [
-        "rate limit",
-        "rate_limit",
-        "service unavailable",
-        "timeout",
-        "connection error",
-        "network error",
-        "temporarily unavailable",
-    ]
-    if any(marker in stderr for marker in transient_markers):
-        pytest.skip(
-            f"Skipped due to transient LLM provider issue: {result.stderr.strip()}"
-        )
+    output = "\n".join([result.stderr or "", result.stdout or ""])
+    if is_transient_llm_error_message(output):
+        pytest.skip(f"Skipped due to transient LLM provider issue: {output.strip()}")
 
 
 @pytest.mark.external_integration
@@ -35,10 +41,12 @@ def test_cli_generate(sample_story_pass, tmp_features):
         "--output-dir",
         str(tmp_features),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    result = _run_cli(cmd, timeout=120)
     if result.returncode != 0:
         _skip_on_transient_cli_failure(result)
-    assert result.returncode == 0, f"CLI failed: {result.stderr}"
+    assert result.returncode == 0, (
+        f"CLI failed ({result.returncode}): stdout={result.stdout!r} stderr={result.stderr!r}"
+    )
     assert "Feature file written" in result.stdout
 
     # Extract file path from output
@@ -63,9 +71,11 @@ def test_cli_quality_only(sample_story_pass):
         "--quality-only",
         sample_story_pass,
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    result = _run_cli(cmd, timeout=60)
     if result.returncode != 0:
         _skip_on_transient_cli_failure(result)
-    assert result.returncode == 0
+    assert result.returncode == 0, (
+        f"CLI failed ({result.returncode}): stdout={result.stdout!r} stderr={result.stderr!r}"
+    )
     assert "Quality score:" in result.stdout
     assert "Passes INVEST: True" in result.stdout

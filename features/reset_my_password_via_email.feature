@@ -1,11 +1,13 @@
 # Feature: Password reset via email for registered users
-# This feature covers requesting a reset link, using a valid token, handling an invalid token,
+# This feature covers sending the reset link, using a valid token, handling invalid tokens,
 # and ensuring the reset link expires after 30 minutes.
 
 Feature: Password reset
 
-  Scenario: Request password reset link
+  Background:
     Given the user is on the login page
+
+  Scenario: Request password reset link
     When the user clicks 'Forgot password'
     Then a password reset email is sent
 
@@ -15,11 +17,11 @@ Feature: Password reset
     Then the password is updated
 
   Scenario: Show error for invalid token
-    Given the user has an invalid reset token
+    Given an invalid reset token exists
     When the user attempts to reset the password
     Then the system displays an invalid token error message
 
-  Scenario: Expired reset link cannot be used
+  Scenario: Expired reset link after 30 minutes
     Given a valid reset token exists
     And the reset token is older than 30 minutes
     When the user attempts to reset the password

@@ -96,20 +96,38 @@ def has_jira_creds() -> bool:
     return bool(os.getenv("JIRA_SERVER") and os.getenv("JIRA_TOKEN"))
 
 
+TRANSIENT_LLM_ERROR_MARKERS = [
+    "rate limit",
+    "rate_limit",
+    "rate-limited",
+    "service unavailable",
+    "429",
+    "503",
+    "timeout",
+    "connection error",
+    "network error",
+    "temporarily unavailable",
+]
+
+
+def is_transient_llm_error_message(message: str) -> bool:
+    message = message.lower()
+    return any(marker in message for marker in TRANSIENT_LLM_ERROR_MARKERS)
+
+
 def maybe_skip_transient_llm_error(exc: Exception) -> None:
     message = str(exc).lower()
-    transient_markers = [
-        "rate limit",
-        "rate_limit",
-        "service unavailable",
-        "429",
-        "503",
-        "timeout",
-        "connection error",
-        "network error",
-        "temporarily unavailable",
-    ]
-    if any(marker in message for marker in transient_markers):
+    if is_transient_llm_error_message(message):
+        pytest.skip(f"Skipped due to transient LLM provider issue: {exc}")
+    if exc.__class__.__name__ in (
+        "RateLimitError",
+        "RateLimitExceededError",
+        "APIConnectionError",
+        "Timeout",
+        "ServiceUnavailableError",
+        "OpenAIError",
+        "OpenAIAPIError",
+    ):
         pytest.skip(f"Skipped due to transient LLM provider issue: {exc}")
     if exc.__class__.__name__ in (
         "RateLimitError",
