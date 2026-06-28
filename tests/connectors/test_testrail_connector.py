@@ -1,5 +1,4 @@
 import os
-import pytest
 from unittest.mock import Mock, patch
 
 from antinode_norma.connectors.testrail_connector import (

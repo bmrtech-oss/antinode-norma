@@ -1,7 +1,7 @@
+import importlib
 import sys
 import types
 
-import pytest
 from click.testing import CliRunner
 from pathlib import Path
 from unittest.mock import patch
@@ -20,14 +20,18 @@ sys.modules["behave"] = behave_module
 sys.modules["behave.parser"] = behave_parser
 sys.modules["behave.model"] = behave_model
 
-from antinode_norma.codegen.cli.commands import cli
-from antinode_norma.codegen.config import CodegenConfig
+cli_module = importlib.import_module("antinode_norma.codegen.cli.commands")
+cli = cli_module.cli
+config_module = importlib.import_module("antinode_norma.codegen.config")
+CodegenConfig = config_module.CodegenConfig
 
 
 class TestCodegenCLIParallelGeneration:
     @patch("antinode_norma.codegen.cli.commands.load_config")
     @patch("antinode_norma.codegen.cli.commands.Orchestrator")
-    def test_generate_multiple_features_in_parallel(self, mock_orchestrator_cls, mock_load_config):
+    def test_generate_multiple_features_in_parallel(
+        self, mock_orchestrator_cls, mock_load_config
+    ):
         config = CodegenConfig()
         config.default_framework = "playwright"
         config.output_dir = Path("generated_tests")
@@ -65,7 +69,9 @@ class TestCodegenCLIParallelGeneration:
 
     @patch("antinode_norma.codegen.cli.commands.load_config")
     @patch("antinode_norma.codegen.cli.commands.Orchestrator")
-    def test_generate_single_feature_still_works(self, mock_orchestrator_cls, mock_load_config):
+    def test_generate_single_feature_still_works(
+        self, mock_orchestrator_cls, mock_load_config
+    ):
         config = CodegenConfig()
         config.default_framework = "playwright"
         config.output_dir = Path("generated_tests")

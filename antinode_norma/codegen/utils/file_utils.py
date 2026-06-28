@@ -3,7 +3,6 @@ File and directory utilities.
 """
 
 from pathlib import Path
-import os
 
 
 def ensure_directory(path: Path) -> None:

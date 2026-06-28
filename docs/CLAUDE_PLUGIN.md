@@ -187,8 +187,8 @@ When using `generate_tests` with `use_page_objects: true` or `generate_step_defs
 - **Reusable Step Definitions** – Common actions (fill, click, navigate) as functions.
 - **Explicit Waits** – Robust `waitForSelector` before interactions.
 - **Data‑Driven Testing** – Support for Scenario Outlines with Examples.
-- **Code Formatting** – Auto‑formatting with Prettier or Black.
-- **Linting** – Optional ESLint or flake8 with auto‑fix.
+- **Code Formatting** – Auto‑formatting with Prettier or Ruff.
+- **Linting** – Optional ESLint or Ruff with auto‑fix.
 
 ### Configuration for Code Generation
 

@@ -1,7 +1,6 @@
 """End-to-end test for Phase 5 failure learning integration."""
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -9,7 +8,8 @@ from antinode_norma.core import failure_analyzer
 from antinode_norma.codegen.parsers.gherkin_parser import GherkinParser
 from antinode_norma.codegen.config import CodegenConfig
 from antinode_norma.codegen.engine.quality import QualityConfig
-from antinode_norma.core.failure_analyzer import FailureEvent
+
+pytestmark = pytest.mark.integration
 
 
 @pytest.fixture(autouse=True)
@@ -111,9 +111,14 @@ def test_e2e_failure_learning_influences_gherkin_parsing(tmp_path, monkeypatch):
     assert case.steps[3].description == 'And I click on "#login-button"'
 
     # Step 5: Verify that failure examples were in the database
-    examples = failure_analyzer.get_failure_examples_for_step('When I click on "#login-button"')
+    examples = failure_analyzer.get_failure_examples_for_step(
+        'When I click on "#login-button"'
+    )
     assert len(examples) >= 1
-    assert "#login-button" in examples[0].selector or examples[0].selector == "#login-button"
+    assert (
+        "#login-button" in examples[0].selector
+        or examples[0].selector == "#login-button"
+    )
     assert "waiting for locator" in examples[0].error_message
 
 

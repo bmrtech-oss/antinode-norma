@@ -9,7 +9,6 @@ and verifies that a feature file is successfully generated.
 import os
 import sys
 import subprocess
-import time
 from pathlib import Path
 
 # Story that meets INVEST criteria
@@ -38,7 +37,12 @@ def main():
     # Run the CLI and capture output
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=120, cwd=os.getcwd(), env=os.environ.copy()
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            cwd=os.getcwd(),
+            env=os.environ.copy(),
         )
     except subprocess.TimeoutExpired:
         print("ERROR: Command timed out after 120 seconds.")

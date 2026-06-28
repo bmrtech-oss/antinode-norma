@@ -9,8 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from antinode_norma.codegen import Orchestrator
-from antinode_norma.codegen.config import get_config, set_config, load_config
-from antinode_norma.codegen.engine.quality import QualityConfig
+from antinode_norma.codegen.config import get_config
 
 # Try to import MCP types; fall back to dict if not available
 try:
@@ -57,7 +56,6 @@ async def handle_generate_tests(arguments: Dict[str, Any]) -> List[Dict[str, Any
     generate_step_defs = arguments.get("generate_step_defs", False)
     enable_visual_testing = arguments.get("enable_visual_testing", None)
     visual_snapshot_dir = arguments.get("visual_snapshot_dir", None)
-    verbose = arguments.get("verbose", False)
 
     # Validate required arguments
     if not feature_path:
@@ -121,11 +119,16 @@ async def handle_generate_tests(arguments: Dict[str, Any]) -> List[Dict[str, Any
 
     except Exception as e:
         return [
-            {"type": "text", "text": _format_result(False, f"Error generating tests: {str(e)}")}
+            {
+                "type": "text",
+                "text": _format_result(False, f"Error generating tests: {str(e)}"),
+            }
         ]
 
 
-async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
+async def handle_generate_page_objects(
+    arguments: Dict[str, Any],
+) -> List[Dict[str, Any]]:
     """
     Handle generate_page_objects MCP tool.
 
@@ -147,7 +150,10 @@ async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[s
 
     if not feature_path:
         return [
-            {"type": "text", "text": _format_result(False, "Error: 'feature_path' is required")}
+            {
+                "type": "text",
+                "text": _format_result(False, "Error: 'feature_path' is required"),
+            }
         ]
 
     feature_path = Path(feature_path)
@@ -155,7 +161,9 @@ async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[s
         return [
             {
                 "type": "text",
-                "text": _format_result(False, f"Error: Feature file not found: {feature_path}"),
+                "text": _format_result(
+                    False, f"Error: Feature file not found: {feature_path}"
+                ),
             }
         ]
 
@@ -172,7 +180,9 @@ async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[s
         suite = orchestrator.parse(feature_path)
 
         # Only emit page objects (using a custom emitter)
-        from antinode_norma.codegen.emitters.page_object_emitter import PageObjectEmitter
+        from antinode_norma.codegen.emitters.page_object_emitter import (
+            PageObjectEmitter,
+        )
 
         emitter = PageObjectEmitter()
         emitter.emit(suite, config.get_output_dir(framework))
@@ -188,7 +198,9 @@ async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[s
         return [
             {
                 "type": "text",
-                "text": _format_result(True, f"Page Objects generated successfully", result_data),
+                "text": _format_result(
+                    True, "Page Objects generated successfully", result_data
+                ),
             }
         ]
 
@@ -196,7 +208,9 @@ async def handle_generate_page_objects(arguments: Dict[str, Any]) -> List[Dict[s
         return [
             {
                 "type": "text",
-                "text": _format_result(False, f"Error generating page objects: {str(e)}"),
+                "text": _format_result(
+                    False, f"Error generating page objects: {str(e)}"
+                ),
             }
         ]
 
@@ -223,7 +237,10 @@ async def handle_generate_step_defs(arguments: Dict[str, Any]) -> List[Dict[str,
 
     if not feature_path:
         return [
-            {"type": "text", "text": _format_result(False, "Error: 'feature_path' is required")}
+            {
+                "type": "text",
+                "text": _format_result(False, "Error: 'feature_path' is required"),
+            }
         ]
 
     feature_path = Path(feature_path)
@@ -231,7 +248,9 @@ async def handle_generate_step_defs(arguments: Dict[str, Any]) -> List[Dict[str,
         return [
             {
                 "type": "text",
-                "text": _format_result(False, f"Error: Feature file not found: {feature_path}"),
+                "text": _format_result(
+                    False, f"Error: Feature file not found: {feature_path}"
+                ),
             }
         ]
 
@@ -265,7 +284,7 @@ async def handle_generate_step_defs(arguments: Dict[str, Any]) -> List[Dict[str,
             {
                 "type": "text",
                 "text": _format_result(
-                    True, f"Step definitions generated successfully", result_data
+                    True, "Step definitions generated successfully", result_data
                 ),
             }
         ]
@@ -274,7 +293,9 @@ async def handle_generate_step_defs(arguments: Dict[str, Any]) -> List[Dict[str,
         return [
             {
                 "type": "text",
-                "text": _format_result(False, f"Error generating step definitions: {str(e)}"),
+                "text": _format_result(
+                    False, f"Error generating step definitions: {str(e)}"
+                ),
             }
         ]
 
@@ -299,7 +320,10 @@ async def handle_validate_feature(arguments: Dict[str, Any]) -> List[Dict[str, A
 
     if not feature_path:
         return [
-            {"type": "text", "text": _format_result(False, "Error: 'feature_path' is required")}
+            {
+                "type": "text",
+                "text": _format_result(False, "Error: 'feature_path' is required"),
+            }
         ]
 
     feature_path = Path(feature_path)
@@ -307,7 +331,9 @@ async def handle_validate_feature(arguments: Dict[str, Any]) -> List[Dict[str, A
         return [
             {
                 "type": "text",
-                "text": _format_result(False, f"Error: Feature file not found: {feature_path}"),
+                "text": _format_result(
+                    False, f"Error: Feature file not found: {feature_path}"
+                ),
             }
         ]
 
@@ -367,7 +393,10 @@ async def handle_validate_feature(arguments: Dict[str, Any]) -> List[Dict[str, A
 
     except Exception as e:
         return [
-            {"type": "text", "text": _format_result(False, f"Error validating feature: {str(e)}")}
+            {
+                "type": "text",
+                "text": _format_result(False, f"Error validating feature: {str(e)}"),
+            }
         ]
 
 
@@ -381,7 +410,10 @@ def get_tool_definitions():
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "feature_path": {"type": "string", "description": "Path to the .feature file"},
+                    "feature_path": {
+                        "type": "string",
+                        "description": "Path to the .feature file",
+                    },
                     "framework": {
                         "type": "string",
                         "description": "Target framework",
@@ -417,7 +449,10 @@ def get_tool_definitions():
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "feature_path": {"type": "string", "description": "Path to the .feature file"},
+                    "feature_path": {
+                        "type": "string",
+                        "description": "Path to the .feature file",
+                    },
                     "framework": {
                         "type": "string",
                         "description": "Target framework",
@@ -438,7 +473,10 @@ def get_tool_definitions():
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "feature_path": {"type": "string", "description": "Path to the .feature file"},
+                    "feature_path": {
+                        "type": "string",
+                        "description": "Path to the .feature file",
+                    },
                     "framework": {
                         "type": "string",
                         "description": "Target framework",
@@ -459,7 +497,10 @@ def get_tool_definitions():
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "feature_path": {"type": "string", "description": "Path to the .feature file"},
+                    "feature_path": {
+                        "type": "string",
+                        "description": "Path to the .feature file",
+                    },
                     "check_invest": {
                         "type": "boolean",
                         "description": "Run INVEST quality check",

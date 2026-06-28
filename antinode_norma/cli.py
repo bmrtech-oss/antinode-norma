@@ -51,9 +51,15 @@ def cli():
 @cli.command()
 @click.argument("story_text", required=False)
 @click.option("--file", "-f", type=click.Path(exists=True), help="Read story from file")
-@click.option("--output-dir", "-o", default="features", help="Output directory for feature files")
-@click.option("--quality-only", is_flag=True, help="Only check quality, do not generate")
-@click.option("--dry-run", is_flag=True, help="Show what would be generated without writing files")
+@click.option(
+    "--output-dir", "-o", default="features", help="Output directory for feature files"
+)
+@click.option(
+    "--quality-only", is_flag=True, help="Only check quality, do not generate"
+)
+@click.option(
+    "--dry-run", is_flag=True, help="Show what would be generated without writing files"
+)
 @click.option("--interactive", is_flag=True, help="Ask for help on unmapped steps")
 def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
     """Generate a feature file from a user story.
@@ -91,7 +97,9 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
             if quality_only:
                 section_header("Quality Assessment")
                 score = result.get("quality_score", 0)
-                score_color = "green" if score >= 0.8 else "yellow" if score >= 0.6 else "red"
+                score_color = (
+                    "green" if score >= 0.8 else "yellow" if score >= 0.6 else "red"
+                )
                 click.echo(f"Quality score: [{score_color}]{score:.1%}[/{score_color}]")
                 click.echo(f"Passes INVEST: {result['passes_invest']}")
 
@@ -113,12 +121,19 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
                             "Interactive mode is enabled. You can retry with corrected story text."
                         )
                         if click.confirm(
-                            "Would you like to retry with corrected story text?", default=False
+                            "Would you like to retry with corrected story text?",
+                            default=False,
                         ):
-                            corrected = click.prompt("Enter corrected story text", type=str)
-                            result = await run_agent_from_raw(corrected, quality_only=quality_only)
+                            corrected = click.prompt(
+                                "Enter corrected story text", type=str
+                            )
+                            result = await run_agent_from_raw(
+                                corrected, quality_only=quality_only
+                            )
                             if "error" in result:
-                                error_message(f"Generation failed again: {result['error']}")
+                                error_message(
+                                    f"Generation failed again: {result['error']}"
+                                )
                                 sys.exit(1)
                             if dry_run:
                                 info_message("Dry-run mode: no files written")
@@ -127,20 +142,28 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
                                     "feature_path", "features/generated.feature"
                                 )
                                 click.echo(f"Would write to: {feature_path}")
-                                click.echo("\n(Content preview not available in this version)")
+                                click.echo(
+                                    "\n(Content preview not available in this version)"
+                                )
                             else:
-                                success_message(f"Feature file written: {result['feature_path']}")
+                                success_message(
+                                    f"Feature file written: {result['feature_path']}"
+                                )
                             return result
                     sys.exit(1)
                 else:
                     if dry_run:
                         info_message("Dry-run mode: no files written")
                         section_header("Generated Feature File")
-                        feature_path = result.get("feature_path", "features/generated.feature")
+                        feature_path = result.get(
+                            "feature_path", "features/generated.feature"
+                        )
                         click.echo(f"Would write to: {feature_path}")
                         click.echo("\n(Content preview not available in this version)")
                     else:
-                        success_message(f"Feature file written: {result['feature_path']}")
+                        success_message(
+                            f"Feature file written: {result['feature_path']}"
+                        )
 
             return result
         except Exception as e:
@@ -167,7 +190,8 @@ def agent(goal):
 
         llm_config = {
             "provider": os.getenv("LLM_PROVIDER", "openrouter"),
-            "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY"),
+            "api_key": os.getenv("OPENROUTER_API_KEY")
+            or os.getenv("ANTHROPIC_API_KEY"),
         }
 
         if not llm_config["api_key"]:
@@ -243,7 +267,9 @@ def jira_status(issue_key, status_name):
 @click.option("--section-id", required=True, type=int, help="TestRail section ID.")
 @click.option("--title", required=True, help="Title for the TestRail test case.")
 @click.option("--description", default="", help="Description for the test case.")
-@click.option("--priority-id", default=2, type=int, help="Priority ID for the test case.")
+@click.option(
+    "--priority-id", default=2, type=int, help="Priority ID for the test case."
+)
 def testrail_case(section_id, title, description, priority_id):
     """Upload a test case to TestRail."""
     from .agent_tools import upload_testrail_case
@@ -271,7 +297,8 @@ def testrail_result(test_id, status_id, comment):
 
 @cli.command("notify-slack")
 @click.option(
-    "--webhook-url", help="Slack webhook URL. If omitted, uses SLACK_WEBHOOK_URL from environment."
+    "--webhook-url",
+    help="Slack webhook URL. If omitted, uses SLACK_WEBHOOK_URL from environment.",
 )
 @click.argument("text", nargs=-1)
 def notify_slack(webhook_url, text):
@@ -284,7 +311,8 @@ def notify_slack(webhook_url, text):
 
 @cli.command("notify-teams")
 @click.option(
-    "--webhook-url", help="Teams webhook URL. If omitted, uses TEAMS_WEBHOOK_URL from environment."
+    "--webhook-url",
+    help="Teams webhook URL. If omitted, uses TEAMS_WEBHOOK_URL from environment.",
 )
 @click.option("--title", required=True, help="Notification title.")
 @click.option("--text", required=True, help="Notification body text.")
@@ -311,10 +339,14 @@ def notify_teams(webhook_url, title, text):
     help="Optional path to the local failure database file.",
 )
 @click.option(
-    "--show-recent", is_flag=True, help="Show recent stored failure examples after learning."
+    "--show-recent",
+    is_flag=True,
+    help="Show recent stored failure examples after learning.",
 )
 @click.option(
-    "--show-suggestions", is_flag=True, help="Show suggested fixes for the learned failures."
+    "--show-suggestions",
+    is_flag=True,
+    help="Show suggested fixes for the learned failures.",
 )
 def learn(report_file, db_file, show_recent, show_suggestions):
     """Learn from Playwright test failures and persist failure patterns.
@@ -391,7 +423,9 @@ def learn(report_file, db_file, show_recent, show_suggestions):
 
 
 @cli.command()
-@click.argument("shell", type=click.Choice(["bash", "zsh", "powershell"], case_sensitive=False))
+@click.argument(
+    "shell", type=click.Choice(["bash", "zsh", "powershell"], case_sensitive=False)
+)
 def completion(shell):
     """Generate shell completion script for the given shell."""
     try:
@@ -414,18 +448,26 @@ def completion(shell):
     type=click.Path(exists=True, dir_okay=False),
     help="Path to a Gherkin feature file to parse.",
 )
-@click.option("--interactive", is_flag=True, help="Prompt for unmapped step mappings during parse.")
+@click.option(
+    "--interactive",
+    is_flag=True,
+    help="Prompt for unmapped step mappings during parse.",
+)
 def parse(feature_file, interactive):
     """Parse a feature file into mapped test steps."""
     try:
         from antinode_norma.codegen.parsers.gherkin_parser import GherkinParser
         from antinode_norma.codegen.models.test_model import ActionType
 
-        def interactive_callback(step_text: str, error_message: str, suggestions: list[str] = None):
+        def interactive_callback(
+            step_text: str, error_message: str, suggestions: list[str] = None
+        ):
             warning_message(f"Unmapped step: {step_text}")
             if error_message:
                 warning_message(error_message)
-            click.echo("Provide a mapping as ACTION|target|value (target/value optional)")
+            click.echo(
+                "Provide a mapping as ACTION|target|value (target/value optional)"
+            )
             raw = click.prompt("Mapping", type=str)
             if not raw:
                 raise click.Abort("No mapping provided")
@@ -437,7 +479,9 @@ def parse(feature_file, interactive):
             value = parts[2] if len(parts) > 2 and parts[2] else None
             return ActionType[action_name], target, value, {}
 
-        parser = GherkinParser(interactive_callback=interactive_callback if interactive else None)
+        parser = GherkinParser(
+            interactive_callback=interactive_callback if interactive else None
+        )
         suite = parser.parse(Path(feature_file))
         section_header("Parsed Feature")
         for case in suite.cases:

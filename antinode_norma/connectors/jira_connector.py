@@ -17,7 +17,9 @@ def get_jira_client() -> JIRA:
     server = os.getenv("JIRA_SERVER")
     token = os.getenv("JIRA_TOKEN")
     if not server or not token:
-        raise EnvironmentError("JIRA_SERVER and JIRA_TOKEN must be set to use the JIRA connector.")
+        raise EnvironmentError(
+            "JIRA_SERVER and JIRA_TOKEN must be set to use the JIRA connector."
+        )
     return JIRA(server=server, token_auth=token)
 
 

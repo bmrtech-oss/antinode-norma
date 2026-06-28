@@ -7,7 +7,6 @@ the `emit()` method.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional
 
 from ..models.test_model import TestSuite
 

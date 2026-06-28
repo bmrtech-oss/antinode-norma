@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
@@ -56,7 +55,9 @@ def test_learn_command_stores_failures_and_shows_suggestions(monkeypatch, tmp_pa
     )
 
     runner = CliRunner()
-    result = runner.invoke(cli, ["learn", "--report-file", str(report_path), "--show-suggestions"])
+    result = runner.invoke(
+        cli, ["learn", "--report-file", str(report_path), "--show-suggestions"]
+    )
 
     assert result.exit_code == 0
     assert "Stored 1 failure event(s)" in result.output

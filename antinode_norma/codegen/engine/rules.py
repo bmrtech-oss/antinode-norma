@@ -10,7 +10,9 @@ from ..models.test_model import ActionType
 
 class RuleEngine:
     def __init__(self):
-        self.rules: List[Tuple[re.Pattern, ActionType, Callable, Callable, Callable]] = []
+        self.rules: List[
+            Tuple[re.Pattern, ActionType, Callable, Callable, Callable]
+        ] = []
         self._compile_default_rules()
 
     def _compile_default_rules(self):
@@ -330,7 +332,9 @@ class RuleEngine:
         value_func: Callable,
         options_func: Callable,
     ):
-        self.rules.append((re.compile(pattern), action, target_func, value_func, options_func))
+        self.rules.append(
+            (re.compile(pattern), action, target_func, value_func, options_func)
+        )
 
     def map_step(
         self, step_text: str

@@ -39,7 +39,9 @@ def run_cli_command(arguments):
         command, capture_output=True, text=True, cwd=Path(__file__).resolve().parents[1]
     )
     if result.returncode != 0:
-        raise RuntimeError(f"Command failed (exit {result.returncode}):\n{result.stderr.strip()}")
+        raise RuntimeError(
+            f"Command failed (exit {result.returncode}):\n{result.stderr.strip()}"
+        )
     return result.stdout.strip()
 
 
@@ -47,12 +49,16 @@ def parse_json_output(output):
     try:
         return json.loads(output)
     except json.JSONDecodeError as exc:
-        raise ValueError("Expected JSON output from CLI command, but got:\n" + output) from exc
+        raise ValueError(
+            "Expected JSON output from CLI command, but got:\n" + output
+        ) from exc
 
 
 def search_jira(label="bdd-ready"):
     if not os.getenv("JIRA_SERVER") or not os.getenv("JIRA_TOKEN"):
-        print("Skipping JIRA search because JIRA_SERVER or JIRA_TOKEN is not configured.")
+        print(
+            "Skipping JIRA search because JIRA_SERVER or JIRA_TOKEN is not configured."
+        )
         return []
 
     output = run_cli_command(["jira-search", "--label", label])
@@ -72,7 +78,9 @@ def generate_feature(story):
 
 def send_slack_notification(text):
     if not os.getenv("SLACK_WEBHOOK_URL"):
-        print("Skipping Slack notification because SLACK_WEBHOOK_URL is not configured.")
+        print(
+            "Skipping Slack notification because SLACK_WEBHOOK_URL is not configured."
+        )
         return None
 
     output = run_cli_command(["notify-slack", "--text", text])
@@ -102,7 +110,8 @@ def main():
         sys.exit(1)
 
     notification_text = (
-        "Antinode Norma Phase 7 demo completed. " "A feature was generated from the selected story."
+        "Antinode Norma Phase 7 demo completed. "
+        "A feature was generated from the selected story."
     )
     send_slack_notification(notification_text)
 

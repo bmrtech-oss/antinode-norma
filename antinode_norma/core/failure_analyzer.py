@@ -85,7 +85,9 @@ def _extract_selector(text: str) -> Optional[str]:
     return None
 
 
-def _read_snippet_from_file(file_path: str, line: Optional[int], context: int = 2) -> Optional[str]:
+def _read_snippet_from_file(
+    file_path: str, line: Optional[int], context: int = 2
+) -> Optional[str]:
     if not file_path or line is None:
         return None
     try:
@@ -191,7 +193,9 @@ def store_playwright_failures(report_path: Path) -> List[FailureEvent]:
     return inserted
 
 
-def _query_failures(where_clause: str, params: tuple[Any, ...], limit: int) -> List[FailureEvent]:
+def _query_failures(
+    where_clause: str, params: tuple[Any, ...], limit: int
+) -> List[FailureEvent]:
     _ensure_database()
     with _get_connection() as conn:
         cursor = conn.execute(
@@ -207,7 +211,9 @@ def get_recent_failures(limit: int = 10) -> List[FailureEvent]:
     return _query_failures("1=1", (), limit)
 
 
-def get_failure_examples_for_step(step_text: str, max_examples: int = 2) -> List[FailureEvent]:
+def get_failure_examples_for_step(
+    step_text: str, max_examples: int = 2
+) -> List[FailureEvent]:
     selector = _extract_selector(step_text)
     if selector:
         examples = _query_failures("selector = ?", (selector,), max_examples)
@@ -223,7 +229,9 @@ def get_failure_examples_for_step(step_text: str, max_examples: int = 2) -> List
     return _query_failures("step_text LIKE ?", (f"%{step_text}%",), max_examples)
 
 
-def get_failure_suggestions_for_step(step_text: str, max_suggestions: int = 3) -> List[str]:
+def get_failure_suggestions_for_step(
+    step_text: str, max_suggestions: int = 3
+) -> List[str]:
     selector = _extract_selector(step_text)
     if selector:
         failures = _query_failures("selector = ?", (selector,), max_suggestions)

@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 
 from .base import Emitter
-from ..models.test_model import TestSuite, TestCase, TestStep, ActionType
+from ..models.test_model import TestSuite, TestStep, ActionType
 from ..utils.file_utils import ensure_directory, write_file
 
 
@@ -64,15 +64,13 @@ class SeleniumEmitter(Emitter):
         elif action == ActionType.ASSERT_VISIBLE:
             return f"assert self.driver.find_element(By.CSS_SELECTOR, '{target}').is_displayed()"
         elif action == ActionType.ASSERT_HIDDEN:
-            return (
-                f"assert not self.driver.find_element(By.CSS_SELECTOR, '{target}').is_displayed()"
-            )
+            return f"assert not self.driver.find_element(By.CSS_SELECTOR, '{target}').is_displayed()"
         elif action == ActionType.WAIT:
             return f"import time; time.sleep({int(value)})"
         elif action == ActionType.CHECK:
             return f"self.driver.find_element(By.CSS_SELECTOR, '{target}').click()  # assuming checkbox"
         elif action == ActionType.UNCHECK:
-            return f"# Uncheck not directly supported, click again if needed"
+            return "# Uncheck not directly supported, click again if needed"
         elif action == ActionType.SELECT:
             return f"from selenium.webdriver.support.ui import Select; Select(self.driver.find_element(By.CSS_SELECTOR, '{target}')).select_by_visible_text('{value}')"
         elif action == ActionType.ASSERT_URL:

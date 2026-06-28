@@ -1,4 +1,4 @@
-"""Run linters on generated code (e.g., ESLint, flake8)."""
+"""Run linters on generated code (e.g., ESLint, Ruff)."""
 
 import subprocess
 from pathlib import Path
@@ -9,7 +9,9 @@ class CodeLinter:
     def __init__(self, tool: Optional[str] = None):
         self.tool = tool
 
-    def lint_files(self, file_paths: List[Path], fix: bool = False, verbose: bool = False) -> bool:
+    def lint_files(
+        self, file_paths: List[Path], fix: bool = False, verbose: bool = False
+    ) -> bool:
         """Run linter on the given files. Returns True if no issues found."""
         if not file_paths:
             return True
@@ -44,8 +46,8 @@ class CodeLinter:
                 pass
         elif ext == ".py":
             try:
-                subprocess.run(["flake8", "--version"], check=True, capture_output=True)
-                return "flake8"
+                subprocess.run(["ruff", "--version"], check=True, capture_output=True)
+                return "ruff"
             except (subprocess.CalledProcessError, FileNotFoundError):
                 pass
         return None
@@ -57,6 +59,10 @@ class CodeLinter:
                 cmd.append("--fix")
             cmd.extend([str(f) for f in files])
             return cmd
-        elif tool == "flake8":
-            return ["flake8"] + [str(f) for f in files]
+        elif tool == "ruff":
+            cmd = ["ruff", "check"]
+            if fix:
+                cmd = ["ruff", "format"]
+            cmd.extend([str(f) for f in files])
+            return cmd
         return []

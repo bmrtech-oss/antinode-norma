@@ -43,15 +43,30 @@ def _build_prompt(step_text: str) -> str:
         ),
         (
             'When I click on "#login-button"',
-            {"action": "CLICK", "target": "#login-button", "value": None, "options": {}},
+            {
+                "action": "CLICK",
+                "target": "#login-button",
+                "value": None,
+                "options": {},
+            },
         ),
         (
             'Then I should see "Welcome"',
-            {"action": "ASSERT_TEXT", "target": None, "value": "Welcome", "options": {}},
+            {
+                "action": "ASSERT_TEXT",
+                "target": None,
+                "value": "Welcome",
+                "options": {},
+            },
         ),
         (
             'When I fill "test@example.com" into "#email"',
-            {"action": "FILL", "target": "#email", "value": "test@example.com", "options": {}},
+            {
+                "action": "FILL",
+                "target": "#email",
+                "value": "test@example.com",
+                "options": {},
+            },
         ),
         (
             'When I double click "#item"',
@@ -63,7 +78,12 @@ def _build_prompt(step_text: str) -> str:
         ),
         (
             'When I hover over "#tooltip-trigger"',
-            {"action": "HOVER", "target": "#tooltip-trigger", "value": None, "options": {}},
+            {
+                "action": "HOVER",
+                "target": "#tooltip-trigger",
+                "value": None,
+                "options": {},
+            },
         ),
         (
             'When I clear "#search"',
@@ -71,7 +91,12 @@ def _build_prompt(step_text: str) -> str:
         ),
         (
             'When I select "United States" from "#country"',
-            {"action": "SELECT", "target": "#country", "value": "United States", "options": {}},
+            {
+                "action": "SELECT",
+                "target": "#country",
+                "value": "United States",
+                "options": {},
+            },
         ),
         (
             'When I check "#subscribe"',
@@ -83,19 +108,39 @@ def _build_prompt(step_text: str) -> str:
         ),
         (
             'Then "#spinner" should be visible',
-            {"action": "ASSERT_VISIBLE", "target": "#spinner", "value": None, "options": {}},
+            {
+                "action": "ASSERT_VISIBLE",
+                "target": "#spinner",
+                "value": None,
+                "options": {},
+            },
         ),
         (
             'Then "#spinner" should not be visible',
-            {"action": "ASSERT_HIDDEN", "target": "#spinner", "value": None, "options": {}},
+            {
+                "action": "ASSERT_HIDDEN",
+                "target": "#spinner",
+                "value": None,
+                "options": {},
+            },
         ),
         (
             'Then I should see "Account created"',
-            {"action": "ASSERT_TEXT", "target": None, "value": "Account created", "options": {}},
+            {
+                "action": "ASSERT_TEXT",
+                "target": None,
+                "value": "Account created",
+                "options": {},
+            },
         ),
         (
             'Then the value of "#price" should be "19.99"',
-            {"action": "ASSERT_VALUE", "target": "#price", "value": "19.99", "options": {}},
+            {
+                "action": "ASSERT_VALUE",
+                "target": "#price",
+                "value": "19.99",
+                "options": {},
+            },
         ),
         (
             'Then the URL should be "https://example.com/dashboard"',
@@ -108,7 +153,12 @@ def _build_prompt(step_text: str) -> str:
         ),
         (
             'Then the title should contain "Dashboard"',
-            {"action": "ASSERT_TITLE", "target": None, "value": "Dashboard", "options": {}},
+            {
+                "action": "ASSERT_TITLE",
+                "target": None,
+                "value": "Dashboard",
+                "options": {},
+            },
         ),
         (
             "And I wait for 5 seconds",
@@ -233,7 +283,9 @@ def _persist_cache() -> None:
                     "options": mapping[3],
                 },
             }
-            for step, mapping in zip(_CACHE_ORDER, (_CACHE[step] for step in _CACHE_ORDER))
+            for step, mapping in zip(
+                _CACHE_ORDER, (_CACHE[step] for step in _CACHE_ORDER)
+            )
         ]
     }
     try:
@@ -243,7 +295,8 @@ def _persist_cache() -> None:
 
 
 def _add_to_cache(
-    step_text: str, mapping: Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]
+    step_text: str,
+    mapping: Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]],
 ) -> None:
     key = _cache_key(step_text)
     quality = get_config().quality
@@ -299,10 +352,14 @@ async def map_step_with_llm(
     raw_output = None
     try:
         _LOGGER.debug("Calling LLM for step mapping: %s", step_text)
-        raw_output = await asyncio.wait_for(_call_llm(prompt, llm_config), timeout=timeout)
+        raw_output = await asyncio.wait_for(
+            _call_llm(prompt, llm_config), timeout=timeout
+        )
         mapping = _parse_llm_output(raw_output)
     except Exception as exc:
-        _LOGGER.debug("LLM mapping failed on first attempt for '%s': %s", step_text, exc)
+        _LOGGER.debug(
+            "LLM mapping failed on first attempt for '%s': %s", step_text, exc
+        )
         retry_prompt = (
             prompt
             + "\n\nIMPORTANT: Please respond with valid JSON only. The JSON object must include action, target, value, and options."
@@ -339,7 +396,8 @@ def map_step(
     fallback_engine: Optional[RuleEngine] = None,
     interactive_callback: Optional[
         Callable[
-            [str, str, list[str]], Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]
+            [str, str, list[str]],
+            Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]],
         ]
     ] = None,
 ) -> Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]:
@@ -361,11 +419,16 @@ def map_step(
                 return (fallback_engine or RuleEngine()).map_step(step_text)
             except ValueError as rules_exc:
                 if interactive_callback is not None:
-                    _LOGGER.debug("Invoking interactive callback for step: %s", step_text)
+                    _LOGGER.debug(
+                        "Invoking interactive callback for step: %s", step_text
+                    )
                     return interactive_callback(step_text, str(rules_exc), [])
                 raise
         if interactive_callback is not None:
-            _LOGGER.debug("Invoking interactive callback after LLM failure for step: %s", step_text)
+            _LOGGER.debug(
+                "Invoking interactive callback after LLM failure for step: %s",
+                step_text,
+            )
             return interactive_callback(step_text, str(exc), [])
         raise
 

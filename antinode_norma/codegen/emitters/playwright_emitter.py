@@ -4,8 +4,8 @@ Playwright (TypeScript) code generator.
 
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Set
-from ..models.test_model import TestSuite, TestCase, TestStep, ActionType
+from typing import Dict, List, Optional
+from ..models.test_model import TestSuite, TestStep, ActionType
 from .base import Emitter
 from ..utils.file_utils import ensure_directory, write_file
 from ..config import get_config
@@ -78,13 +78,15 @@ class PlaywrightEmitter(Emitter):
             content = self._render_page_object(page_name, selectors)
             write_file(pages_dir / f"{page_name.lower()}.page.ts", content)
 
-    def _render_page_object(self, page_name: str, selectors: Dict[str, ActionType]) -> str:
+    def _render_page_object(
+        self, page_name: str, selectors: Dict[str, ActionType]
+    ) -> str:
         """Render a Page Object class for the given page."""
         lines = [
             "import { Page, Locator } from '@playwright/test';",
             "",
             f"export class {page_name} {{",
-            f"  constructor(private page: Page) {{}}",
+            "  constructor(private page: Page) {}",
             "",
         ]
         # Add goto method if there's a NAVIGATE step
@@ -222,7 +224,11 @@ class PlaywrightEmitter(Emitter):
 
         helper_prefix = ""
         helper_target = None
-        if self.quality.enable_self_healing and target and self._needs_selector_healing(action):
+        if (
+            self.quality.enable_self_healing
+            and target
+            and self._needs_selector_healing(action)
+        ):
             escaped_target = self._escape_string(target)
             helper_prefix = f"const healed = await healSelector(page, '{escaped_target}', '{escaped_description}');\n"
             helper_target = "healed"
@@ -275,7 +281,11 @@ class PlaywrightEmitter(Emitter):
                 return f"{helper_prefix}await steps.assertScreenshot(page, '{self.quality.visual_snapshot_dir}/{self._safe_filename(step.description or 'screenshot')}.png');"
             elif action in {ActionType.ASSERT_VISIBLE, ActionType.ASSERT_HIDDEN}:
                 selector = helper_target or f"'{self._escape_string(target or '')}'"
-                method = "assertVisible" if action == ActionType.ASSERT_VISIBLE else "assertHidden"
+                method = (
+                    "assertVisible"
+                    if action == ActionType.ASSERT_VISIBLE
+                    else "assertHidden"
+                )
                 return f"{helper_prefix}await steps.{method}(page, {selector});"
             elif action == ActionType.ASSERT_VALUE:
                 selector = helper_target or f"'{self._escape_string(target or '')}'"
@@ -322,10 +332,18 @@ class PlaywrightEmitter(Emitter):
         return f"\nawait expect(page).toHaveScreenshot('{snapshot_dir}/{snapshot_name}.png');"
 
     def _escape_string(self, value: str) -> str:
-        return value.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ").replace("\r", " ")
+        return (
+            value.replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace("\n", " ")
+            .replace("\r", " ")
+        )
 
     def _inline_translate(
-        self, step: TestStep, helper_prefix: str = "", helper_target: Optional[str] = None
+        self,
+        step: TestStep,
+        helper_prefix: str = "",
+        helper_target: Optional[str] = None,
     ) -> str:
         """Original inline translation (unchanged)."""
         action = step.action
@@ -335,7 +353,9 @@ class PlaywrightEmitter(Emitter):
             target_expr = f"'{self._escape_string(step.target or '')}'"
         value = step.value
         if action == ActionType.NAVIGATE:
-            return f"{helper_prefix}await page.goto('{self._escape_string(value or '')}');"
+            return (
+                f"{helper_prefix}await page.goto('{self._escape_string(value or '')}');"
+            )
         elif action == ActionType.CLICK:
             if self.quality.add_explicit_waits:
                 return (
@@ -397,9 +417,7 @@ class PlaywrightEmitter(Emitter):
                 )
             return f"{helper_prefix}await expect(page.locator({target_expr})).toHaveValue('{self._escape_string(value or '')}');"
         else:
-            return (
-                f"{helper_prefix}// UNKNOWN ACTION: {self._escape_string(step.description or '')}"
-            )
+            return f"{helper_prefix}// UNKNOWN ACTION: {self._escape_string(step.description or '')}"
 
     def _safe_filename(self, name: str) -> str:
         if name is None:

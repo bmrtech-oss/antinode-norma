@@ -45,7 +45,9 @@ def add_test_case(
         "priority_id": priority_id,
         "custom_expected": description,
     }
-    response = session.post(_api_url(f"add_case/{section_id}"), json=payload, timeout=30)
+    response = session.post(
+        _api_url(f"add_case/{section_id}"), json=payload, timeout=30
+    )
     if not response.ok:
         raise TestRailError(f"Failed to add test case: {response.text}")
     return response.json()

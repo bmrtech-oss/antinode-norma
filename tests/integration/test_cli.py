@@ -1,13 +1,35 @@
 """Integration tests for the CLI using the real LLM and file system."""
 
+import os
 import subprocess
 import sys
 from pathlib import Path
 import pytest
-from tests.conftest import has_openrouter_key
+
+from tests.conftest import is_transient_llm_error_message
 
 
-@pytest.mark.skipif(not has_openrouter_key(), reason="OPENROUTER_API_KEY not set")
+def _run_cli(cmd, timeout=60):
+    env = os.environ.copy()
+    env.setdefault("PYTHONIOENCODING", "utf-8")
+    env.setdefault("PYTHONUTF8", "1")
+    return subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=env,
+        timeout=timeout,
+    )
+
+
+def _skip_on_transient_cli_failure(result):
+    output = "\n".join([result.stderr or "", result.stdout or ""])
+    if is_transient_llm_error_message(output):
+        pytest.skip(f"Skipped due to transient LLM provider issue: {output.strip()}")
+
+
+@pytest.mark.external_integration
 def test_cli_generate(sample_story_pass, tmp_features):
     """Test that the CLI generates a feature file."""
     cmd = [
@@ -19,8 +41,12 @@ def test_cli_generate(sample_story_pass, tmp_features):
         "--output-dir",
         str(tmp_features),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-    assert result.returncode == 0, f"CLI failed: {result.stderr}"
+    result = _run_cli(cmd, timeout=120)
+    if result.returncode != 0:
+        _skip_on_transient_cli_failure(result)
+    assert result.returncode == 0, (
+        f"CLI failed ({result.returncode}): stdout={result.stdout!r} stderr={result.stderr!r}"
+    )
     assert "Feature file written" in result.stdout
 
     # Extract file path from output
@@ -35,7 +61,7 @@ def test_cli_generate(sample_story_pass, tmp_features):
         pytest.fail("No feature file path found in output")
 
 
-@pytest.mark.skipif(not has_openrouter_key(), reason="OPENROUTER_API_KEY not set")
+@pytest.mark.external_integration
 def test_cli_quality_only(sample_story_pass):
     cmd = [
         sys.executable,
@@ -45,7 +71,11 @@ def test_cli_quality_only(sample_story_pass):
         "--quality-only",
         sample_story_pass,
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-    assert result.returncode == 0
+    result = _run_cli(cmd, timeout=60)
+    if result.returncode != 0:
+        _skip_on_transient_cli_failure(result)
+    assert result.returncode == 0, (
+        f"CLI failed ({result.returncode}): stdout={result.stdout!r} stderr={result.stderr!r}"
+    )
     assert "Quality score:" in result.stdout
     assert "Passes INVEST: True" in result.stdout

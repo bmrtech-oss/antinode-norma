@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Callable, List, Optional
 
 from behave.parser import parse_feature
-from behave.model import Feature, Scenario, Step
+from behave.model import Feature, Step
 
 from .base import Parser
 from ..models.test_model import TestSuite, TestCase, TestStep
@@ -54,7 +54,9 @@ class GherkinParser(Parser):
 
         cases = []
         for scenario in feature.scenarios:
-            steps = background_steps.copy() + self._behave_steps_to_teststeps(scenario.steps)
+            steps = background_steps.copy() + self._behave_steps_to_teststeps(
+                scenario.steps
+            )
             cases.append(
                 TestCase(
                     name=scenario.name or "Untitled Scenario",

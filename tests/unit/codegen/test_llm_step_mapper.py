@@ -1,4 +1,3 @@
-import asyncio
 import json
 
 import pytest
@@ -11,7 +10,9 @@ from antinode_norma.codegen.engine.rules import RuleEngine
 
 @pytest.fixture(autouse=True)
 def clear_llm_cache(monkeypatch, tmp_path):
-    monkeypatch.setattr(llm_step_mapper, "_CACHE_FILE", tmp_path / "llm_step_cache.json")
+    monkeypatch.setattr(
+        llm_step_mapper, "_CACHE_FILE", tmp_path / "llm_step_cache.json"
+    )
     llm_step_mapper._CACHE.clear()
     llm_step_mapper._CACHE_ORDER.clear()
     yield
@@ -93,7 +94,9 @@ def test_rule_engine_respects_codegen_base_url(monkeypatch):
     )
 
     engine = RuleEngine()
-    action, target, value, options = engine.map_step("Given the user is on the login page")
+    action, target, value, options = engine.map_step(
+        "Given the user is on the login page"
+    )
 
     assert action.name == "NAVIGATE"
     assert value == "https://myapp.local/login"
@@ -168,7 +171,9 @@ def test_build_prompt_skips_failure_context_when_disabled(monkeypatch):
         failure_learning_max_examples = 2
 
     monkeypatch.setattr(
-        llm_step_mapper, "get_config", lambda: type("C", (), {"quality": DummyQuality})()
+        llm_step_mapper,
+        "get_config",
+        lambda: type("C", (), {"quality": DummyQuality})(),
     )
     monkeypatch.setattr(
         llm_step_mapper,

@@ -26,7 +26,10 @@ class AgentState:
 
 class BDDAgent:
     def __init__(
-        self, llm_config: Dict[str, Any], tool_registry: Dict[str, Any], max_iterations: int = 10
+        self,
+        llm_config: Dict[str, Any],
+        tool_registry: Dict[str, Any],
+        max_iterations: int = 10,
     ):
         self.llm = create_llm_callable(llm_config)
         self.tools = tool_registry
@@ -44,7 +47,11 @@ class BDDAgent:
             # Auto‑fix common issues: if improve_story is called without raw_text, inject it from state
             if action.get("tool") == "improve_story":
                 args = action.get("args", {})
-                if "raw_text" not in args and "story" not in args and "text" not in args:
+                if (
+                    "raw_text" not in args
+                    and "story" not in args
+                    and "text" not in args
+                ):
                     if self.state.current_story_text:
                         args["raw_text"] = self.state.current_story_text
                         action["args"] = args
@@ -142,7 +149,7 @@ class BDDAgent:
         history = (
             "\n".join(
                 [
-                    f"Step {i+1}: {h['action'].get('tool', 'unknown')} -> {str(h['result'])[:200]}"
+                    f"Step {i + 1}: {h['action'].get('tool', 'unknown')} -> {str(h['result'])[:200]}"
                     for i, h in enumerate(self.state.history)
                 ]
             )
