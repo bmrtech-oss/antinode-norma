@@ -10,6 +10,12 @@ from typing import Any, Dict, List, Optional
 
 from antinode_norma.codegen import Orchestrator
 from antinode_norma.codegen.config import get_config
+from antinode_norma.core import failure_analyzer
+from antinode_norma.utils.llm_factory import create_llm_callable
+import subprocess
+import shutil
+import tempfile
+import os
 
 # Try to import MCP types; fall back to dict if not available
 try:
@@ -400,6 +406,185 @@ async def handle_validate_feature(arguments: Dict[str, Any]) -> List[Dict[str, A
         ]
 
 
+async def handle_generate_and_autocorrect(arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Generate tests, run them, and attempt automatic Gherkin fixes when failures occur.
+
+    Arguments:
+        feature_path: str (required)
+        framework: str (default 'playwright')
+        output_dir: str (optional)
+        run_tests: bool (default True for playwright)
+        max_iterations: int (default 2)
+
+    Returns: MCP-style JSON result with success, messages and diagnostics.
+    """
+    feature_path = arguments.get("feature_path")
+    framework = arguments.get("framework", "playwright")
+    output_dir = arguments.get("output_dir")
+    run_tests = arguments.get("run_tests", True)
+    max_iterations = int(arguments.get("max_iterations", 2))
+    non_destructive = bool(arguments.get("non_destructive", False))
+    create_branch = bool(arguments.get("create_branch", False))
+    confirm_before_apply = bool(arguments.get("confirm_before_apply", False))
+    approve = bool(arguments.get("approve", False))
+
+    if not feature_path:
+        return [{"type": "text", "text": _format_result(False, "Error: 'feature_path' is required")}]
+
+    feature_path = Path(feature_path)
+    if not feature_path.exists():
+        return [{"type": "text", "text": _format_result(False, f"Error: Feature file not found: {feature_path}")}]
+
+    # Load config and prepare output dir
+    try:
+        config = get_config()
+        if output_dir:
+            config.output_dir = Path(output_dir)
+
+        orchestrator = Orchestrator()
+
+        # Iteratively generate -> run -> analyze -> fix
+        iteration = 0
+        messages: List[str] = []
+        last_report = None
+
+        while iteration < max_iterations:
+            iteration += 1
+            orchestrator.generate(
+                feature_path=feature_path,
+                output_dir=config.get_output_dir(framework),
+                framework=framework,
+            )
+
+            messages.append(f"Iteration {iteration}: Generated tests for {framework}.")
+
+            if not run_tests or framework.lower() != "playwright":
+                break
+
+            # Find available playwright executable: prefer local node_modules/.bin/playwright, then npx, then playwright CLI
+            pw_cmd = None
+            if shutil.which("playwright"):
+                pw_cmd = ["playwright", "test", str(config.get_output_dir(framework)), "--reporter=json"]
+            elif shutil.which("npx"):
+                pw_cmd = ["npx", "playwright", "test", str(config.get_output_dir(framework)), "--reporter=json"]
+
+            if not pw_cmd:
+                messages.append("Playwright not found on PATH; skipping test run.")
+                break
+
+            # Run Playwright and capture JSON output
+            try:
+                proc = subprocess.run(pw_cmd, capture_output=True, text=True, cwd=os.getcwd())
+            except Exception as e:
+                messages.append(f"Error running Playwright: {e}")
+                break
+
+            # Write stdout to temp report file
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+            tmp.write(proc.stdout.encode("utf-8"))
+            tmp.flush()
+            tmp.close()
+            report_path = Path(tmp.name)
+            last_report = str(report_path)
+
+            # Parse and store failures
+            failures = failure_analyzer.store_playwright_failures(report_path)
+            if not failures:
+                messages.append("No failures detected; tests passed.")
+                return [
+                    {"type": "text", "text": _format_result(True, "Tests passed", {"messages": messages})}
+                ]
+
+            messages.append(f"Detected {len(failures)} failure(s).")
+
+            # Build prompt for LLM to suggest Gherkin fixes
+            try:
+                llm_config = {
+                    "provider": os.getenv("LLM_PROVIDER", "openrouter"),
+                    "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY"),
+                }
+                llm = create_llm_callable(llm_config)
+
+                failure_summary_lines = []
+                for f in failures:
+                    failure_summary_lines.append(
+                        f"Step: {f.step_text or ''}\nSelector: {f.selector or ''}\nError: {f.error_message.splitlines()[0]}"
+                    )
+
+                with open(feature_path, "r", encoding="utf-8") as fh:
+                    current_feature = fh.read()
+
+                prompt = (
+                    "You are an expert BDD engineer. The following Playwright test failures were observed when running the tests generated from the Gherkin feature below.\n\n"
+                    "Failures:\n" + "\n---\n".join(failure_summary_lines)
+                    + "\n\nCurrent feature:\n" + current_feature
+                    + "\n\nProduce a corrected Gherkin feature file that addresses the root causes of these failures. Return ONLY the corrected feature file, with minimal changes."
+                )
+
+                fixed = llm(prompt)
+
+                target_path = feature_path
+                if non_destructive:
+                    target_path = feature_path.with_name(feature_path.stem + ".autocorrected.feature")
+
+                # If confirmation requested, require approval or interactive prompt
+                if confirm_before_apply and not approve:
+                    try:
+                        import sys
+
+                        if sys.stdin is not None and sys.stdin.isatty():
+                            resp = input(f"Apply LLM-suggested fixes to {target_path}? [y/N]: ")
+                            if resp.strip().lower() not in {"y", "yes"}:
+                                messages.append("User declined to apply LLM fixes.")
+                                # Do not apply; return current diagnostics
+                                data = {"messages": messages}
+                                if last_report:
+                                    data["last_report"] = last_report
+                                return [{"type": "text", "text": _format_result(False, "User declined LLM fixes", data)}]
+                        else:
+                            # Non-interactive: require explicit 'approve' flag
+                            data = {"messages": messages, "note": "Approval required in non-interactive mode (set 'approve': true)"}
+                            return [{"type": "text", "text": _format_result(False, "Approval required to apply fixes", data)}]
+                    except Exception:
+                        data = {"messages": messages, "note": "Unable to prompt for confirmation"}
+                        return [{"type": "text", "text": _format_result(False, "Approval required to apply fixes", data)}]
+
+                # Apply or write fixed content
+                target_path.write_text(fixed, encoding="utf-8")
+
+                # Optionally create a git branch and commit the change (local only)
+                if create_branch:
+                    try:
+                        import subprocess as _sub
+
+                        safe_branch = f"autocorrect/{feature_path.stem}-iter{iteration}"
+                        _sub.run(["git", "checkout", "-b", safe_branch], check=False)
+                        _sub.run(["git", "add", str(target_path)], check=False)
+                        _sub.run(["git", "commit", "-m", f"autocorrect: apply LLM fixes to {target_path.name}"], check=False)
+                        messages.append(f"Committed fixes to branch {safe_branch}.")
+                    except Exception:
+                        messages.append("Git branch/commit failed (continuing without committing).")
+
+                messages.append(f"Applied LLM-suggested Gherkin fixes to {target_path}.")
+
+                # Loop will regenerate and re-run
+                continue
+            except Exception as e:
+                messages.append(f"LLM-based fix failed: {e}")
+                break
+
+        # If we exit loop with failures, return diagnostics
+        data = {"messages": messages}
+        if last_report:
+            data["last_report"] = last_report
+
+        return [{"type": "text", "text": _format_result(False, "Auto-correction completed with unresolved failures", data)}]
+
+    except Exception as e:
+        return [{"type": "text", "text": _format_result(False, f"Error during generate_and_autocorrect: {str(e)}")}]
+
+
 # Tool definitions for MCP server
 def get_tool_definitions():
     """Return the tool definitions for MCP registration."""
@@ -506,6 +691,21 @@ def get_tool_definitions():
                         "description": "Run INVEST quality check",
                         "default": True,
                     },
+                },
+                "required": ["feature_path"],
+            },
+        },
+        {
+            "name": "generate_and_autocorrect",
+            "description": "Generate tests, run Playwright, analyze failures and automatically propose Gherkin fixes using the LLM.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "feature_path": {"type": "string"},
+                    "framework": {"type": "string", "enum": ["playwright", "cypress", "selenium"], "default": "playwright"},
+                    "output_dir": {"type": "string"},
+                    "run_tests": {"type": "boolean", "default": True},
+                    "max_iterations": {"type": "integer", "default": 2},
                 },
                 "required": ["feature_path"],
             },
