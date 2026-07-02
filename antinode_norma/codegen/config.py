@@ -38,6 +38,7 @@ class CodegenConfig:
     emitter_options: Dict[str, Any] = field(default_factory=dict)
     verbose: bool = False
     dry_run: bool = False
+    log_level: str = "INFO"
 
     # Quality enhancements (nested)
     quality: QualityConfig = field(default_factory=QualityConfig)
@@ -46,6 +47,7 @@ class CodegenConfig:
         # Ensure paths are Path objects
         self.feature_dir = Path(self.feature_dir)
         self.output_dir = Path(self.output_dir)
+        self.log_level = str(self.log_level or "INFO").upper()
 
         # Convert quality dict to QualityConfig, filtering unknown keys
         if isinstance(self.quality, dict):

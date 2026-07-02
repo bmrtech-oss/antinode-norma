@@ -119,3 +119,25 @@ ruff
     assert "generate_step_defs: true" in content
     assert "run_formatter: false" in content
     assert "formatter_tool: ruff" in content
+
+
+def test_parse_show_mapping_decisions_writes_summary_and_debug_log(tmp_path, monkeypatch):
+    feature_path = tmp_path / "sample.feature"
+    feature_path.write_text(
+        """Feature: Login\n  Scenario: Valid login\n    Given I open \"https://example.com\"\n    When I click \"#login-button\"\n""",
+        encoding="utf-8",
+    )
+
+    runner = CliRunner()
+    monkeypatch.chdir(tmp_path)
+
+    result = runner.invoke(
+        cli,
+        ["parse", str(feature_path), "--show-mapping-decisions"],
+    )
+
+    assert result.exit_code == 0
+    assert "Input text" in result.output
+    assert "Selected mapping" in result.output
+    assert "Reason" in result.output
+    assert (tmp_path / ".antinode_norma_mapping_decisions.jsonl").exists()

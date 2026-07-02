@@ -336,6 +336,25 @@ class RuleEngine:
             (re.compile(pattern), action, target_func, value_func, options_func)
         )
 
+    def get_candidate_mappings(self, step_text: str) -> List[Dict[str, Any]]:
+        candidates: List[Dict[str, Any]] = []
+        for pattern, action, target_func, value_func, options_func in self.rules:
+            match = pattern.match(step_text)
+            if match:
+                target = target_func(match) if target_func else None
+                value = value_func(match) if value_func else None
+                options = options_func(match) if options_func else {}
+                candidates.append(
+                    {
+                        "action": action.name,
+                        "target": target,
+                        "value": value,
+                        "options": options,
+                        "pattern": pattern.pattern,
+                    }
+                )
+        return candidates
+
     def map_step(
         self, step_text: str
     ) -> Tuple[ActionType, Optional[str], Optional[str], Dict[str, Any]]:

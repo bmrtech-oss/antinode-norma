@@ -10,6 +10,7 @@ framework_output_map:                  # Sub‑folders per framework
   selenium: selenium
 verbose: false
 dry_run: false
+log_level: INFO
 
 # Quality‑related settings
 quality:

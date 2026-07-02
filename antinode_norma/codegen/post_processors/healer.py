@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from ...utils.llm_factory import create_llm_callable
+from ..engine.exceptions import SelectorNotFoundError
 
 _LOGGER = logging.getLogger(__name__)
 _CACHE_FILE = Path.home() / ".antinode_norma_healing_cache.json"
@@ -159,10 +160,19 @@ async def heal_selector(page: Any, old_selector: str, step_context: str) -> str:
         if suggested and suggested != old_selector:
             _add_to_cache(key, suggested)
             return suggested
+    except SelectorNotFoundError:
+        raise
     except Exception as exc:
         _LOGGER.debug("Selector healing LLM failed: %s", exc)
 
-    return old_selector
+    raise SelectorNotFoundError(
+        old_selector,
+        step_context,
+        alternatives=[
+            "Try a role= or text= based locator",
+            "Prefer a data-testid or aria-label selector",
+        ],
+    ) from None
 
 
 def render_playwright_healer() -> str:
