@@ -12,8 +12,20 @@ from .base import Parser
 from ..models.test_model import TestSuite, TestCase, TestStep
 from ..engine.rules import RuleEngine
 from ..engine.llm_step_mapper import map_step as map_step_with_llm, LLMStepMapper
+from ..engine.prompt_library import Domain
 from ..engine.exceptions import StepMappingError, LLMTimeoutError, SelectorNotFoundError
 from ..config import get_config
+
+
+def _normalize_domain(domain_name: Optional[str]) -> Optional[Domain]:
+    if not domain_name:
+        return None
+    if isinstance(domain_name, Domain):
+        return domain_name
+    try:
+        return Domain(domain_name.strip().lower())
+    except Exception:
+        return None
 
 
 class GherkinParser(Parser):
@@ -34,7 +46,16 @@ class GherkinParser(Parser):
         self.mapping_decisions = mapping_decisions if mapping_decisions is not None else []
         self.mapping_decisions_log_path = mapping_decisions_log_path
         self.use_richer_mapper = use_richer_mapper
-        self.mapper = LLMStepMapper() if use_richer_mapper else None
+        if use_richer_mapper:
+            cfg = get_config()
+            mapper_domain = _normalize_domain(getattr(cfg, "domain", None))
+            mapper_prompt_version = getattr(cfg, "prompt_version", "latest") or "latest"
+            self.mapper = LLMStepMapper(
+                domain=mapper_domain,
+                prompt_version=mapper_prompt_version,
+            )
+        else:
+            self.mapper = None
 
     def parse(self, source: Path) -> TestSuite:
         """

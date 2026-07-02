@@ -1,6 +1,7 @@
 """Integration tests for Phase 1.3c: LLMStepMapper + PromptLibrary."""
 
 import pytest
+from antinode_norma.codegen.config import CodegenConfig
 from antinode_norma.codegen.engine.llm_step_mapper import LLMStepMapper
 from antinode_norma.codegen.engine.prompt_library import Domain
 from antinode_norma.codegen.engine.feedback_store import FeedbackStore
@@ -153,3 +154,18 @@ class TestLLMStepMapperIntegration:
         # Check prompt is now ecommerce-specific
         prompt = mapper._build_system_prompt()
         assert "checkout" in prompt.lower() or "cart" in prompt.lower() or "payment" in prompt.lower()
+
+    def test_gherkin_parser_uses_codegen_config_for_mapper(self, tmp_path, monkeypatch):
+        """Test that GherkinParser loads domain and prompt version from config."""
+        from antinode_norma.codegen.parsers.gherkin_parser import GherkinParser
+
+        config = CodegenConfig(domain="saas", prompt_version="v1")
+        monkeypatch.setattr(
+            "antinode_norma.codegen.parsers.gherkin_parser.get_config",
+            lambda: config,
+        )
+
+        parser = GherkinParser(use_richer_mapper=True)
+        assert parser.mapper is not None
+        assert parser.mapper.domain == Domain.SAAS
+        assert parser.mapper.prompt_version == "v1"

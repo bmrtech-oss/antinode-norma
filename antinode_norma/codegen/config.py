@@ -34,6 +34,8 @@ class CodegenConfig:
             "selenium": "selenium",
         }
     )
+    domain: Optional[str] = None
+    prompt_version: str = "latest"
     parser_options: Dict[str, Any] = field(default_factory=dict)
     emitter_options: Dict[str, Any] = field(default_factory=dict)
     verbose: bool = False
