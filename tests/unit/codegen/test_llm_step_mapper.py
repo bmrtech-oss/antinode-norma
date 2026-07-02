@@ -9,6 +9,7 @@ from antinode_norma.codegen.engine.exceptions import (
     StepMappingError,
 )
 from antinode_norma.codegen.post_processors import healer
+from antinode_norma.codegen.post_processors.healer import SelectorHealer
 from antinode_norma.core.failure_analyzer import FailureEvent
 from antinode_norma.codegen.config import CodegenConfig
 from antinode_norma.codegen.engine import llm_step_mapper
@@ -22,9 +23,13 @@ def clear_llm_cache(monkeypatch, tmp_path):
     )
     llm_step_mapper._CACHE.clear()
     llm_step_mapper._CACHE_ORDER.clear()
+    healer._CACHE.clear()
+    healer._CACHE_ORDER.clear()
     yield
     llm_step_mapper._CACHE.clear()
     llm_step_mapper._CACHE_ORDER.clear()
+    healer._CACHE.clear()
+    healer._CACHE_ORDER.clear()
 
 
 def test_map_step_with_llm_returns_playwright_mapping(monkeypatch):
@@ -281,13 +286,82 @@ async def test_heal_selector_raises_selector_not_found_error(monkeypatch):
         def locator(self, selector):
             return DummyLocator()
 
-    async def fake_suggest(old_selector: str, step_context: str) -> str:
+    async def fake_suggest(self, old_selector: str, step_context: str) -> str:
         return old_selector
 
-    monkeypatch.setattr(healer, "_suggest_alternative_selector", fake_suggest)
+    monkeypatch.setattr(SelectorHealer, "_suggest_alternative_selector", fake_suggest)
 
     with pytest.raises(SelectorNotFoundError) as excinfo:
         await healer.heal_selector(DummyPage(), "#missing", "click the button")
 
     assert "#missing" in str(excinfo.value)
     assert "alternatives" in str(excinfo.value).lower()
+
+
+@pytest.mark.asyncio
+async def test_selector_healer_returns_cached_alternative(monkeypatch, tmp_path):
+    class DummyLocator:
+        def __init__(self, selector):
+            self.selector = selector
+
+        async def count(self):
+            return 1 if self.selector == "text=click the button" else 0
+
+    class DummyPage:
+        def locator(self, selector):
+            return DummyLocator(selector)
+
+    cache_file = tmp_path / "healer_cache_cached.json"
+    healer = SelectorHealer(cache_file=cache_file)
+    cache_key = healer._cache_key("#missing", "click the button")
+    healer.cache[cache_key] = "text=click the button"
+    healer.cache_order.append(cache_key)
+
+    result = await healer.heal_selector(DummyPage(), "#missing", "click the button")
+
+    assert result.selector == "text=click the button"
+    assert result.confidence == 0.95
+    assert result.source == "cache"
+    assert result.cache_hit is True
+
+
+@pytest.mark.asyncio
+async def test_selector_healer_returns_dom_candidate(monkeypatch, tmp_path):
+    class DummyLocator:
+        def __init__(self, selector):
+            self.selector = selector
+
+        async def count(self):
+            return 1 if self.selector == "text=click the button" else 0
+
+    class DummyPage:
+        def locator(self, selector):
+            return DummyLocator(selector)
+
+    cache_file = tmp_path / "healer_cache_dom.json"
+    healer = SelectorHealer(cache_file=cache_file)
+    result = await healer.heal_selector(DummyPage(), "#missing", "click the button")
+
+    assert result.selector == "text=click the button"
+    assert result.confidence == 0.82
+    assert result.source == "dom_similarity"
+    assert result.cache_hit is False
+
+
+@pytest.mark.asyncio
+async def test_heal_selector_wrapper_raises_when_confidence_too_low(monkeypatch):
+    class DummyLocator:
+        async def count(self):
+            return 0
+
+    class DummyPage:
+        def locator(self, selector):
+            return DummyLocator()
+
+    async def fake_suggest(self, old_selector: str, step_context: str) -> str:
+        return "text=click the button"
+
+    monkeypatch.setattr(SelectorHealer, "_suggest_alternative_selector", fake_suggest)
+
+    with pytest.raises(SelectorNotFoundError):
+        await healer.heal_selector(DummyPage(), "#missing", "click the button")
