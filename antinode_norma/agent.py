@@ -3,9 +3,20 @@ import logging
 import re
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
+from .codegen.config import get_config
 from .utils.llm_factory import create_llm_callable
 
 logger = logging.getLogger(__name__)
+
+
+def _configure_logging(level_name: Optional[str]) -> None:
+    level = getattr(logging, str(level_name or "INFO").upper(), logging.INFO)
+    logger.setLevel(level)
+    if logger.handlers:
+        return
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(levelname)s:%(name)s:%(message)s"))
+    logger.addHandler(handler)
 
 
 @dataclass
@@ -31,6 +42,7 @@ class BDDAgent:
         tool_registry: Dict[str, Any],
         max_iterations: int = 10,
     ):
+        _configure_logging(get_config().log_level)
         self.llm = create_llm_callable(llm_config)
         self.tools = tool_registry
         self.max_iterations = max_iterations
@@ -80,7 +92,6 @@ class BDDAgent:
         return self._final_state()
 
     def _plan(self) -> Dict:
-        logging.basicConfig(level=logging.DEBUG)
         prompt = self._build_planner_prompt()
         response = self.llm(prompt)
         try:
@@ -101,7 +112,6 @@ class BDDAgent:
             return {"type": "finish", "reason": "Could not parse LLM response."}
 
     def _execute(self, action: Dict) -> Any:
-        logging.basicConfig(level=logging.DEBUG)
         tool_name = action.get("tool")
         args = action.get("args", {})
         if tool_name not in self.tools:

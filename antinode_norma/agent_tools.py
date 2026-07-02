@@ -10,6 +10,7 @@ from .core.parser import parse_story
 from .core.gherkin_generator import generate_gherkin
 from .core.schemas import UserStory
 from .utils.llm_factory import create_llm_callable
+from .codegen.engine.exceptions import StepMappingError, LLMTimeoutError, SelectorNotFoundError
 
 # JIRA connector (optional)
 try:
@@ -138,6 +139,8 @@ def submit_story(**kwargs) -> Dict:
 
     try:
         result = asyncio.run(run_agent_from_raw(text, quality_only=True))
+    except (StepMappingError, LLMTimeoutError, SelectorNotFoundError) as exc:
+        return {"error": f"Failed to run agent: {exc}"}
     except Exception as e:
         return {"error": f"Failed to run agent: {str(e)}"}
 
@@ -206,7 +209,11 @@ def _load_story_from_kwargs(kwargs: Dict[str, Any]) -> UserStory:
         }
         llm = create_llm_callable(llm_config)
         return parse_story(story_input, llm)
-    raise ValueError("No story text provided.")
+    raise StepMappingError(
+        "story input",
+        "No story text provided.",
+        ["Provide raw_text, story, or text content before generating a feature."],
+    )
 
 
 def generate_feature(**kwargs) -> Dict:
@@ -216,7 +223,7 @@ def generate_feature(**kwargs) -> Dict:
 
     try:
         story = _load_story_from_kwargs(kwargs)
-    except ValueError as exc:
+    except StepMappingError as exc:
         return {"error": str(exc)}
     except Exception as exc:
         return {"error": f"Failed to parse story: {str(exc)}"}
@@ -295,6 +302,8 @@ Return the corrected Gherkin only."""
         fixed = llm(prompt)
         write_feature_file(feature_path, fixed)
         return {"fixed": True, "new_content": fixed}
+    except (StepMappingError, LLMTimeoutError) as exc:
+        return {"error": str(exc)}
     except Exception as e:
         return {"error": str(e)}
 

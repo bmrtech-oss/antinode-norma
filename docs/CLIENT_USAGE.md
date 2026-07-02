@@ -221,6 +221,8 @@ With the following `codegen.yaml` in your project root:
 
 ```yaml
 default_framework: playwright
+domain: generic
+prompt_version: latest
 quality:
   use_page_objects: true
   generate_step_defs: true

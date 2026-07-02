@@ -34,6 +34,34 @@ def _print_json_result(result):
     return result
 
 
+def print_mapping_decisions_summary(decisions):
+    if not decisions:
+        return
+    for decision in decisions:
+        click.echo(f"Input text: {decision.get('input_text', '')}")
+        click.echo("Candidate mappings:")
+        for candidate in decision.get("candidate_mappings", []):
+            click.echo(
+                "  - {action} target={target} value={value}".format(
+                    action=candidate.get("action", "unknown"),
+                    target=candidate.get("target"),
+                    value=candidate.get("value"),
+                )
+            )
+        selected = decision.get("selected_mapping") or {}
+        click.echo(
+            "Selected mapping: {action} target={target} value={value} (confidence {confidence:.2f}, source: {source})".format(
+                action=selected.get("action", "none"),
+                target=selected.get("target"),
+                value=selected.get("value"),
+                confidence=decision.get("confidence", 0.0),
+                source=decision.get("source", "unknown"),
+            )
+        )
+        click.echo(f"Reason: {decision.get('reason', 'n/a')}")
+        click.echo("")
+
+
 @click.group()
 @click.version_option()
 def cli():
@@ -441,10 +469,10 @@ def completion(shell):
 
 
 @cli.command()
+@click.argument("feature_file", required=False, type=click.Path(exists=True, dir_okay=False))
 @click.option(
     "--feature-file",
-    "feature_file",
-    required=True,
+    "feature_file_option",
     type=click.Path(exists=True, dir_okay=False),
     help="Path to a Gherkin feature file to parse.",
 )
@@ -453,11 +481,21 @@ def completion(shell):
     is_flag=True,
     help="Prompt for unmapped step mappings during parse.",
 )
-def parse(feature_file, interactive):
+@click.option(
+    "--show-mapping-decisions",
+    "-d",
+    is_flag=True,
+    help="Show per-step mapping decisions and write them to a debug log file.",
+)
+def parse(feature_file, feature_file_option, interactive, show_mapping_decisions):
     """Parse a feature file into mapped test steps."""
     try:
         from antinode_norma.codegen.parsers.gherkin_parser import GherkinParser
         from antinode_norma.codegen.models.test_model import ActionType
+
+        resolved_feature_file = feature_file_option or feature_file
+        if not resolved_feature_file:
+            raise click.UsageError("A feature file path is required.")
 
         def interactive_callback(
             step_text: str, error_message: str, suggestions: list[str] = None
@@ -479,10 +517,20 @@ def parse(feature_file, interactive):
             value = parts[2] if len(parts) > 2 and parts[2] else None
             return ActionType[action_name], target, value, {}
 
+        mapping_decisions = [] if show_mapping_decisions else None
         parser = GherkinParser(
-            interactive_callback=interactive_callback if interactive else None
+            interactive_callback=interactive_callback if interactive else None,
+            mapping_decisions=mapping_decisions,
+            mapping_decisions_log_path=(
+                Path.cwd() / ".antinode_norma_mapping_decisions.jsonl"
+                if show_mapping_decisions
+                else None
+            ),
+            use_richer_mapper=show_mapping_decisions,
         )
-        suite = parser.parse(Path(feature_file))
+        suite = parser.parse(Path(resolved_feature_file))
+        if show_mapping_decisions:
+            print_mapping_decisions_summary(mapping_decisions)
         section_header("Parsed Feature")
         for case in suite.cases:
             click.echo(f"Scenario: {case.name}")

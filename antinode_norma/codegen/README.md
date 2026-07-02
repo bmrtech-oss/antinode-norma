@@ -196,6 +196,8 @@ The generator uses a flexible configuration system with **three layers** (last w
 default_framework: playwright
 feature_dir: features
 output_dir: generated_tests
+domain: generic
+prompt_version: latest
 verbose: false
 
 quality:
@@ -218,6 +220,8 @@ quality:
 # .env
 CODEGEN_DEFAULT_FRAMEWORK=cypress
 CODEGEN_OUTPUT_DIR=./my_tests
+CODEGEN_DOMAIN=saas
+CODEGEN_PROMPT_VERSION=v1
 CODEGEN_QUALITY_USE_PAGE_OBJECTS=true
 CODEGEN_QUALITY_GENERATE_STEP_DEFS=true
 CODEGEN_VERBOSE=true
@@ -230,6 +234,8 @@ CODEGEN_VERBOSE=true
 | `CODEGEN_DEFAULT_FRAMEWORK` | Target framework | `playwright` |
 | `CODEGEN_FEATURE_DIR` | Directory containing `.feature` files | `features` |
 | `CODEGEN_OUTPUT_DIR` | Base output directory | `generated_tests` |
+| `CODEGEN_DOMAIN` | Preferred domain for step mapping (`ecommerce`, `saas`, `fintech`, `generic`) | `generic` |
+| `CODEGEN_PROMPT_VERSION` | Prompt template version for domain-specific mapping | `latest` |
 | `CODEGEN_VERBOSE` | Enable verbose logging | `false` |
 | `CODEGEN_DRY_RUN` | Do not write files, only log | `false` |
 | `CODEGEN_QUALITY_USE_PAGE_OBJECTS` | Generate Page Objects | `false` |
