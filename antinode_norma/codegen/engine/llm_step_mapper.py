@@ -16,6 +16,8 @@ from ..config import get_config
 from ..models.test_model import ActionType
 from .exceptions import LLMTimeoutError, StepMappingError
 from .feedback_store import FeedbackStore
+from .prompt_library import PromptLibrary, Domain
+from .domain_detector import DomainDetector
 from .rules import RuleEngine
 
 _LOGGER = logging.getLogger(__name__)
@@ -526,6 +528,8 @@ class LLMStepMapper(RuleEngine):
         llm_timeout: Optional[int] = None,
         similarity_threshold: float = 0.55,
         feedback_store: Optional[FeedbackStore] = None,
+        domain: Optional[Domain] = None,
+        prompt_version: str = "latest",
     ):
         super().__init__()
         self.provider = provider or getattr(config or {}, "get", lambda *_: None)("provider")
@@ -540,9 +544,31 @@ class LLMStepMapper(RuleEngine):
         self._feedback_store: list[dict[str, Any]] = []
         self._embedding_model = None
         self.feedback_store = feedback_store or FeedbackStore()
+        self.domain = domain or Domain.GENERIC
+        self.prompt_version = prompt_version
+        self.prompt_library = PromptLibrary()
 
     def _build_llm_config(self) -> Dict[str, Any]:
         return _build_llm_config_from_env(self.provider)
+
+    def set_domain(self, domain: Domain, auto_detect: bool = False) -> None:
+        """Manually set domain or enable auto-detection."""
+        self.domain = domain
+
+    def auto_detect_domain(self, feature_content: str) -> Domain:
+        """Auto-detect domain from feature file content."""
+        domain, confidence = DomainDetector.detect_domain(feature_content)
+        self.domain = domain
+        _LOGGER.debug("Auto-detected domain: %s (confidence: %.2f)", domain.value, confidence)
+        return domain
+
+    def _build_system_prompt(self) -> str:
+        """Get domain-specific system prompt from PromptLibrary."""
+        template_prompt = self.prompt_library.get_system_prompt(self.domain, self.prompt_version)
+        if template_prompt:
+            return template_prompt
+        # Fallback to generic if template not found
+        return self.prompt_library.get_system_prompt(Domain.GENERIC) or ""
 
     def _token_similarity(self, left: str, right: str) -> float:
         left_tokens = Counter(re.findall(r"[a-z0-9]+", left.lower()))
@@ -657,7 +683,9 @@ class LLMStepMapper(RuleEngine):
             )
 
         quality = get_config().quality
-        prompt = _build_prompt(step_text)
+        # Use domain-specific system prompt
+        system_prompt = self._build_system_prompt()
+        prompt = system_prompt + "\n\nStep to map: " + step_text
         llm_config = self._build_llm_config()
         timeout = self.llm_timeout if self.llm_timeout else quality.llm_mapping_timeout
 
