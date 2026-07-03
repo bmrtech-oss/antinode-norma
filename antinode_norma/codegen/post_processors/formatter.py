@@ -33,6 +33,10 @@ class CodeFormatter:
             if verbose:
                 print(f"Formatter error: {e.stderr}")
             return False
+        except FileNotFoundError as e:
+            if verbose:
+                print(f"Formatter not found: {e}")
+            return False
 
     def _detect_tool(self, sample_file: Path) -> Optional[str]:
         """Detect which formatter to use based on file extension."""
