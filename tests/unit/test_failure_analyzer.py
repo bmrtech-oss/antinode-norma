@@ -67,6 +67,56 @@ def test_store_playwright_failures_extracts_selector_and_step_text(tmp_path):
     assert examples[0].selector == "#email"
 
 
+def test_create_weekly_failure_report_writes_markdown(tmp_path):
+    report_path = tmp_path / "playwright-report.json"
+    spec_path = tmp_path / "generated_tests" / "playwright" / "user_login.spec.ts"
+    spec_path.parent.mkdir(parents=True, exist_ok=True)
+    spec_path.write_text(
+        "import { test, expect } from '@playwright/test';\n"
+        "test('User Login', async ({ page }) => {\n"
+        "  await page.locator('#email').fill('testuser@example.com');\n"
+        "});\n"
+    )
+
+    report_path.write_text(
+        json.dumps(
+            {
+                "suites": [
+                    {
+                        "title": "",
+                        "suites": [],
+                        "tests": [
+                            {
+                                "title": "User Login › Failed fill",
+                                "location": {
+                                    "file": str(spec_path),
+                                    "line": 3,
+                                },
+                                "results": [
+                                    {
+                                        "status": "failed",
+                                        "error": "locator.fill: Test timeout of 30000ms exceeded. waiting for locator('#email')",
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    failure_analyzer.store_playwright_failures(report_path)
+    report_output = tmp_path / "weekly-report.md"
+    content = failure_analyzer.create_weekly_failure_report(report_output, lookback_days=30)
+
+    assert report_output.exists()
+    assert "Weekly Failure Report" in content
+    assert "User Login › Failed fill" in content
+    assert "#email" in content
+
+
 def test_get_recent_failures_returns_stored_records(tmp_path):
     report_path = tmp_path / "playwright-report.json"
     report_path.write_text(

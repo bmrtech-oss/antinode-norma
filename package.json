@@ -23,6 +23,7 @@
   "homepage": "https://github.com/bmrtech-oss/antinode-norma#readme",
   "devDependencies": {
     "@playwright/test": "^1.61.1",
-    "@types/node": "^26.0.1"
+    "@types/node": "^26.0.1",
+    "prettier": "^3.0.0"
   }
 }

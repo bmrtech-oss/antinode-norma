@@ -221,6 +221,8 @@ With the following `codegen.yaml` in your project root:
 
 ```yaml
 default_framework: playwright
+domain: generic
+prompt_version: latest
 quality:
   use_page_objects: true
   generate_step_defs: true
@@ -341,9 +343,12 @@ After running Playwright with `--reporter=json`, you can import failure data int
 ```bash
 npx playwright test generated_tests/playwright --project=chromium --reporter=json > playwright-report.json
 python -m antinode_norma.cli learn --report-file playwright-report.json --show-recent --show-suggestions
+python -m antinode_norma.cli learn --report-file playwright-report.json --weekly-report-file weekly-failure-report.md
 ```
 
 This stores failure patterns in a local SQLite database and provides the generator with negative examples to avoid flakier step mappings. The `--show-suggestions` flag also prints healing recommendations for selectors and step mappings derived from the learned failures.
+
+The `--weekly-report-file` flag generates a markdown report summarizing the most frequent failures, failing selectors, and root-cause categories over the recent reporting window.
 
 Notes:
 - The generator accepts two CLI flags: `--enable-visual-testing` and `--visual-snapshot-dir` (relative to the emitter output dir).

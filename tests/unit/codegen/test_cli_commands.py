@@ -91,3 +91,14 @@ class TestCodegenCLIParallelGeneration:
         assert result.exit_code == 0
         assert mock_orch.generate.call_count == 1
         assert "Tests generated successfully for 'login.feature'" in result.output
+
+    def test_load_config_reads_domain_and_prompt_version(self):
+        config_file = Path("codegen.yaml")
+        config_file.write_text(
+            "domain: saas\nprompt_version: v1\n", encoding="utf-8"
+        )
+
+        config = config_module.load_config(config_file=config_file)
+
+        assert config.domain == "saas"
+        assert config.prompt_version == "v1"

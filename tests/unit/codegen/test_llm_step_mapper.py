@@ -1,7 +1,15 @@
+import asyncio
 import json
 
 import pytest
 
+from antinode_norma.codegen.engine.exceptions import (
+    LLMTimeoutError,
+    SelectorNotFoundError,
+    StepMappingError,
+)
+from antinode_norma.codegen.post_processors import healer
+from antinode_norma.codegen.post_processors.healer import SelectorHealer
 from antinode_norma.core.failure_analyzer import FailureEvent
 from antinode_norma.codegen.config import CodegenConfig
 from antinode_norma.codegen.engine import llm_step_mapper
@@ -15,9 +23,13 @@ def clear_llm_cache(monkeypatch, tmp_path):
     )
     llm_step_mapper._CACHE.clear()
     llm_step_mapper._CACHE_ORDER.clear()
+    healer._CACHE.clear()
+    healer._CACHE_ORDER.clear()
     yield
     llm_step_mapper._CACHE.clear()
     llm_step_mapper._CACHE_ORDER.clear()
+    healer._CACHE.clear()
+    healer._CACHE_ORDER.clear()
 
 
 def test_map_step_with_llm_returns_playwright_mapping(monkeypatch):
@@ -84,6 +96,42 @@ def test_map_step_falls_back_to_rule_engine_when_llm_fails(monkeypatch):
     assert target is None
     assert value == "https://example.com/login"
     assert options == {}
+
+
+def test_llm_step_mapper_uses_rule_engine_fast_path():
+    mapper = llm_step_mapper.LLMStepMapper(provider="mock")
+
+    result = mapper.map_step('Given I navigate to "https://example.com/login"')
+
+    assert result.action_type.name == "NAVIGATE"
+    assert result.confidence >= 0.95
+    assert result.source == "rule_engine"
+
+
+def test_llm_step_mapper_falls_back_to_similarity_when_llm_fails(monkeypatch):
+    async def fake_call(prompt: str, config: dict) -> str:
+        raise ValueError("LLM failure")
+
+    monkeypatch.setattr(llm_step_mapper, "_call_llm", fake_call)
+
+    mapper = llm_step_mapper.LLMStepMapper(provider="mock")
+    mapper.record_feedback(
+        "When I click the login button",
+        llm_step_mapper.MappingResult(
+            action_type=llm_step_mapper.ActionType.CLICK,
+            selector="#login-button",
+            value=None,
+            options={},
+            confidence=0.91,
+            source="feedback",
+        ),
+    )
+
+    result = mapper.map_step("When I click the login button", use_llm=True)
+
+    assert result.action_type.name == "CLICK"
+    assert result.source == "similarity"
+    assert result.confidence >= 0.8
 
 
 def test_rule_engine_respects_codegen_base_url(monkeypatch):
@@ -193,3 +241,127 @@ def test_build_prompt_skips_failure_context_when_disabled(monkeypatch):
 
     prompt = llm_step_mapper._build_prompt('When I click on "#login-button"')
     assert "Previous failure patterns to avoid:" not in prompt
+
+
+def test_map_step_raises_step_mapping_error_for_invalid_json(monkeypatch):
+    async def fake_call(prompt: str, config: dict) -> str:
+        return '{"action": "UNKNOWN"}'
+
+    monkeypatch.setattr(llm_step_mapper, "_call_llm", fake_call)
+
+    with pytest.raises(StepMappingError) as excinfo:
+        llm_step_mapper.map_step(
+            'When I click on "#login-button"',
+            use_llm=True,
+            fallback_to_rules=False,
+        )
+
+    assert 'When I click on "#login-button"' in str(excinfo.value)
+    assert "suggested fixes" in str(excinfo.value).lower()
+
+
+def test_map_step_raises_llm_timeout_error(monkeypatch):
+    async def fake_call(prompt: str, config: dict) -> str:
+        raise asyncio.TimeoutError("timed out")
+
+    monkeypatch.setattr(llm_step_mapper, "_call_llm", fake_call)
+
+    with pytest.raises(LLMTimeoutError) as excinfo:
+        llm_step_mapper.map_step(
+            'When I click on "#login-button"',
+            use_llm=True,
+            fallback_to_rules=False,
+        )
+
+    assert "retry" in str(excinfo.value).lower()
+
+
+@pytest.mark.asyncio
+async def test_heal_selector_raises_selector_not_found_error(monkeypatch):
+    class DummyLocator:
+        async def count(self):
+            return 0
+
+    class DummyPage:
+        def locator(self, selector):
+            return DummyLocator()
+
+    async def fake_suggest(self, old_selector: str, step_context: str) -> str:
+        return old_selector
+
+    monkeypatch.setattr(SelectorHealer, "_suggest_alternative_selector", fake_suggest)
+
+    with pytest.raises(SelectorNotFoundError) as excinfo:
+        await healer.heal_selector(DummyPage(), "#missing", "click the button")
+
+    assert "#missing" in str(excinfo.value)
+    assert "alternatives" in str(excinfo.value).lower()
+
+
+@pytest.mark.asyncio
+async def test_selector_healer_returns_cached_alternative(monkeypatch, tmp_path):
+    class DummyLocator:
+        def __init__(self, selector):
+            self.selector = selector
+
+        async def count(self):
+            return 1 if self.selector == "text=click the button" else 0
+
+    class DummyPage:
+        def locator(self, selector):
+            return DummyLocator(selector)
+
+    cache_file = tmp_path / "healer_cache_cached.json"
+    healer = SelectorHealer(cache_file=cache_file)
+    cache_key = healer._cache_key("#missing", "click the button")
+    healer.cache[cache_key] = "text=click the button"
+    healer.cache_order.append(cache_key)
+
+    result = await healer.heal_selector(DummyPage(), "#missing", "click the button")
+
+    assert result.selector == "text=click the button"
+    assert result.confidence == 0.95
+    assert result.source == "cache"
+    assert result.cache_hit is True
+
+
+@pytest.mark.asyncio
+async def test_selector_healer_returns_dom_candidate(monkeypatch, tmp_path):
+    class DummyLocator:
+        def __init__(self, selector):
+            self.selector = selector
+
+        async def count(self):
+            return 1 if self.selector == "text=click the button" else 0
+
+    class DummyPage:
+        def locator(self, selector):
+            return DummyLocator(selector)
+
+    cache_file = tmp_path / "healer_cache_dom.json"
+    healer = SelectorHealer(cache_file=cache_file)
+    result = await healer.heal_selector(DummyPage(), "#missing", "click the button")
+
+    assert result.selector == "text=click the button"
+    assert result.confidence == 0.82
+    assert result.source == "dom_similarity"
+    assert result.cache_hit is False
+
+
+@pytest.mark.asyncio
+async def test_heal_selector_wrapper_raises_when_confidence_too_low(monkeypatch):
+    class DummyLocator:
+        async def count(self):
+            return 0
+
+    class DummyPage:
+        def locator(self, selector):
+            return DummyLocator()
+
+    async def fake_suggest(self, old_selector: str, step_context: str) -> str:
+        return "text=click the button"
+
+    monkeypatch.setattr(SelectorHealer, "_suggest_alternative_selector", fake_suggest)
+
+    with pytest.raises(SelectorNotFoundError):
+        await healer.heal_selector(DummyPage(), "#missing", "click the button")

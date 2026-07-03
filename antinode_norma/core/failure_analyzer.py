@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import collections
+import datetime
 import json
 import os
 import re
@@ -251,3 +253,123 @@ def get_failure_suggestions_for_step(
                 f"Previous failure for step '{summary_key}': {error_line}. Consider rephrasing the step or choosing a more specific locator."
             )
     return suggestions
+
+
+_ERROR_CATEGORY_PATTERNS = [
+    ("Timeout", re.compile(r"timeout", re.I)),
+    ("Element not found", re.compile(r"(unable to find element|no such element|not found|unable to locate|cannot find|not visible)", re.I)),
+    ("Stale element", re.compile(r"(stale element|detached from DOM)", re.I)),
+    ("Assertion failure", re.compile(r"(assertion|expected .* to .*|expected.*equal)", re.I)),
+    ("Network issue", re.compile(r"(network|ECONNREFUSED|ECONNRESET|connect.*refused)", re.I)),
+]
+
+
+def _categorize_error_message(error_message: str) -> str:
+    message = (error_message or "").strip()
+    for label, pattern in _ERROR_CATEGORY_PATTERNS:
+        if pattern.search(message):
+            return label
+    return "Other"
+
+
+def get_failures_since(days: int = 7) -> List[FailureEvent]:
+    _ensure_database()
+    with _get_connection() as conn:
+        cursor = conn.execute(
+            f"SELECT step_text, test_title, file_path, line, selector, error_message, created_at "
+            f"FROM {_TABLE_NAME} WHERE created_at >= datetime('now', ?) ORDER BY created_at DESC",
+            (f"-{days} days",),
+        )
+        rows = cursor.fetchall()
+    return [FailureEvent(**dict(row)) for row in rows]
+
+
+def get_top_failing_selectors(failures: List[FailureEvent], limit: int = 10) -> List[tuple[str, int]]:
+    counts = collections.Counter(f.selector or "<no selector>" for f in failures)
+    return counts.most_common(limit)
+
+
+def get_top_failing_tests(failures: List[FailureEvent], limit: int = 10) -> List[tuple[str, int]]:
+    counts = collections.Counter(f.test_title for f in failures)
+    return counts.most_common(limit)
+
+
+def get_root_cause_categories(failures: List[FailureEvent], limit: int = 10) -> List[tuple[str, int]]:
+    counts = collections.Counter(_categorize_error_message(f.error_message) for f in failures)
+    return counts.most_common(limit)
+
+
+def detect_common_failure_patterns(
+    failures: List[FailureEvent], min_count: int = 3, min_ratio: float = 0.25, limit: int = 10
+) -> List[tuple[str, int, float]]:
+    total = max(len(failures), 1)
+    keys = collections.Counter(
+        (
+            f.selector or f.step_text or "<unknown>",
+            f.step_text or "<unknown>",
+        )
+        for f in failures
+    )
+    patterns: List[tuple[str, int, float]] = []
+    for (selector, step_text), count in keys.items():
+        ratio = count / total
+        if count >= min_count and ratio >= min_ratio:
+            label = selector
+            if step_text and step_text not in selector:
+                label = f"{selector} / {step_text}"
+            patterns.append((label, count, round(ratio, 2)))
+    patterns.sort(key=lambda item: item[1], reverse=True)
+    return patterns[:limit]
+
+
+def create_weekly_failure_report(
+    output_path: Path, lookback_days: int = 7, top_n: int = 10
+) -> str:
+    failures = get_failures_since(lookback_days)
+    report_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    header = [
+        "# Weekly Failure Report",
+        "",
+        f"Generated: {report_date}",
+        f"Window: last {lookback_days} days",
+        "",
+        f"Total failures: {len(failures)}",
+        "",
+    ]
+
+    if not failures:
+        header.append("No failures were recorded in this period.")
+        report_text = "\n".join(header)
+        output_path.write_text(report_text, encoding="utf-8")
+        return report_text
+
+    top_tests = get_top_failing_tests(failures, limit=top_n)
+    top_selectors = get_top_failing_selectors(failures, limit=top_n)
+    categories = get_root_cause_categories(failures, limit=top_n)
+    patterns = detect_common_failure_patterns(failures, min_count=2, min_ratio=0.2, limit=top_n)
+
+    lines = header
+    lines.append("## Top failing tests")
+    for title, count in top_tests:
+        lines.append(f"- {title}: {count} failure(s)")
+    lines.append("")
+
+    lines.append("## Top failing selectors")
+    for selector, count in top_selectors:
+        lines.append(f"- {selector}: {count} failure(s)")
+    lines.append("")
+
+    lines.append("## Root cause categories")
+    for category, count in categories:
+        lines.append(f"- {category}: {count} failure(s)")
+    lines.append("")
+
+    if patterns:
+        lines.append("## Frequent failure patterns")
+        for label, count, ratio in patterns:
+            lines.append(f"- {label}: {count} failures ({ratio*100:.0f}% of window)")
+        lines.append("")
+
+    report_text = "\n".join(lines)
+    output_path.write_text(report_text, encoding="utf-8")
+    return report_text
