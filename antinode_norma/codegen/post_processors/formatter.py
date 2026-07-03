@@ -45,7 +45,16 @@ class CodeFormatter:
                 )
                 return "prettier"
             except (subprocess.CalledProcessError, FileNotFoundError):
-                pass
+                # fallback to local node_modules binary (works in CI after `npm ci`)
+                local_prettier = Path("node_modules") / ".bin" / "prettier"
+                if local_prettier.exists():
+                    return str(local_prettier)
+                # as a last resort, try `npx prettier`
+                try:
+                    subprocess.run(["npx", "prettier", "--version"], check=True, capture_output=True)
+                    return "npx prettier"
+                except (subprocess.CalledProcessError, FileNotFoundError):
+                    return None
         elif ext == ".py":
             try:
                 subprocess.run(["ruff", "--version"], check=True, capture_output=True)
@@ -58,10 +67,20 @@ class CodeFormatter:
         self, tool: str, files: List[Path], check: bool = False
     ) -> List[str]:
         """Build the command line for the formatter."""
-        if tool == "prettier":
-            cmd = ["prettier", "--write"]
+        if tool.endswith("prettier") or tool == "prettier":
+            # tool may be a path to the prettier binary (node_modules/.bin/prettier)
+            exe = tool if tool != "prettier" and " " not in tool else "prettier"
+            if tool == "prettier":
+                exe = "prettier"
+            cmd = [exe, "--write"]
             if check:
-                cmd = ["prettier", "--check"]
+                cmd = [exe, "--check"]
+            cmd.extend([str(f) for f in files])
+            return cmd
+        if tool == "npx prettier":
+            cmd = ["npx", "prettier", "--write"]
+            if check:
+                cmd = ["npx", "prettier", "--check"]
             cmd.extend([str(f) for f in files])
             return cmd
         elif tool == "ruff":
