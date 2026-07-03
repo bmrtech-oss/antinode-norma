@@ -31,6 +31,15 @@ jobs:
           pip install -e .
           pip install -r requirements-dev.txt
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install JS dev dependencies
+        run: |
+          npm ci
+
       - name: Check unused imports with Ruff
         run: |
           python -m ruff check . --select F401
