@@ -1,6 +1,8 @@
 """Tests for Phase 6 CLI and UX improvements."""
 
+import json
 from click.testing import CliRunner
+from pathlib import Path
 from antinode_norma.cli import cli
 from unittest.mock import patch
 
@@ -16,6 +18,43 @@ class TestCLIOutput:
         assert "Quick start:" in result.output
         assert "anorm generate" in result.output
         assert "anorm learn" in result.output
+
+    def test_learn_command_writes_weekly_report(self):
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            report_path = Path("playwright-report.json")
+            report_path.write_text(
+                json.dumps(
+                    {
+                        "tests": [
+                            {
+                                "title": "Forgot password",
+                                "results": [
+                                    {
+                                        "status": "failed",
+                                        "error": "locator.click: waiting for locator('text=Forgot password')",
+                                    }
+                                ],
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = runner.invoke(
+                cli,
+                [
+                    "learn",
+                    "--report-file",
+                    str(report_path),
+                    "--weekly-report-file",
+                    "weekly-report.md",
+                ],
+            )
+
+            assert result.exit_code == 0
+            assert Path("weekly-report.md").exists()
+            assert "Weekly Failure Report" in Path("weekly-report.md").read_text(encoding="utf-8")
 
     def test_generate_command_help_shows_examples(self):
         """Verify generate command help has multiple examples."""

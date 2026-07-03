@@ -376,7 +376,18 @@ def notify_teams(webhook_url, title, text):
     is_flag=True,
     help="Show suggested fixes for the learned failures.",
 )
-def learn(report_file, db_file, show_recent, show_suggestions):
+@click.option(
+    "--weekly-report-file",
+    "weekly_report_file",
+    type=click.Path(dir_okay=False),
+    help="Write a weekly markdown failure report.",
+)
+@click.option(
+    "--auto-update-graph",
+    is_flag=True,
+    help="Feed failures into the knowledge graph and update step mappings.",
+)
+def learn(report_file, db_file, show_recent, show_suggestions, weekly_report_file, auto_update_graph):
     """Learn from Playwright test failures and persist failure patterns.
 
     \b
@@ -386,6 +397,7 @@ def learn(report_file, db_file, show_recent, show_suggestions):
       anorm learn --report-file test-results/report.json --db-file ~/.my_failures.db --show-recent
     """
     from antinode_norma.core.failure_analyzer import (
+        create_weekly_failure_report,
         get_failure_suggestions_for_step,
         get_recent_failures,
         set_db_file,
@@ -442,6 +454,17 @@ def learn(report_file, db_file, show_recent, show_suggestions):
                     click.echo(f"     Error: {error_first_line}")
             else:
                 info_message("No prior failure records found.")
+
+        if weekly_report_file:
+            report_path = Path(weekly_report_file)
+            create_weekly_failure_report(report_path)
+            success_message(f"Weekly failure report written to {weekly_report_file}")
+
+        if auto_update_graph:
+            info_message(
+                "Auto-update graph is not yet available in Phase 2.3; "
+                "failure data is ready for future knowledge graph ingestion."
+            )
 
         success_message("Learning complete!")
 
