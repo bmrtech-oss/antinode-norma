@@ -1,2 +1,2 @@
-gitpython>=3.1.50
+gitpython>=3.1.53
 behave>=1.2.6
