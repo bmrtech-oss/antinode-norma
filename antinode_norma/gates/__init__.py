@@ -6,6 +6,7 @@ from antinode_norma.gates.norma_validator import Q0NormaValidatorGate
 from antinode_norma.gates.syntax import Q1SyntaxGate
 from antinode_norma.gates.rspec_guard import Q2RSpecGuardGate
 from antinode_norma.gates.traceability import Q3TraceabilityGate, Q4OrphanTagsGate
+from antinode_norma.gates.duplicates import Q5DuplicatesGate
 
 __all__ = [
     "BaseGate",
@@ -16,4 +17,5 @@ __all__ = [
     "Q2RSpecGuardGate",
     "Q3TraceabilityGate",
     "Q4OrphanTagsGate",
+    "Q5DuplicatesGate",
 ]
