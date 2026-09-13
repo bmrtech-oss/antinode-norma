@@ -9,6 +9,7 @@ class NormaAgent:
     """
     Unified BDD Agent Skeleton.
     Generates Gherkin feature files from TestCases and evaluates them using Quality Gates.
+    Supports multi-attempt repair loop with error feedback.
     """
 
     def __init__(
@@ -53,3 +54,46 @@ class NormaAgent:
 
         verdict = self.gate_runner.evaluate(context)
         return gherkin_text, verdict
+
+    def generate_feature_with_repair(
+        self,
+        test_cases: List[TestCase],
+        max_attempts: int = 3,
+    ) -> Tuple[str, Verdict, int]:
+        """
+        Execute generation with repair loop up to max_attempts.
+
+        If quality gates fail, extracts issues from failed gate results and feeds
+        them back into the prompt for subsequent attempts.
+
+        Args:
+            test_cases: List of TestCase IR instances.
+            max_attempts: Maximum number of generation attempts (default 3).
+
+        Returns:
+            Tuple of (gherkin_text, verdict, attempt_count).
+        """
+        feedback: Optional[List[str]] = None
+        last_gherkin = ""
+        last_verdict: Optional[Verdict] = None
+
+        for attempt in range(1, max_attempts + 1):
+            gherkin_text, verdict = self.generate_feature(
+                test_cases=test_cases,
+                feedback=feedback,
+            )
+            last_gherkin = gherkin_text
+            last_verdict = verdict
+
+            # Check if all hard gates passed (and overall pass condition met)
+            if verdict.hard_pass:
+                return gherkin_text, verdict, attempt
+
+            # Construct feedback list from failed gate issues
+            feedback = []
+            for gate_id, gate_res in verdict.gate_results.items():
+                if not gate_res.passed:
+                    for issue in gate_res.issues:
+                        feedback.append(f"[{gate_id}] {issue}")
+
+        return last_gherkin, last_verdict, max_attempts
