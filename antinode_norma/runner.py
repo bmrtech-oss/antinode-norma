@@ -41,6 +41,19 @@ def get_step_definitions(keyword: str = None):
     return steps
 
 
+async def run_bdd_agent(story: str, max_iterations: int = 3) -> Dict[str, Any]:
+    """Run the autonomous BDD agent on a story."""
+    from .agent import BDDAgent
+    from .agent_tools import AGENT_TOOLS
+
+    llm_config = {
+        "provider": os.getenv("LLM_PROVIDER", "openrouter"),
+        "api_key": os.getenv("OPENROUTER_API_KEY") or os.getenv("ANTHROPIC_API_KEY"),
+    }
+    agent_instance = BDDAgent(llm_config, AGENT_TOOLS, max_iterations=max_iterations)
+    return agent_instance.run(story)
+
+
 async def run_agent_from_raw(
     raw_story: str, quality_only: bool = False
 ) -> Dict[str, Any]:
