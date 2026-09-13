@@ -9,13 +9,9 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
     if provider == "anthropic":
         from anthropic import Anthropic
 
-        api_key = config.get("api_key") or os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise ValueError(
-                "Missing required secret ANTHROPIC_API_KEY for provider 'anthropic'. "
-                "Please configure ANTHROPIC_API_KEY in your environment or .env file (see .env.example)."
-            )
-        client = Anthropic(api_key=api_key)
+        client = Anthropic(
+            api_key=config.get("api_key") or os.getenv("ANTHROPIC_API_KEY")
+        )
         model = config.get("model", "claude-3-5-sonnet-20241022")
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
@@ -34,13 +30,7 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
     elif provider == "openai":
         from openai import OpenAI
 
-        api_key = config.get("api_key") or os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError(
-                "Missing required secret OPENAI_API_KEY for provider 'openai'. "
-                "Please configure OPENAI_API_KEY in your environment or .env file (see .env.example)."
-            )
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=config.get("api_key") or os.getenv("OPENAI_API_KEY"))
         model = config.get("model", "gpt-4o")
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
@@ -62,10 +52,7 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         base_url = config.get("base_url", "https://openrouter.ai/api/v1")
         api_key = config.get("api_key") or os.getenv("OPENROUTER_API_KEY")
         if not api_key:
-            raise ValueError(
-                "Missing required secret OPENROUTER_API_KEY for provider 'openrouter'. "
-                "Please configure OPENROUTER_API_KEY in your environment or .env file (see .env.example)."
-            )
+            raise ValueError("OPENROUTER_API_KEY is required for openrouter provider")
         client = OpenAI(base_url=base_url, api_key=api_key)
         model = config.get("model", "openai/gpt-oss-120b:free")
         temperature = config.get("temperature", 0.2)

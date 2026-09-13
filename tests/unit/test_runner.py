@@ -1,16 +1,9 @@
 """Unit tests for the runner orchestration logic."""
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from antinode_norma.runner import run_agent_from_raw
 from antinode_norma.core.schemas import UserStory, QualityReport
-
-
-@pytest.fixture(autouse=True)
-def mock_runner_llm_callable():
-    """Autouse fixture to mock get_llm_callable for runner unit tests."""
-    with patch("antinode_norma.runner.get_llm_callable", return_value=MagicMock()):
-        yield
 
 
 @pytest.mark.asyncio

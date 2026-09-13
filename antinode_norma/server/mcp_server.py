@@ -21,9 +21,10 @@ from .tools import (
 server = Server("norma")
 
 
-async def list_tools_handler(req: types.ListToolsRequest) -> types.ListToolsResult:
+@server.list_tools()
+async def list_tools() -> list[types.Tool]:
     """List all available tools."""
-    tools = [
+    return [
         # Existing BDD tools
         types.Tool(
             name="submit_story",
@@ -168,58 +169,56 @@ async def list_tools_handler(req: types.ListToolsRequest) -> types.ListToolsResu
             },
         ),
     ]
-    return types.ListToolsResult(tools=tools)
 
 
-async def call_tool_handler(req: types.CallToolRequest) -> types.CallToolResult:
+@server.call_tool()
+async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
     """Handle tool calls."""
-    name = req.params.name
-    arguments = req.params.arguments or {}
-
     # Existing BDD handlers
     if name == "submit_story":
         story = arguments.get("story")
-        result = await run_agent_from_raw(story, quality_only=True)
-        return types.CallToolResult(content=[types.TextContent(type="text", text=json.dumps(result, indent=2))])
+        file_path = arguments.get("file_path")
+        result = await run_agent_from_raw(story, file_path)
+        return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
 
     elif name == "improve_story":
+        story = arguments.get("story")
         # Implementation for improvement...
-        return types.CallToolResult(content=[types.TextContent(type="text", text="Improvement suggestions generated.")])
+        return [
+            types.TextContent(type="text", text="Improvement suggestions generated.")
+        ]
 
     elif name == "generate_feature":
         story = arguments.get("story")
-        result = await run_agent_from_raw(story, quality_only=False)
-        return types.CallToolResult(content=[types.TextContent(type="text", text=json.dumps(result, indent=2))])
+        file_path = arguments.get("file_path")
+        result = await run_agent_from_raw(story, file_path)
+        return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
 
     elif name == "run_bdd_agent":
         story = arguments.get("story")
         max_iterations = arguments.get("max_iterations", 3)
         result = await run_bdd_agent(story, max_iterations)
-        return types.CallToolResult(content=[types.TextContent(type="text", text=json.dumps(result, indent=2))])
+        return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
 
     # New codegen handlers
     elif name == "generate_tests":
         result = await handle_generate_tests(arguments)
-        return types.CallToolResult(content=[types.TextContent(type="text", text=result[0]["text"])])
+        return [types.TextContent(type="text", text=result[0]["text"])]
 
     elif name == "generate_page_objects":
         result = await handle_generate_page_objects(arguments)
-        return types.CallToolResult(content=[types.TextContent(type="text", text=result[0]["text"])])
+        return [types.TextContent(type="text", text=result[0]["text"])]
 
     elif name == "generate_step_defs":
         result = await handle_generate_step_defs(arguments)
-        return types.CallToolResult(content=[types.TextContent(type="text", text=result[0]["text"])])
+        return [types.TextContent(type="text", text=result[0]["text"])]
 
     elif name == "validate_feature":
         result = await handle_validate_feature(arguments)
-        return types.CallToolResult(content=[types.TextContent(type="text", text=result[0]["text"])])
+        return [types.TextContent(type="text", text=result[0]["text"])]
 
     else:
-        return types.CallToolResult(content=[types.TextContent(type="text", text=f"Unknown tool: {name}")])
-
-
-server.add_request_handler("tools/list", types.ListToolsRequest, list_tools_handler)
-server.add_request_handler("tools/call", types.CallToolRequest, call_tool_handler)
+        return [types.TextContent(type="text", text=f"Unknown tool: {name}")]
 
 
 async def main():
