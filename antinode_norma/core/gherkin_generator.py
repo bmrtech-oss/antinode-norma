@@ -1,11 +1,28 @@
 from typing import Callable, List
 from .schemas import UserStory
 from .prompts import FEATURE_PROMPT_TEMPLATE, select_feature_examples
+from .features import FeatureFlagResolver
+from .agent import NormaAgent
+from antinode_norma.ingest_structured.story import story_to_case
 
 
 def generate_gherkin(
     story: UserStory, step_definitions: List[str], llm_call: Callable[[str], str]
 ) -> str:
+    resolver = FeatureFlagResolver()
+    if resolver.is_enabled("unified_agent"):
+        story_dict = {
+            "role": story.role,
+            "action": story.action,
+            "benefit": story.benefit,
+            "acceptance_criteria": story.acceptance_criteria,
+        }
+        test_case = story_to_case(story_dict)
+        agent = NormaAgent(llm_callable=llm_call)
+        gherkin_text, verdict, attempts = agent.generate_feature_with_repair([test_case])
+        return gherkin_text
+
+    # Legacy path (when unified_agent flag is disabled)
     examples = select_feature_examples(story)
     prompt = FEATURE_PROMPT_TEMPLATE.format(
         examples="\n\n".join(examples),
