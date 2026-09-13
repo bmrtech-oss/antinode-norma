@@ -71,6 +71,8 @@ def cli():
     Quick start:
       anorm generate "As a user, I want to log in"
       anorm generate --file my_story.txt
+      anorm generate-from-csv cases.csv
+      anorm generate-from-xlsx cases.xlsx
       anorm learn --report-file test-results/report.json --show-suggestions
     """
     pass
@@ -199,6 +201,67 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
             sys.exit(1)
 
     asyncio.run(run())
+
+
+@cli.command("generate-from-csv")
+@click.argument("csv_file", type=click.Path(exists=True, dir_okay=False))
+@click.option(
+    "--output-dir", "-o", default="features", help="Output directory for feature files"
+)
+def generate_from_csv(csv_file, output_dir):
+    """Generate Gherkin feature files from a CSV file."""
+    try:
+        from antinode_norma.ingest_structured.normalize import normalize
+        from antinode_norma.agent_tools import generate_feature
+
+        cases = normalize(csv_file, kind="csv")
+        success_message(f"Ingested {len(cases)} test cases from {csv_file}")
+
+        generated_files = []
+        for case in cases:
+            res = generate_feature(
+                story=case.dict(),
+                output_dir=output_dir,
+            )
+            if "feature_path" in res:
+                generated_files.append(res["feature_path"])
+
+        success_message(f"Generated {len(generated_files)} feature file(s) in {output_dir}")
+        click.echo(json.dumps({"test_cases": len(cases), "feature_files": generated_files}, indent=2))
+    except Exception as e:
+        error_context(e, f"Failed to generate feature files from CSV: {csv_file}")
+        sys.exit(1)
+
+
+@cli.command("generate-from-xlsx")
+@click.argument("xlsx_file", type=click.Path(exists=True, dir_okay=False))
+@click.option("--sheet-name", "-s", help="Optional sheet name to ingest")
+@click.option(
+    "--output-dir", "-o", default="features", help="Output directory for feature files"
+)
+def generate_from_xlsx(xlsx_file, sheet_name, output_dir):
+    """Generate Gherkin feature files from an XLSX workbook."""
+    try:
+        from antinode_norma.ingest_structured.normalize import normalize
+        from antinode_norma.agent_tools import generate_feature
+
+        cases = normalize(xlsx_file, kind="xlsx", sheet_name=sheet_name)
+        success_message(f"Ingested {len(cases)} test cases from {xlsx_file}")
+
+        generated_files = []
+        for case in cases:
+            res = generate_feature(
+                story=case.dict(),
+                output_dir=output_dir,
+            )
+            if "feature_path" in res:
+                generated_files.append(res["feature_path"])
+
+        success_message(f"Generated {len(generated_files)} feature file(s) in {output_dir}")
+        click.echo(json.dumps({"test_cases": len(cases), "feature_files": generated_files}, indent=2))
+    except Exception as e:
+        error_context(e, f"Failed to generate feature files from XLSX: {xlsx_file}")
+        sys.exit(1)
 
 
 @cli.command()
