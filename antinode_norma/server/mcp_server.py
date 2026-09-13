@@ -179,8 +179,7 @@ async def call_tool_handler(req: types.CallToolRequest) -> types.CallToolResult:
     # Existing BDD handlers
     if name == "submit_story":
         story = arguments.get("story")
-        file_path = arguments.get("file_path")
-        result = await run_agent_from_raw(story, file_path)
+        result = await run_agent_from_raw(story, quality_only=True)
         return types.CallToolResult(content=[types.TextContent(type="text", text=json.dumps(result, indent=2))])
 
     elif name == "improve_story":
@@ -189,8 +188,7 @@ async def call_tool_handler(req: types.CallToolRequest) -> types.CallToolResult:
 
     elif name == "generate_feature":
         story = arguments.get("story")
-        file_path = arguments.get("file_path")
-        result = await run_agent_from_raw(story, file_path)
+        result = await run_agent_from_raw(story, quality_only=False)
         return types.CallToolResult(content=[types.TextContent(type="text", text=json.dumps(result, indent=2))])
 
     elif name == "run_bdd_agent":
