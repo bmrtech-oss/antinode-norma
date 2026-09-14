@@ -8,6 +8,9 @@ from antinode_norma.gates.rspec_guard import Q2RSpecGuardGate
 from antinode_norma.gates.traceability import Q3TraceabilityGate, Q4OrphanTagsGate
 from antinode_norma.gates.duplicates import Q5DuplicatesGate
 from antinode_norma.gates.declarative import Q6DeclarativeStyleGate
+from antinode_norma.gates.reuse import Q7StepReuseGate
+from antinode_norma.gates.outline import Q8OutlineUsageGate
+from antinode_norma.gates.state import Q9StateModelGate
 from antinode_norma.gates.runner import GateRunner
 
 __all__ = [
@@ -21,5 +24,8 @@ __all__ = [
     "Q4OrphanTagsGate",
     "Q5DuplicatesGate",
     "Q6DeclarativeStyleGate",
+    "Q7StepReuseGate",
+    "Q8OutlineUsageGate",
+    "Q9StateModelGate",
     "GateRunner",
 ]
