@@ -11,6 +11,7 @@ from antinode_norma.gates.declarative import Q6DeclarativeStyleGate
 from antinode_norma.gates.reuse import Q7StepReuseGate
 from antinode_norma.gates.outline import Q8OutlineUsageGate
 from antinode_norma.gates.state import Q9StateModelGate
+from antinode_norma.gates.semantic import Q10SemanticJudgeGate
 from antinode_norma.gates.runner import GateRunner
 
 __all__ = [
@@ -27,5 +28,6 @@ __all__ = [
     "Q7StepReuseGate",
     "Q8OutlineUsageGate",
     "Q9StateModelGate",
+    "Q10SemanticJudgeGate",
     "GateRunner",
 ]

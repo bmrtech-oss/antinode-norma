@@ -7,12 +7,18 @@ from antinode_norma.gates.syntax import Q1SyntaxGate
 from antinode_norma.gates.rspec_guard import Q2RSpecGuardGate
 from antinode_norma.gates.traceability import Q3TraceabilityGate, Q4OrphanTagsGate
 from antinode_norma.gates.duplicates import Q5DuplicatesGate
+from antinode_norma.gates.declarative import Q6DeclarativeStyleGate
+from antinode_norma.gates.reuse import Q7StepReuseGate
+from antinode_norma.gates.outline import Q8OutlineUsageGate
+from antinode_norma.gates.state import Q9StateModelGate
+from antinode_norma.gates.semantic import Q10SemanticJudgeGate
 
 
 class GateRunner:
     """
     Quality Gate Runner.
     Runs configured quality gates against a GateContext and aggregates results into a Verdict.
+    Default gate configuration includes hard gates Q0-Q5 and soft gates Q6-Q10.
     """
 
     def __init__(self, gates: Optional[List[BaseGate]] = None):
@@ -24,6 +30,11 @@ class GateRunner:
                 Q3TraceabilityGate(),
                 Q4OrphanTagsGate(),
                 Q5DuplicatesGate(),
+                Q6DeclarativeStyleGate(),
+                Q7StepReuseGate(),
+                Q8OutlineUsageGate(),
+                Q9StateModelGate(),
+                Q10SemanticJudgeGate(),
             ]
         else:
             self.gates = gates
