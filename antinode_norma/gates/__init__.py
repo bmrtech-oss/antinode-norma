@@ -7,6 +7,7 @@ from antinode_norma.gates.syntax import Q1SyntaxGate
 from antinode_norma.gates.rspec_guard import Q2RSpecGuardGate
 from antinode_norma.gates.traceability import Q3TraceabilityGate, Q4OrphanTagsGate
 from antinode_norma.gates.duplicates import Q5DuplicatesGate
+from antinode_norma.gates.declarative import Q6DeclarativeStyleGate
 from antinode_norma.gates.runner import GateRunner
 
 __all__ = [
@@ -19,5 +20,6 @@ __all__ = [
     "Q3TraceabilityGate",
     "Q4OrphanTagsGate",
     "Q5DuplicatesGate",
+    "Q6DeclarativeStyleGate",
     "GateRunner",
 ]
