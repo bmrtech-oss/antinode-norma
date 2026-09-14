@@ -1,17 +1,18 @@
-from typing import List, Optional, Tuple, Callable
+from typing import List, Optional, Tuple, Callable, Union
 from antinode_norma.core.types import TestCase, DomainModel, Verdict
 from antinode_norma.core.prompts import build_feature_generation_prompt
 from antinode_norma.gates.types import GateContext
 from antinode_norma.gates.runner import GateRunner
 from antinode_norma.core.features import FeatureFlagResolver
 from antinode_norma.cache.exact import ExactPromptCache
+from antinode_norma.cache.semantic import SemanticPromptCache
 
 
 class NormaAgent:
     """
     Unified BDD Agent Skeleton.
     Generates Gherkin feature files from TestCases and evaluates them using Quality Gates.
-    Supports multi-attempt repair loop with error feedback and exact prompt caching.
+    Supports multi-attempt repair loop with error feedback, exact prompt caching, and semantic caching.
     """
 
     def __init__(
@@ -19,7 +20,7 @@ class NormaAgent:
         llm_callable: Callable[[str], str],
         domain_model: Optional[DomainModel] = None,
         gate_runner: Optional[GateRunner] = None,
-        cache: Optional[ExactPromptCache] = None,
+        cache: Optional[Union[ExactPromptCache, SemanticPromptCache]] = None,
     ):
         self.llm_callable = llm_callable
         self.domain_model = domain_model
@@ -50,18 +51,34 @@ class NormaAgent:
         full_prompt = f"{sys_prompt}\n\n{user_prompt}"
 
         resolver = FeatureFlagResolver()
-        use_cache = resolver.is_enabled("cache_exact")
+        use_exact = resolver.is_enabled("cache_exact")
+        use_semantic = resolver.is_enabled("cache_semantic")
 
         gherkin_text: Optional[str] = None
-        cache_inst = self.cache or (ExactPromptCache() if use_cache else None)
 
-        if use_cache and cache_inst:
-            gherkin_text = cache_inst.get(full_prompt)
+        # 1. Try Exact Cache if enabled
+        if use_exact:
+            exact_cache = self.cache if isinstance(self.cache, ExactPromptCache) else ExactPromptCache()
+            gherkin_text = exact_cache.get(full_prompt)
 
+        # 2. Try Semantic Cache if enabled and exact cache missed
+        if gherkin_text is None and use_semantic:
+            sem_cache = self.cache if isinstance(self.cache, SemanticPromptCache) else SemanticPromptCache()
+            match = sem_cache.get(full_prompt)
+            if match:
+                gherkin_text = match[0]
+
+        # 3. LLM Call on miss
         if gherkin_text is None:
             gherkin_text = self.llm_callable(full_prompt)
-            if use_cache and cache_inst:
-                cache_inst.set(full_prompt, gherkin_text)
+
+            # Store in caches if enabled
+            if use_exact:
+                exact_cache = self.cache if isinstance(self.cache, ExactPromptCache) else ExactPromptCache()
+                exact_cache.set(full_prompt, gherkin_text)
+            if use_semantic:
+                sem_cache = self.cache if isinstance(self.cache, SemanticPromptCache) else SemanticPromptCache()
+                sem_cache.set(full_prompt, gherkin_text)
 
         context = GateContext(
             gherkin_text=gherkin_text,
