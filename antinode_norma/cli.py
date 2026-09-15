@@ -642,7 +642,7 @@ def serve(transport):
         from antinode_norma.server.mcp_server import main as mcp_main
 
         info_message(f"Starting Norma MCP server on {transport}...")
-        asyncio.run(mcp_main())
+        mcp_main()
     except Exception as e:
         error_context(e, "MCP server startup failed")
         sys.exit(1)
