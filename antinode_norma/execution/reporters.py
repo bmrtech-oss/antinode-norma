@@ -3,7 +3,7 @@ import time
 import uuid
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 from antinode_norma.execution.parallel import ParallelExecutionResult
 
 
