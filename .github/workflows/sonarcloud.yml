@@ -26,7 +26,9 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run SonarCloud scan
-        if: ${{ secrets.SONAR_TOKEN != '' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        if: ${{ env.SONAR_TOKEN != '' }}
         uses: SonarSource/sonarcloud-github-action@v5.0.0
         with:
           projectBaseDir: .
@@ -34,5 +36,3 @@ jobs:
             -Dsonar.organization=bmrtech-oss
             -Dsonar.projectKey=bmrtech-oss_antinode-norma
             -Dsonar.host.url=https://sonarcloud.io
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

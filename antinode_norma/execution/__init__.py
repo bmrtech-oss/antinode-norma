@@ -4,6 +4,7 @@ from antinode_norma.execution.parallel import ParallelExecutor, ParallelExecutio
 from antinode_norma.execution.retry import retry_with_backoff, RetryResult
 from antinode_norma.execution.artifacts import ArtifactManager, Artifact, ArtifactType
 from antinode_norma.execution.reporters import ExecutionReporter
+from antinode_norma.execution.cloud import CloudRunner, CloudConfig, CloudProvider
 
 __all__ = [
     "ParallelExecutor",
@@ -15,4 +16,7 @@ __all__ = [
     "Artifact",
     "ArtifactType",
     "ExecutionReporter",
+    "CloudRunner",
+    "CloudConfig",
+    "CloudProvider",
 ]
