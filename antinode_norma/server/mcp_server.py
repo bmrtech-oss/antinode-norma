@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP as MCPServer
+from mcp.server.mcpserver import MCPServer
 import mcp.types as types
 
 from antinode_norma.runner import run_agent_from_raw
