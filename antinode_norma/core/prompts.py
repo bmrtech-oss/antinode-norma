@@ -1,5 +1,6 @@
-from typing import List
+from typing import List, Optional, Tuple
 from .schemas import UserStory
+from .types import TestCase, DomainModel
 
 FEATURE_GENERATION_EXAMPLES = [
     {
@@ -82,3 +83,68 @@ def select_feature_examples(story: UserStory) -> List[str]:
     if not examples:
         examples = [ex["feature"] for ex in FEATURE_GENERATION_EXAMPLES[:2]]
     return examples
+
+
+def build_feature_generation_prompt(
+    test_cases: List[TestCase],
+    domain_model: Optional[DomainModel] = None,
+    feedback: Optional[List[str]] = None,
+) -> Tuple[str, str]:
+    """
+    Build system and user prompts for Gherkin feature generation.
+
+    Includes test case details, mandatory tag requirement (@<id>), domain model context,
+    and optional repair feedback from quality gates.
+    """
+    system_prompt = (
+        "You are an expert BDD author. Your task is to generate valid, high-quality "
+        "Gherkin feature files from provided test cases."
+    )
+
+    tc_sections = []
+    tc_ids = []
+    for tc in test_cases:
+        tc_ids.append(tc.id)
+        ac_str = "\n    - ".join(tc.acceptance_criteria) if tc.acceptance_criteria else "None"
+        tc_sections.append(
+            f"Test Case [{tc.id}]: {tc.title}\n"
+            f"  Role: {tc.role}\n"
+            f"  Action: {tc.action}\n"
+            f"  Benefit: {tc.benefit}\n"
+            f"  Acceptance Criteria:\n    - {ac_str}"
+        )
+
+    test_cases_text = "\n\n".join(tc_sections)
+    ids_list_str = ", ".join(f"@{tc_id}" for tc_id in tc_ids)
+
+    user_prompt_parts = [
+        "### Input Test Cases",
+        test_cases_text,
+        "",
+        "### Requirements",
+        "1. Output ONLY a valid Gherkin .feature file.",
+        f"2. Every test case ID must appear as a tag ({ids_list_str}) above its scenario or feature.",
+        "3. Do not use unit test / RSpec keywords (describe, context, expect, should, let, before, after).",
+        "4. Each scenario must have a unique descriptive name.",
+    ]
+
+    if domain_model and domain_model.entities:
+        entities_str = "\n".join(
+            f"- {e.name}: attributes={e.attributes}, relationships={e.relationships}"
+            for e in domain_model.entities
+        )
+        user_prompt_parts.extend(["", "### Domain Model Context", entities_str])
+
+    if feedback:
+        feedback_str = "\n".join(f"- {item}" for item in feedback)
+        user_prompt_parts.extend(
+            [
+                "",
+                "### PREVIOUS EVALUATION FEEDBACK (REPAIR MODE)",
+                "Your previous attempt failed the quality gates. Fix the following issues:",
+                feedback_str,
+            ]
+        )
+
+    user_prompt = "\n".join(user_prompt_parts)
+    return system_prompt, user_prompt

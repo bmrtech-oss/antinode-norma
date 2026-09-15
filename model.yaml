@@ -1,0 +1,20 @@
+name: norma_baseline_domain
+entities:
+  - name: User
+    attributes:
+      - id
+      - email
+      - role
+      - status
+    relationships:
+      account: Account
+  - name: Account
+    attributes:
+      - account_number
+      - balance
+      - currency
+    relationships:
+      owner: User
+metadata:
+  version: "1.0.0"
+  description: "Baseline domain model for Norma BDD platform"

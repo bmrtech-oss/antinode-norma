@@ -17,6 +17,7 @@ setup(
         "jira>=3.4.0",
         "requests>=2.31.0",
         "click>=8.1.0",
+        "openpyxl>=3.1.0",
     ],
     entry_points={
         "console_scripts": [

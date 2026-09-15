@@ -23,10 +23,11 @@ from antinode_norma.agent_tools import update_jira_issue_status
 result = update_jira_issue_status(issue_key="JIRA-123", status_name="Done")
 ```
 
-## TestRail
+## TestRail & Xray Delivery Adapters
 
-A new TestRail connector supports creating cases, recording test results, and creating runs.
+Phase 7 governance delivery adapters support automated delivery of approved BDD features into TestRail and Jira Xray.
 
+### TestRail
 Environment variables:
 - `TESTRAIL_URL` – base URL for TestRail, e.g. `https://yourcompany.testrail.io`
 - `TESTRAIL_USER` – TestRail username or email
@@ -34,9 +35,24 @@ Environment variables:
 
 Example:
 ```python
-from antinode_norma.agent_tools import upload_testrail_case
+from antinode_norma.delivery import TestRailDeliveryAdapter
 
-upload_testrail_case(section_id=42, title="Login flow", description="Verify login succeeds")
+adapter = TestRailDeliveryAdapter(approval_gate=approval_gate)
+report = adapter.deliver_feature(feature_id="FEAT-100", gherkin_text=text, section_id=42, test_mode=True)
+```
+
+### Jira Xray
+Environment variables:
+- `XRAY_BASE_URL` – base URL for Xray API (defaults to `https://xray.cloud.getxray.app`)
+- `XRAY_CLIENT_ID` – Xray API client ID
+- `XRAY_CLIENT_SECRET` – Xray API client secret
+
+Example:
+```python
+from antinode_norma.delivery import XrayDeliveryAdapter
+
+adapter = XrayDeliveryAdapter(approval_gate=approval_gate)
+report = adapter.deliver_feature(feature_id="FEAT-100", gherkin_text=text, project_key="PROJ", test_mode=True)
 ```
 
 ## Notifications
