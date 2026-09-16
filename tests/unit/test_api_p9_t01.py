@@ -24,7 +24,7 @@ class TestAPIFoundation(unittest.TestCase):
             headers={"Origin": "http://localhost:3000"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.headers.get("access-control-allow-origin"), "*")
+        self.assertEqual(response.headers.get("access-control-allow-origin"), "http://localhost:3000")
 
     def test_404_not_found(self):
         response = self.client.get("/nonexistent-endpoint")
