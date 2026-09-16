@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from antinode_norma.server.schemas import HealthResponse, ErrorResponse
+from antinode_norma.server.routes import features_router
 
 app = FastAPI(
     title="Norma BDD Platform API",
@@ -36,6 +37,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content=ErrorResponse(detail="Internal Server Error", error_code="INTERNAL_ERROR").model_dump(),
     )
+
+
+# Register route modules
+app.include_router(features_router)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])

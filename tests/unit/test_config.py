@@ -1,3 +1,16 @@
+<<<<<<< HEAD
+"""Unit tests for configuration loading."""
+
+from dotenv import load_dotenv
+
+
+def test_env_loading():
+    """Test that .env file is loaded (if present)."""
+    load_dotenv()
+    # This just checks that the function runs; the actual variables depend on .env
+    # If the .env file is present, it might be set; but we don't force it.
+    assert True  # no assertion, just ensure no exception
+=======
 from pathlib import Path
 from antinode_norma.core.config import load_config, NormaConfig
 
@@ -21,3 +34,4 @@ def test_load_custom_norma_config(tmp_path):
     assert config.gates.min_soft_score == 0.90
     assert config.cache.exact is True
     assert config.features["unified_agent"] is True
+>>>>>>> d4d2d9a (fix(tests): update CORS header assertion in test_api_p9_t01.py)
