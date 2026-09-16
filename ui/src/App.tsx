@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Activity, FileText, CheckCircle2, ShieldAlert, Cpu, LayoutDashboard } from 'lucide-react'
+import { Activity, FileText, CheckCircle2, ShieldAlert, Cpu, LayoutDashboard, ShieldCheck } from 'lucide-react'
 import FeatureReview from './components/FeatureReview'
+import ApprovalQueue from './components/ApprovalQueue'
 
 interface HealthStatus {
   status: string
@@ -11,7 +12,7 @@ interface HealthStatus {
 export default function App() {
   const [health, setHealth] = useState<HealthStatus | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'review'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'approvals'>('dashboard')
 
   useEffect(() => {
     fetch('/health')
@@ -60,6 +61,17 @@ export default function App() {
               <FileText className="h-3.5 w-3.5" />
               <span>Feature Review</span>
             </button>
+            <button
+              onClick={() => setActiveTab('approvals')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center space-x-1.5 ${
+                activeTab === 'approvals'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              }`}
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span>Approval Queue</span>
+            </button>
           </nav>
         </div>
 
@@ -86,7 +98,7 @@ export default function App() {
                 <span>Platform Dashboard</span>
               </h2>
               <p className="text-slate-300 text-sm leading-relaxed">
-                Welcome to the Antinode Norma BDD Platform Web UI dashboard. Switch to the <strong className="text-indigo-300">Feature Review</strong> tab to inspect generated Gherkin feature files, scenario counts, and Quality Gate metrics.
+                Welcome to the Antinode Norma BDD Platform Web UI dashboard. Use the navigation tabs above to review feature files or manage pending approval requests in the governance queue.
               </p>
             </div>
 
@@ -103,12 +115,15 @@ export default function App() {
                 <p className="text-slate-400 text-xs">Browse and inspect generated Gherkin feature files and scenario structures.</p>
               </div>
 
-              <div className="bg-slate-800/30 border border-slate-800 rounded-lg p-5 hover:border-slate-700 transition">
+              <div
+                onClick={() => setActiveTab('approvals')}
+                className="bg-slate-800/30 border border-slate-800 rounded-lg p-5 hover:border-indigo-500/50 transition cursor-pointer group"
+              >
                 <div className="flex items-center space-x-3 mb-3">
-                  <ShieldAlert className="h-5 w-5 text-amber-400" />
-                  <h3 className="font-medium text-slate-200">Quality Gates</h3>
+                  <ShieldCheck className="h-5 w-5 text-amber-400 group-hover:text-indigo-400 transition" />
+                  <h3 className="font-medium text-slate-200">Approval Queue</h3>
                 </div>
-                <p className="text-slate-400 text-xs">Evaluate hard (Q0–Q5) and soft (Q6–Q10) INVEST quality gates and verdicts.</p>
+                <p className="text-slate-400 text-xs">Manage pending feature approval state transitions and reviewer comments.</p>
               </div>
 
               <div className="bg-slate-800/30 border border-slate-800 rounded-lg p-5 hover:border-slate-700 transition">
@@ -120,8 +135,10 @@ export default function App() {
               </div>
             </div>
           </>
-        ) : (
+        ) : activeTab === 'review' ? (
           <FeatureReview />
+        ) : (
+          <ApprovalQueue />
         )}
       </main>
 

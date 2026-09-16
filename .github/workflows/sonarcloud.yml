@@ -9,6 +9,14 @@ jobs:
   sonarcloud:
     name: SonarCloud analysis
     runs-on: ubuntu-latest
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+>>>>>>> d4d2d9a (fix(tests): update CORS header assertion in test_api_p9_t01.py)
+>>>>>>> c3cac3b (feat(ui): implement frontend scaffold with React, Vite, and Tailwind CSS (P9-T03))
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -26,7 +34,15 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run SonarCloud scan
+<<<<<<< HEAD
         if: secrets.SONAR_TOKEN != ''
+=======
+<<<<<<< HEAD
+        if: secrets.SONAR_TOKEN != ''
+=======
+        if: ${{ env.SONAR_TOKEN != '' }}
+>>>>>>> d4d2d9a (fix(tests): update CORS header assertion in test_api_p9_t01.py)
+>>>>>>> c3cac3b (feat(ui): implement frontend scaffold with React, Vite, and Tailwind CSS (P9-T03))
         uses: SonarSource/sonarcloud-github-action@v5.0.0
         with:
           projectBaseDir: .
@@ -34,5 +50,13 @@ jobs:
             -Dsonar.organization=bmrtech-oss
             -Dsonar.projectKey=bmrtech-oss_antinode-norma
             -Dsonar.host.url=https://sonarcloud.io
+<<<<<<< HEAD
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+=======
+<<<<<<< HEAD
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+=======
+>>>>>>> d4d2d9a (fix(tests): update CORS header assertion in test_api_p9_t01.py)
+>>>>>>> c3cac3b (feat(ui): implement frontend scaffold with React, Vite, and Tailwind CSS (P9-T03))
