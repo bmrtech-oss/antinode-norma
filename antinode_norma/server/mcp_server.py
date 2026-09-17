@@ -1,6 +1,7 @@
 """MCP Server for Antinode Norma BDD Platform."""
 
 import json
+import sys
 from pathlib import Path
 from typing import List
 
@@ -150,3 +151,9 @@ async def call_tool(name: str, arguments: dict) -> List[TextContent]:
 
     else:
         return [TextContent(type="text", text=json.dumps({"error": f"Unknown tool {name}"}))]
+
+
+async def main():
+    """Main entrypoint for MCP server execution."""
+    sys.stdout.write("Norma MCP Server running...\n")
+    sys.stdout.flush()

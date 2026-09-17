@@ -5,6 +5,7 @@ from antinode_norma.server.routes.approvals import router as approvals_router
 from antinode_norma.server.routes.audit import router as audit_router
 from antinode_norma.server.routes.traceability import router as traceability_router
 from antinode_norma.server.routes.dashboard import dashboard_router
+from antinode_norma.server.routes.auth import router as auth_router
 
 __all__ = [
     "features_router",
@@ -12,4 +13,5 @@ __all__ = [
     "audit_router",
     "traceability_router",
     "dashboard_router",
+    "auth_router",
 ]
