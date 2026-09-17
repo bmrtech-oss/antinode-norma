@@ -2,9 +2,9 @@
 
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from antinode_norma.governance.approval import ApprovalGate, ApprovalRequest, ApprovalStatus
+from antinode_norma.governance.approval import ApprovalGate, ApprovalRequest
 
 router = APIRouter(prefix="/api/approvals", tags=["Approvals"])
 

@@ -1,6 +1,6 @@
 """Audit log routes for Norma BDD Platform FastAPI server."""
 
-from typing import List, Dict, Any
+from typing import List
 from fastapi import APIRouter
 from pydantic import BaseModel
 
