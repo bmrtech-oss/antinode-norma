@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Activity, FileText, CheckCircle2, ShieldAlert, Cpu, LayoutDashboard, ShieldCheck, GitMerge } from 'lucide-react'
+import { Dashboard } from './components/Dashboard'
 import FeatureReview from './components/FeatureReview'
 import ApprovalQueue from './components/ApprovalQueue'
 import TraceabilityView from './components/TraceabilityView'
@@ -115,64 +116,7 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 p-8 max-w-7xl w-full mx-auto space-y-8">
         {activeTab === 'dashboard' ? (
-          <>
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 shadow-xl">
-              <h2 className="text-lg font-semibold mb-2 flex items-center space-x-2">
-                <CheckCircle2 className="h-5 w-5 text-indigo-400" />
-                <span>Platform Dashboard</span>
-              </h2>
-              <p className="text-slate-300 text-sm leading-relaxed">
-                Welcome to the Antinode Norma BDD Platform Web UI dashboard. Use the navigation tabs above to review feature files, manage pending approvals, inspect requirement traceability, or audit governance events.
-              </p>
-            </div>
-
-            {/* Feature Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div
-                onClick={() => setActiveTab('review')}
-                className="bg-slate-800/30 border border-slate-800 rounded-lg p-5 hover:border-indigo-500/50 transition cursor-pointer group"
-              >
-                <div className="flex items-center space-x-3 mb-3">
-                  <FileText className="h-5 w-5 text-blue-400 group-hover:text-indigo-400 transition" />
-                  <h3 className="font-medium text-slate-200">Feature Viewer</h3>
-                </div>
-                <p className="text-slate-400 text-xs">Browse and inspect generated Gherkin feature files and scenario structures.</p>
-              </div>
-
-              <div
-                onClick={() => setActiveTab('approvals')}
-                className="bg-slate-800/30 border border-slate-800 rounded-lg p-5 hover:border-indigo-500/50 transition cursor-pointer group"
-              >
-                <div className="flex items-center space-x-3 mb-3">
-                  <ShieldCheck className="h-5 w-5 text-amber-400 group-hover:text-indigo-400 transition" />
-                  <h3 className="font-medium text-slate-200">Approval Queue</h3>
-                </div>
-                <p className="text-slate-400 text-xs">Manage pending feature approval state transitions and reviewer comments.</p>
-              </div>
-
-              <div
-                onClick={() => setActiveTab('traceability')}
-                className="bg-slate-800/30 border border-slate-800 rounded-lg p-5 hover:border-indigo-500/50 transition cursor-pointer group"
-              >
-                <div className="flex items-center space-x-3 mb-3">
-                  <GitMerge className="h-5 w-5 text-emerald-400 group-hover:text-indigo-400 transition" />
-                  <h3 className="font-medium text-slate-200">Traceability</h3>
-                </div>
-                <p className="text-slate-400 text-xs">Map requirement IDs to generated Gherkin scenarios.</p>
-              </div>
-
-              <div
-                onClick={() => setActiveTab('audit')}
-                className="bg-slate-800/30 border border-slate-800 rounded-lg p-5 hover:border-indigo-500/50 transition cursor-pointer group"
-              >
-                <div className="flex items-center space-x-3 mb-3">
-                  <ShieldAlert className="h-5 w-5 text-purple-400 group-hover:text-indigo-400 transition" />
-                  <h3 className="font-medium text-slate-200">Audit Trail</h3>
-                </div>
-                <p className="text-slate-400 text-xs">Cryptographically verify governance log integrity.</p>
-              </div>
-            </div>
-          </>
+          <Dashboard />
         ) : activeTab === 'review' ? (
           <FeatureReview />
         ) : activeTab === 'approvals' ? (
