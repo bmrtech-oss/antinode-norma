@@ -23,6 +23,7 @@ def test_viewer_role_permissions():
     user = User(username="viewer_user", email="viewer@example.com", roles=[Role.VIEWER])
     perms = get_user_permissions(user)
 
+    assert get_role_permissions(Role.VIEWER) == perms
     assert FEATURE_READ in perms
     assert AUDIT_READ in perms
     assert FEATURE_WRITE not in perms
