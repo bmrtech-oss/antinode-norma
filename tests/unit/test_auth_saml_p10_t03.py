@@ -37,7 +37,7 @@ def test_generate_sp_metadata():
 
 
 def test_parse_saml_response_claims():
-    fake_response = "<saml:Response><saml:NameID>user-saml-123</saml:NameID></saml:Response>"
+    fake_response = '<saml:Response xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"><saml:NameID>user-saml-123</saml:NameID></saml:Response>'
     fake_b64 = base64.b64encode(fake_response.encode("utf-8")).decode("utf-8")
 
     claims = parse_saml_response_claims(fake_b64)
