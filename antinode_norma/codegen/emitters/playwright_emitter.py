@@ -359,15 +359,17 @@ class PlaywrightEmitter(Emitter):
         elif action == ActionType.CLICK:
             if self.quality.add_explicit_waits:
                 return (
-                    f"{helper_prefix}await page.locator({target_expr}).waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
-                    f"    await page.locator({target_expr}).click();"
+                    f"{helper_prefix}const locator = page.locator({target_expr});\n"
+                    f"    await locator.waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
+                    f"    await locator.click();"
                 )
             return f"{helper_prefix}await page.locator({target_expr}).click();"
         elif action == ActionType.FILL:
             if self.quality.add_explicit_waits:
                 return (
-                    f"{helper_prefix}await page.locator({target_expr}).waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
-                    f"    await page.locator({target_expr}).fill('{self._escape_string(value or '')}');"
+                    f"{helper_prefix}const locator = page.locator({target_expr});\n"
+                    f"    await locator.waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
+                    f"    await locator.fill('{self._escape_string(value or '')}');"
                 )
             return f"{helper_prefix}await page.locator({target_expr}).fill('{self._escape_string(value or '')}');"
         elif action == ActionType.ASSERT_TEXT:
@@ -375,29 +377,33 @@ class PlaywrightEmitter(Emitter):
         elif action == ActionType.CHECK:
             if self.quality.add_explicit_waits:
                 return (
-                    f"{helper_prefix}await page.locator({target_expr}).waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
-                    f"    await page.locator({target_expr}).check();"
+                    f"{helper_prefix}const locator = page.locator({target_expr});\n"
+                    f"    await locator.waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
+                    f"    await locator.check();"
                 )
             return f"{helper_prefix}await page.locator({target_expr}).check();"
         elif action == ActionType.UNCHECK:
             if self.quality.add_explicit_waits:
                 return (
-                    f"{helper_prefix}await page.locator({target_expr}).waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
-                    f"    await page.locator({target_expr}).uncheck();"
+                    f"{helper_prefix}const locator = page.locator({target_expr});\n"
+                    f"    await locator.waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
+                    f"    await locator.uncheck();"
                 )
             return f"{helper_prefix}await page.locator({target_expr}).uncheck();"
         elif action == ActionType.SELECT:
             if self.quality.add_explicit_waits:
                 return (
-                    f"{helper_prefix}await page.locator({target_expr}).waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
-                    f"    await page.locator({target_expr}).selectOption('{self._escape_string(value or '')}');"
+                    f"{helper_prefix}const locator = page.locator({target_expr});\n"
+                    f"    await locator.waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
+                    f"    await locator.selectOption('{self._escape_string(value or '')}');"
                 )
             return f"{helper_prefix}await page.locator({target_expr}).selectOption('{self._escape_string(value or '')}');"
         elif action == ActionType.ASSERT_VISIBLE:
             if self.quality.add_explicit_waits:
                 return (
-                    f"{helper_prefix}await page.locator({target_expr}).waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
-                    f"    await expect(page.locator({target_expr})).toBeVisible();"
+                    f"{helper_prefix}const locator = page.locator({target_expr});\n"
+                    f"    await locator.waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
+                    f"    await expect(locator).toBeVisible();"
                 )
             return f"{helper_prefix}await expect(page.locator({target_expr})).toBeVisible();"
         elif action == ActionType.ASSERT_HIDDEN:
@@ -405,8 +411,9 @@ class PlaywrightEmitter(Emitter):
         elif action == ActionType.ASSERT_VALUE:
             if self.quality.add_explicit_waits:
                 return (
-                    f"{helper_prefix}await page.locator({target_expr}).waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
-                    f"    await expect(page.locator({target_expr})).toHaveValue('{self._escape_string(value or '')}');"
+                    f"{helper_prefix}const locator = page.locator({target_expr});\n"
+                    f"    await locator.waitFor({{ state: 'visible', timeout: {self.quality.wait_timeout} }});\n"
+                    f"    await expect(locator).toHaveValue('{self._escape_string(value or '')}');"
                 )
             return f"{helper_prefix}await expect(page.locator({target_expr})).toHaveValue('{self._escape_string(value or '')}');"
         else:

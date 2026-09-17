@@ -26,6 +26,7 @@ dependencies = [
     "rich>=13.0.0",
     "tqdm>=4.65.0",
     "fastapi>=0.100.0",
+    "httpx>=0.24.0",
 ]
 
 [project.scripts]
