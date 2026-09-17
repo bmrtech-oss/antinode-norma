@@ -18,6 +18,12 @@ from antinode_norma.auth.roles import (
     get_user_permissions,
     has_permission,
 )
+from antinode_norma.auth.saml import (
+    SAMLConfig,
+    build_authn_request,
+    generate_sp_metadata,
+    parse_saml_response_claims,
+)
 
 __all__ = [
     "Role",
@@ -26,6 +32,10 @@ __all__ = [
     "build_authorization_url",
     "generate_pkce_pair",
     "map_claims_to_user",
+    "SAMLConfig",
+    "build_authn_request",
+    "generate_sp_metadata",
+    "parse_saml_response_claims",
     "FEATURE_READ",
     "FEATURE_WRITE",
     "APPROVAL_ACTION",
