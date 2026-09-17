@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import { Activity, FileText, CheckCircle2, ShieldAlert, Cpu, LayoutDashboard, ShieldCheck } from 'lucide-react'
+import { Activity, FileText, CheckCircle2, ShieldAlert, Cpu, LayoutDashboard, ShieldCheck, GitMerge } from 'lucide-react'
 import FeatureReview from './components/FeatureReview'
 import ApprovalQueue from './components/ApprovalQueue'
+import TraceabilityView from './components/TraceabilityView'
+import AuditTrailView from './components/AuditTrailView'
 
 interface HealthStatus {
   status: string
@@ -12,7 +14,7 @@ interface HealthStatus {
 export default function App() {
   const [health, setHealth] = useState<HealthStatus | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'approvals'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'approvals' | 'traceability' | 'audit'>('dashboard')
 
   useEffect(() => {
     fetch('/health')
@@ -72,6 +74,28 @@ export default function App() {
               <ShieldCheck className="h-3.5 w-3.5" />
               <span>Approval Queue</span>
             </button>
+            <button
+              onClick={() => setActiveTab('traceability')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center space-x-1.5 ${
+                activeTab === 'traceability'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              }`}
+            >
+              <GitMerge className="h-3.5 w-3.5" />
+              <span>Traceability</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('audit')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center space-x-1.5 ${
+                activeTab === 'audit'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              }`}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              <span>Audit Log</span>
+            </button>
           </nav>
         </div>
 
@@ -98,12 +122,12 @@ export default function App() {
                 <span>Platform Dashboard</span>
               </h2>
               <p className="text-slate-300 text-sm leading-relaxed">
-                Welcome to the Antinode Norma BDD Platform Web UI dashboard. Use the navigation tabs above to review feature files or manage pending approval requests in the governance queue.
+                Welcome to the Antinode Norma BDD Platform Web UI dashboard. Use the navigation tabs above to review feature files, manage pending approvals, inspect requirement traceability, or audit governance events.
               </p>
             </div>
 
             {/* Feature Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div
                 onClick={() => setActiveTab('review')}
                 className="bg-slate-800/30 border border-slate-800 rounded-lg p-5 hover:border-indigo-500/50 transition cursor-pointer group"
@@ -126,19 +150,37 @@ export default function App() {
                 <p className="text-slate-400 text-xs">Manage pending feature approval state transitions and reviewer comments.</p>
               </div>
 
-              <div className="bg-slate-800/30 border border-slate-800 rounded-lg p-5 hover:border-slate-700 transition">
+              <div
+                onClick={() => setActiveTab('traceability')}
+                className="bg-slate-800/30 border border-slate-800 rounded-lg p-5 hover:border-indigo-500/50 transition cursor-pointer group"
+              >
                 <div className="flex items-center space-x-3 mb-3">
-                  <Activity className="h-5 w-5 text-emerald-400" />
-                  <h3 className="font-medium text-slate-200">Execution Maturity</h3>
+                  <GitMerge className="h-5 w-5 text-emerald-400 group-hover:text-indigo-400 transition" />
+                  <h3 className="font-medium text-slate-200">Traceability</h3>
                 </div>
-                <p className="text-slate-400 text-xs">Monitor parallel test runs, flake detection, and artifact captures.</p>
+                <p className="text-slate-400 text-xs">Map requirement IDs to generated Gherkin scenarios.</p>
+              </div>
+
+              <div
+                onClick={() => setActiveTab('audit')}
+                className="bg-slate-800/30 border border-slate-800 rounded-lg p-5 hover:border-indigo-500/50 transition cursor-pointer group"
+              >
+                <div className="flex items-center space-x-3 mb-3">
+                  <ShieldAlert className="h-5 w-5 text-purple-400 group-hover:text-indigo-400 transition" />
+                  <h3 className="font-medium text-slate-200">Audit Trail</h3>
+                </div>
+                <p className="text-slate-400 text-xs">Cryptographically verify governance log integrity.</p>
               </div>
             </div>
           </>
         ) : activeTab === 'review' ? (
           <FeatureReview />
-        ) : (
+        ) : activeTab === 'approvals' ? (
           <ApprovalQueue />
+        ) : activeTab === 'traceability' ? (
+          <TraceabilityView />
+        ) : (
+          <AuditTrailView />
         )}
       </main>
 
