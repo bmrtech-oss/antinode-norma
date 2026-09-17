@@ -1,5 +1,6 @@
 """Authentication and Authorization package for Antinode Norma Platform."""
 
+from antinode_norma.auth.middleware import get_current_user, requires_permission
 from antinode_norma.auth.models import Role, User
 from antinode_norma.auth.oidc import (
     OIDCConfig,
@@ -36,6 +37,8 @@ __all__ = [
     "build_authn_request",
     "generate_sp_metadata",
     "parse_saml_response_claims",
+    "get_current_user",
+    "requires_permission",
     "FEATURE_READ",
     "FEATURE_WRITE",
     "APPROVAL_ACTION",

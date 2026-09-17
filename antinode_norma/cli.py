@@ -647,69 +647,6 @@ def init(force):
         sys.exit(1)
 
 
-@cli.command("generate-from-csv")
-@click.argument("csv_file", type=click.Path(exists=True, dir_okay=False))
-@click.option("--output-dir", "-o", default="features", help="Output directory for feature files")
-def generate_from_csv(csv_file, output_dir):
-    """Generate Gherkin features from a CSV file of test cases."""
-    from antinode_norma.ingest_structured.csv import CSVIngester
-
-    try:
-        ingester = CSVIngester()
-        test_cases = ingester.ingest(Path(csv_file))
-        info_message(f"Ingested {len(test_cases)} test cases from {csv_file}")
-
-        out_path = Path(output_dir)
-        out_path.mkdir(parents=True, exist_ok=True)
-
-        os.environ.setdefault("LLM_PROVIDER", "mock")
-        for tc in test_cases:
-            raw_text = f"As a {tc.role}, I want to {tc.action} so that {tc.benefit}.\n"
-            if tc.acceptance_criteria:
-                raw_text += "Acceptance Criteria:\n" + "\n".join(f"- {ac}" for ac in tc.acceptance_criteria)
-            os.environ["NORMA_OUTPUT_DIR"] = str(out_path)
-            res = asyncio.run(run_agent_from_raw(raw_text))
-            if isinstance(res, dict) and "error" in res:
-                out_file = out_path / f"{tc.id.lower().replace('-', '_')}.feature"
-                out_file.write_text(f"Feature: {tc.title}\n\n  @{tc.id}\n  Scenario: {tc.title}\n    Given the {tc.role} initiates action\n    When they {tc.action}\n    Then outcome supports {tc.benefit}\n", encoding="utf-8")
-
-        success_message(f"Ingested {len(test_cases)} test cases")
-    except Exception as e:
-        error_context(e, "Failed to generate features from CSV")
-        sys.exit(1)
-
-
-@cli.command("generate-from-xlsx")
-@click.argument("xlsx_file", type=click.Path(exists=True, dir_okay=False))
-@click.option("--output-dir", "-o", default="features", help="Output directory for feature files")
-def generate_from_xlsx(xlsx_file, output_dir):
-    """Generate Gherkin features from an XLSX file of test cases."""
-    from antinode_norma.ingest_structured.xlsx import XLSXIngester
-
-    try:
-        ingester = XLSXIngester()
-        test_cases = ingester.ingest(Path(xlsx_file))
-        info_message(f"Ingested {len(test_cases)} test cases from {xlsx_file}")
-
-        out_path = Path(output_dir)
-        out_path.mkdir(parents=True, exist_ok=True)
-
-        for tc in test_cases:
-            raw_text = f"As a {tc.role}, I want to {tc.action} so that {tc.benefit}.\n"
-            if tc.acceptance_criteria:
-                raw_text += "Acceptance Criteria:\n" + "\n".join(f"- {ac}" for ac in tc.acceptance_criteria)
-            os.environ["NORMA_OUTPUT_DIR"] = str(out_path)
-            res = asyncio.run(run_agent_from_raw(raw_text))
-            if isinstance(res, dict) and "error" in res:
-                out_file = out_path / f"{tc.id.lower().replace('-', '_')}.feature"
-                out_file.write_text(f"Feature: {tc.title}\n\n  @{tc.id}\n  Scenario: {tc.title}\n    Given the {tc.role} initiates action\n    When they {tc.action}\n    Then outcome supports {tc.benefit}\n", encoding="utf-8")
-
-        success_message(f"Ingested {len(test_cases)} test cases")
-    except Exception as e:
-        error_context(e, "Failed to generate features from XLSX")
-        sys.exit(1)
-
-
 def main():
     cli()
 
