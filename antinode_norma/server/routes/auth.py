@@ -2,7 +2,7 @@
 
 import secrets
 from typing import Dict, Any, Optional
-from fastapi import APIRouter, HTTPException, Query, Header
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from antinode_norma.auth.oidc import (
