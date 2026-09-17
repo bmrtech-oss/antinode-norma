@@ -11,23 +11,20 @@ from .utils.file_writer import write_feature_file
 
 load_dotenv()
 
-# Load LLM config once
-LLM_CONFIG = {
-    "provider": os.getenv("LLM_PROVIDER", "anthropic"),
-    "api_key": os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENAI_API_KEY"),
-    "model": os.getenv("LLM_MODEL", "claude-3-5-sonnet-20241022"),
-    "temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
-    "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "1024")),
-    "url": os.getenv("LLM_URL"),
-}
-
 
 def get_llm_callable():
-    return create_llm_callable(LLM_CONFIG)
+    config = {
+        "provider": os.getenv("LLM_PROVIDER", "anthropic"),
+        "api_key": os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENAI_API_KEY"),
+        "model": os.getenv("LLM_MODEL", "claude-3-5-sonnet-20241022"),
+        "temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
+        "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "1024")),
+        "url": os.getenv("LLM_URL"),
+    }
+    return create_llm_callable(config)
 
 
 def get_step_definitions(keyword: str = None):
-    # Simple implementation – can be extended to read from file system
     steps = [
         "Given the user is on the login page",
         "When the user clicks 'Forgot password'",
@@ -45,10 +42,8 @@ async def run_agent_from_raw(
     raw_story: str, quality_only: bool = False
 ) -> Dict[str, Any]:
     """Run the Norma agent from raw story text."""
-    # Parse
     llm_call = get_llm_callable()
     story = parse_story(raw_story, llm_call)
-    # Quality check
     report = compute_quality(story)
     if quality_only:
         return {
@@ -63,15 +58,18 @@ async def run_agent_from_raw(
             "issues": report.issues,
             "suggestions": report.suggestions,
         }
-    # Generate
     step_defs = get_step_definitions()
     gherkin = generate_gherkin(story, step_defs, llm_call)
     validation = validate_gherkin(gherkin)
     if not validation.valid:
         return {"error": "Gherkin validation failed", "errors": validation.errors}
-    # Write file
     output_dir = os.getenv("NORMA_OUTPUT_DIR", "features")
     safe_action = story.action.lower().replace(" ", "_")
     file_path = os.path.join(output_dir, f"{safe_action}.feature")
     write_feature_file(file_path, gherkin)
     return {"feature_path": file_path, "validation_passed": True}
+
+
+async def run_bdd_agent(raw_story: str, max_iterations: int = 3) -> Dict[str, Any]:
+    """Run the autonomous BDD agent on a story."""
+    return await run_agent_from_raw(raw_story)

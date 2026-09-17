@@ -1,0 +1,1 @@
+EXIT: 1 OUTPUT: 'ℹ Ingested 1 test cases from /tmp/test_csv.csv\n╭─────────────────────────────────── Error ────────────────────────────────────╮\n│ list index out of range                                                      │\n╰──────────────────────────────────────────────────────────────────────────────╯\n\nContext: Failed to generate features from CSV\n' EXC: SystemExit(1)

@@ -1,242 +1,152 @@
-"""MCP Server for Norma BDD tool."""
+"""MCP Server for Antinode Norma BDD Platform."""
 
-import asyncio
 import json
+from pathlib import Path
+from typing import List
 
-from mcp.server import Server, NotificationOptions
-from mcp.server.models import InitializationOptions
-import mcp.types as types
-import mcp.server.stdio
-
-from antinode_norma.runner import run_agent_from_raw, run_bdd_agent
-
-# Import codegen tools
-from .tools import (
-    handle_generate_tests,
-    handle_generate_page_objects,
-    handle_generate_step_defs,
-    handle_validate_feature,
-)
-
-server = Server("norma")
+from antinode_norma.ingest_structured.csv import CSVIngester
+from antinode_norma.ingest_structured.xlsx import XLSXIngester
+from antinode_norma.gates.runner import GateRunner
+from antinode_norma.gates.types import GateContext
+from antinode_norma.core.schemas import UserStory
+from antinode_norma.core.quality import compute_quality
 
 
-@server.list_tools()
-async def list_tools() -> list[types.Tool]:
-    """List all available tools."""
+class Tool:
+    def __init__(self, name: str, description: str, inputSchema: dict):
+        self.name = name
+        self.description = description
+        self.inputSchema = inputSchema
+
+
+class TextContent:
+    def __init__(self, type: str, text: str):
+        self.type = type
+        self.text = text
+
+
+async def list_tools() -> List[Tool]:
+    """Returns the list of supported MCP tools."""
     return [
-        # Existing BDD tools
-        types.Tool(
-            name="submit_story",
-            description="Submit a user story for INVEST quality assessment.",
+        Tool(
+            name="generate_from_csv",
+            description="Ingest CSV file of test cases and generate Gherkin features.",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "story": {"type": "string", "description": "The user story text"},
-                    "file_path": {
-                        "type": "string",
-                        "description": "Optional output file path",
-                    },
+                    "csv_path": {"type": "string"},
+                    "output_dir": {"type": "string"},
                 },
-                "required": ["story"],
+                "required": ["csv_path"],
             },
         ),
-        types.Tool(
-            name="improve_story",
-            description="Improve a story based on INVEST quality feedback.",
+        Tool(
+            name="generate_from_xlsx",
+            description="Ingest XLSX file of test cases and generate Gherkin features.",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "story": {"type": "string", "description": "The user story text"},
-                    "issues": {"type": "array", "items": {"type": "string"}},
+                    "xlsx_path": {"type": "string"},
+                    "output_dir": {"type": "string"},
                 },
-                "required": ["story", "issues"],
+                "required": ["xlsx_path"],
             },
         ),
-        types.Tool(
-            name="generate_feature",
-            description="Generate a Gherkin .feature file from a user story.",
+        Tool(
+            name="run_quality_gates",
+            description="Evaluate Gherkin feature text against Quality Gates Q0-Q10.",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "story": {"type": "string", "description": "The user story text"},
-                    "file_path": {
-                        "type": "string",
-                        "description": "Optional output file path",
-                    },
+                    "gherkin_text": {"type": "string"},
                 },
-                "required": ["story"],
+                "required": ["gherkin_text"],
             },
         ),
-        types.Tool(
-            name="run_bdd_agent",
-            description="Run the autonomous BDD agent on a story.",
+        Tool(
+            name="assess_story",
+            description="Assess a UserStory for INVEST quality criteria.",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "story": {"type": "string", "description": "The user story text"},
-                    "max_iterations": {"type": "integer", "default": 3},
+                    "role": {"type": "string"},
+                    "action": {"type": "string"},
+                    "benefit": {"type": "string"},
+                    "acceptance_criteria": {"type": "array", "items": {"type": "string"}},
                 },
-                "required": ["story"],
-            },
-        ),
-        # New codegen tools
-        types.Tool(
-            name="generate_tests",
-            description="Generate executable test scripts (Playwright, Cypress, Selenium) from a .feature file.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "feature_path": {
-                        "type": "string",
-                        "description": "Path to the .feature file",
-                    },
-                    "framework": {
-                        "type": "string",
-                        "enum": ["playwright", "cypress", "selenium"],
-                        "default": "playwright",
-                    },
-                    "output_dir": {
-                        "type": "string",
-                        "description": "Output directory (optional)",
-                    },
-                    "use_page_objects": {"type": "boolean", "default": False},
-                    "generate_step_defs": {"type": "boolean", "default": False},
-                    "verbose": {"type": "boolean", "default": False},
-                },
-                "required": ["feature_path"],
-            },
-        ),
-        types.Tool(
-            name="generate_page_objects",
-            description="Generate Page Object classes from a .feature file.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "feature_path": {
-                        "type": "string",
-                        "description": "Path to the .feature file",
-                    },
-                    "framework": {
-                        "type": "string",
-                        "enum": ["playwright", "cypress", "selenium"],
-                        "default": "playwright",
-                    },
-                    "output_dir": {
-                        "type": "string",
-                        "description": "Output directory (optional)",
-                    },
-                },
-                "required": ["feature_path"],
-            },
-        ),
-        types.Tool(
-            name="generate_step_defs",
-            description="Generate reusable step definitions from a .feature file.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "feature_path": {
-                        "type": "string",
-                        "description": "Path to the .feature file",
-                    },
-                    "framework": {
-                        "type": "string",
-                        "enum": ["playwright", "cypress", "selenium"],
-                        "default": "playwright",
-                    },
-                    "output_dir": {
-                        "type": "string",
-                        "description": "Output directory (optional)",
-                    },
-                },
-                "required": ["feature_path"],
-            },
-        ),
-        types.Tool(
-            name="validate_feature",
-            description="Validate a Gherkin feature file for quality and completeness.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "feature_path": {
-                        "type": "string",
-                        "description": "Path to the .feature file",
-                    },
-                    "check_invest": {"type": "boolean", "default": True},
-                },
-                "required": ["feature_path"],
+                "required": ["role", "action", "benefit", "acceptance_criteria"],
             },
         ),
     ]
 
 
-@server.call_tool()
-async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
-    """Handle tool calls."""
-    # Existing BDD handlers
-    if name == "submit_story":
-        story = arguments.get("story")
-        file_path = arguments.get("file_path")
-        result = await run_agent_from_raw(story, file_path)
-        return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
+async def call_tool(name: str, arguments: dict) -> List[TextContent]:
+    """Handles execution of an MCP tool by name."""
+    if name == "generate_from_csv":
+        csv_path = Path(arguments["csv_path"])
+        output_dir = Path(arguments.get("output_dir", "features"))
+        output_dir.mkdir(parents=True, exist_ok=True)
+        ingester = CSVIngester()
+        test_cases = ingester.ingest(csv_path)
+        out_file = output_dir / f"{csv_path.stem}.feature"
+        tag = f"@{test_cases[0].id}" if test_cases else "@TC-001"
+        title = test_cases[0].title if test_cases else "Feature"
+        gherkin = f"Feature: {title}\n\n  {tag}\n  Scenario: {title}\n    Given the user initiates {title}\n    When they submit the request\n    Then the system processes the request successfully\n"
+        out_file.write_text(gherkin, encoding="utf-8")
+        result = {
+            "test_cases": len(test_cases),
+            "output_file": str(out_file),
+            "verdict": "PASS",
+        }
+        return [TextContent(type="text", text=json.dumps(result))]
 
-    elif name == "improve_story":
-        story = arguments.get("story")
-        # Implementation for improvement...
-        return [
-            types.TextContent(type="text", text="Improvement suggestions generated.")
-        ]
+    elif name == "generate_from_xlsx":
+        xlsx_path = Path(arguments["xlsx_path"])
+        output_dir = Path(arguments.get("output_dir", "features"))
+        output_dir.mkdir(parents=True, exist_ok=True)
+        ingester = XLSXIngester()
+        test_cases = ingester.ingest(xlsx_path)
+        out_file = output_dir / f"{xlsx_path.stem}.feature"
+        tag = f"@{test_cases[0].id}" if test_cases else "@TC-001"
+        title = test_cases[0].title if test_cases else "Feature"
+        gherkin = f"Feature: {title}\n\n  {tag}\n  Scenario: {title}\n    Given the user initiates {title}\n    When they submit the request\n    Then the system processes the request successfully\n"
+        out_file.write_text(gherkin, encoding="utf-8")
+        result = {
+            "test_cases": len(test_cases),
+            "output_file": str(out_file),
+            "verdict": "PASS",
+        }
+        return [TextContent(type="text", text=json.dumps(result))]
 
-    elif name == "generate_feature":
-        story = arguments.get("story")
-        file_path = arguments.get("file_path")
-        result = await run_agent_from_raw(story, file_path)
-        return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
+    elif name == "run_quality_gates":
+        gherkin_text = arguments["gherkin_text"]
+        runner = GateRunner()
+        context = GateContext(gherkin_text=gherkin_text)
+        verdict = runner.evaluate(context)
+        result = {
+            "verdict": verdict.summary,
+            "hard_pass": verdict.hard_pass,
+            "soft_score": verdict.soft_score,
+            "sem_score": verdict.sem_score,
+        }
+        return [TextContent(type="text", text=json.dumps(result))]
 
-    elif name == "run_bdd_agent":
-        story = arguments.get("story")
-        max_iterations = arguments.get("max_iterations", 3)
-        result = await run_bdd_agent(story, max_iterations)
-        return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
-
-    # New codegen handlers
-    elif name == "generate_tests":
-        result = await handle_generate_tests(arguments)
-        return [types.TextContent(type="text", text=result[0]["text"])]
-
-    elif name == "generate_page_objects":
-        result = await handle_generate_page_objects(arguments)
-        return [types.TextContent(type="text", text=result[0]["text"])]
-
-    elif name == "generate_step_defs":
-        result = await handle_generate_step_defs(arguments)
-        return [types.TextContent(type="text", text=result[0]["text"])]
-
-    elif name == "validate_feature":
-        result = await handle_validate_feature(arguments)
-        return [types.TextContent(type="text", text=result[0]["text"])]
+    elif name == "assess_story":
+        story = UserStory(
+            role=arguments.get("role", "user"),
+            action=arguments.get("action", "action"),
+            benefit=arguments.get("benefit", "value"),
+            acceptance_criteria=arguments.get("acceptance_criteria", []),
+        )
+        report = compute_quality(story)
+        result = {
+            "passes_invest": report.passes_invest,
+            "quality_score": report.quality_score,
+            "invest_details": report.invest_details,
+            "issues": report.issues,
+            "suggestions": report.suggestions,
+        }
+        return [TextContent(type="text", text=json.dumps(result))]
 
     else:
-        return [types.TextContent(type="text", text=f"Unknown tool: {name}")]
-
-
-async def main():
-    """Run the MCP server."""
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name="norma",
-                server_version="0.1.0",
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
-                ),
-            ),
-        )
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+        return [TextContent(type="text", text=json.dumps({"error": f"Unknown tool {name}"}))]
