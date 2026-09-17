@@ -155,5 +155,5 @@ async def call_tool(name: str, arguments: dict) -> List[TextContent]:
 
 async def main():
     """Main entrypoint for MCP server execution."""
-    sys.stdout.write("Norma MCP Server running...\n")
-    sys.stdout.flush()
+    sys.stderr.write("Norma MCP Server running...\n")
+    sys.stderr.flush()

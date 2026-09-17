@@ -4,10 +4,8 @@ import base64
 import urllib.parse
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
-from pydantic import BaseModel, Field
-
-from antinode_norma.auth.models import Role, User
+from typing import Dict, Optional
+from pydantic import BaseModel
 
 
 class SAMLConfig(BaseModel):

@@ -1,8 +1,10 @@
 """FastAPI application server foundation for Norma BDD Platform."""
 
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from antinode_norma.server.schemas import HealthResponse, ErrorResponse
 from antinode_norma.server.routes import (
@@ -59,3 +61,9 @@ app.include_router(auth_router)
 async def health_check():
     """Health check endpoint returning API operational status."""
     return HealthResponse(status="ok", version="0.1.0")
+
+
+# Mount static SPA if built dist exists
+static_dir = Path("ui/dist")
+if static_dir.exists():
+    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static_spa")
