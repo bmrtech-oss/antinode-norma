@@ -8,6 +8,7 @@ from antinode_norma.server.routes.dashboard import dashboard_router
 from antinode_norma.server.routes.auth import router as auth_router
 from antinode_norma.server.routes.admin import router as admin_router
 from antinode_norma.server.routes.comments import router as comments_router
+from antinode_norma.server.routes.notifications import router as notifications_router
 
 __all__ = [
     "features_router",
@@ -18,4 +19,5 @@ __all__ = [
     "auth_router",
     "admin_router",
     "comments_router",
+    "notifications_router",
 ]
