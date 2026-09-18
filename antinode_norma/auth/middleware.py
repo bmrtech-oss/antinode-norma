@@ -18,7 +18,7 @@ async def get_current_user(
     # Fallback header user resolution from request headers or header param
     header_val = request.headers.get("x-user-id") or (x_user_id if isinstance(x_user_id, str) else None)
     if header_val:
-        roles = [Role.ADMIN] if ("admin" in header_val.lower() or "user" in header_val.lower()) else [Role.VIEWER]
+        roles = [Role.ADMIN] if "admin" in header_val.lower() else [Role.VIEWER]
         return User(
             id=header_val,
             username="header_user",

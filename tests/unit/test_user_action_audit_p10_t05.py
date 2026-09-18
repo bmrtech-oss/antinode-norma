@@ -9,8 +9,8 @@ from antinode_norma.governance.audit import AuditLog
 from antinode_norma.server.routes.audit import audit_log, router as audit_router
 
 
-def test_audit_log_record_user_action():
-    log = AuditLog()
+def test_audit_log_record_user_action(tmp_path):
+    log = AuditLog(log_path=tmp_path / "audit.jsonl")
     initial_count = len(log.records)
 
     record = log.record_user_action(
