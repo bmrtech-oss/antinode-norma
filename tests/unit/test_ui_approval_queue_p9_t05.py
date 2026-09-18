@@ -1,0 +1,30 @@
+"""Unit tests for Phase 9 Task P9-T05: Frontend Approval Queue Component."""
+
+import unittest
+from pathlib import Path
+
+
+class TestUIApprovalQueuePage(unittest.TestCase):
+    def setUp(self):
+        self.ui_dir = Path("ui")
+
+    def test_approval_queue_component_exists(self):
+        comp = self.ui_dir / "src" / "components" / "ApprovalQueue.tsx"
+        self.assertTrue(comp.exists())
+
+        content = comp.read_text(encoding="utf-8")
+        self.assertIn("export default function ApprovalQueue", content)
+        self.assertIn("/api/approvals", content)
+        self.assertIn("Governance Approval Queue", content)
+
+    def test_app_navigation_integration(self):
+        app = self.ui_dir / "src" / "App.tsx"
+        self.assertTrue(app.exists())
+
+        content = app.read_text(encoding="utf-8")
+        self.assertIn("import ApprovalQueue from './components/ApprovalQueue'", content)
+        self.assertIn("Approval Queue", content)
+
+
+if __name__ == "__main__":
+    unittest.main()
