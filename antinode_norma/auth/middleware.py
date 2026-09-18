@@ -54,3 +54,29 @@ def requires_permission(permission: str) -> Callable:
         return user
 
     return dependency
+
+
+def log_user_action(
+    request: Request,
+    user: Optional[User],
+    action: str,
+    resource: str,
+    result: str = "success",
+    payload: Optional[dict] = None,
+) -> None:
+    """Helper function to record a user action event into audit trail."""
+    from antinode_norma.server.routes.audit import audit_log
+
+    user_id = user.id if user else "anonymous"
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    user_agent = request.headers.get("user-agent", "unknown")
+
+    audit_log.record_user_action(
+        user_id=user_id,
+        action=action,
+        resource=resource,
+        result=result,
+        ip=client_ip,
+        user_agent=user_agent,
+        payload=payload,
+    )

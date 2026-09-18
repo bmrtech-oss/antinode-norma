@@ -63,6 +63,32 @@ class AuditLog:
         self._persist_record(record)
         return record
 
+    def record_user_action(
+        self,
+        user_id: str,
+        action: str,
+        resource: str,
+        result: str = "success",
+        ip: Optional[str] = None,
+        user_agent: Optional[str] = None,
+        payload: Optional[Dict[str, Any]] = None,
+    ) -> AuditRecord:
+        full_payload = dict(payload) if payload else {}
+        full_payload.update(
+            {
+                "user_id": user_id,
+                "result": result,
+                "ip": ip or "127.0.0.1",
+                "user_agent": user_agent or "unknown",
+            }
+        )
+        return self.record_event(
+            action=action,
+            resource=resource,
+            actor=user_id,
+            payload=full_payload,
+        )
+
     def _persist_record(self, record: AuditRecord) -> None:
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
         with open(self.log_path, "a", encoding="utf-8") as f:
