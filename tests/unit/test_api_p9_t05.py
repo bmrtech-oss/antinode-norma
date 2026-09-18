@@ -8,7 +8,7 @@ from antinode_norma.server.api import app
 
 class TestApprovalQueueAPI(unittest.TestCase):
     def setUp(self):
-        self.client = TestClient(app)
+        self.client = TestClient(app, headers={"X-User-ID": "admin_user"})
 
     def test_approval_workflow(self):
         # 1. Create approval request

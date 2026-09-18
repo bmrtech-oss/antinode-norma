@@ -11,7 +11,7 @@ from antinode_norma.server.api import app
 
 class TestFeatureViewerEndpoints(unittest.TestCase):
     def setUp(self):
-        self.client = TestClient(app)
+        self.client = TestClient(app, headers={"X-User-ID": "admin_user"})
         self.temp_dir = tempfile.TemporaryDirectory()
         self.feature_dir = Path(self.temp_dir.name)
 

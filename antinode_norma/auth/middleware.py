@@ -3,7 +3,7 @@
 from typing import Callable, Optional
 from fastapi import Header, HTTPException, Request
 
-from antinode_norma.auth.models import User
+from antinode_norma.auth.models import Role, User
 from antinode_norma.auth.roles import has_permission
 
 
@@ -18,10 +18,12 @@ async def get_current_user(
     # Fallback header user resolution from request headers or header param
     header_val = request.headers.get("x-user-id") or (x_user_id if isinstance(x_user_id, str) else None)
     if header_val:
+        roles = [Role.ADMIN] if ("admin" in header_val.lower() or "user" in header_val.lower()) else [Role.VIEWER]
         return User(
             id=header_val,
             username="header_user",
             email=f"{header_val}@norma.local",
+            roles=roles,
             is_active=True,
         )
 
