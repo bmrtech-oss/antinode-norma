@@ -1,6 +1,5 @@
 """MCP Server for Antinode Norma BDD Platform."""
 
-import asyncio
 import json
 import sys
 from pathlib import Path
