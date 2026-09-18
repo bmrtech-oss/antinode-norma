@@ -4,7 +4,6 @@ import unittest
 from fastapi.testclient import TestClient
 
 from antinode_norma.server.api import app
-from antinode_norma.governance.audit import AuditLog
 from antinode_norma.server.routes.audit import audit_log
 
 

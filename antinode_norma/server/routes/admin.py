@@ -1,6 +1,6 @@
 """Admin settings routes for Norma BDD Platform FastAPI server."""
 
-from typing import Dict, Any
+from typing import Dict
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
