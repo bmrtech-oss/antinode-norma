@@ -1,0 +1,6 @@
+name: norma_baseline_domain
+entities:
+  - name: User
+    attributes: [id, email, role]
+  - name: Account
+    attributes: [id, balance, status]

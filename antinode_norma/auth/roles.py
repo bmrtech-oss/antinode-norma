@@ -1,17 +1,16 @@
-"""Role permission matrix and permission resolution helpers."""
+"""Role Permission Matrix for Antinode Norma Platform SSO & RBAC."""
 
-from typing import Dict, Set
+from typing import Set
 from antinode_norma.auth.models import Role, User
 
 # Permission constants
-FEATURE_READ = "features:read"
-FEATURE_WRITE = "features:generate"
-APPROVAL_ACTION = "features:approve"
+FEATURE_READ = "feature:read"
+FEATURE_WRITE = "feature:write"
+APPROVAL_ACTION = "approval:action"
 AUDIT_READ = "audit:read"
-ADMIN_WRITE = "settings:manage"
+ADMIN_WRITE = "admin:write"
 
-# Role permission matrix
-ROLE_PERMISSIONS: Dict[Role, Set[str]] = {
+ROLE_PERMISSIONS = {
     Role.ADMIN: {
         FEATURE_READ,
         FEATURE_WRITE,
@@ -37,12 +36,12 @@ ROLE_PERMISSIONS: Dict[Role, Set[str]] = {
 
 
 def get_role_permissions(role: Role) -> Set[str]:
-    """Get permission set for a given Role."""
+    """Returns the set of permissions granted to a given role."""
     return ROLE_PERMISSIONS.get(role, set())
 
 
 def get_user_permissions(user: User) -> Set[str]:
-    """Resolve aggregate permissions across all roles assigned to an active user."""
+    """Returns the combined set of permissions granted across all roles assigned to the user."""
     if not user.is_active:
         return set()
 
@@ -53,7 +52,5 @@ def get_user_permissions(user: User) -> Set[str]:
 
 
 def has_permission(user: User, permission: str) -> bool:
-    """Check if an active user possesses a specific permission."""
-    if not user.is_active:
-        return False
+    """Checks whether an active user has the specified permission."""
     return permission in get_user_permissions(user)

@@ -94,22 +94,34 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
                 return prompt.split(marker, 1)[1].strip()
             return ""
 
+        def _get_line(prompt: str, marker: str, default: str) -> str:
+            val = _extract_block(prompt, marker)
+            lines = val.splitlines()
+            if lines and lines[0].strip():
+                return lines[0].strip()
+            return default
+
         def _parse_story_text(raw_text: str):
             role = "user"
             action = "do something"
             benefit = "achieve value"
             text = raw_text.strip().strip("`\n ")
-            if text.lower().startswith("as a "):
+            text_lower = text.lower()
+            if text_lower.startswith("as a "):
                 text = text[5:]
-                if " so that " in text:
-                    before, after = text.split(" so that ", 1)
+                text_lower = text.lower()
+                if " so that " in text_lower:
+                    idx = text_lower.find(" so that ")
+                    before = text[:idx]
+                    after = text[idx + 9 :]
                     benefit = after.strip().rstrip(".")
                 else:
                     before = text
-                if " i want to " in before.lower():
-                    parts = before.split(" i want to ", 1)
-                    role = parts[0].strip().rstrip(".")
-                    action = parts[1].strip().rstrip(".")
+                before_lower = before.lower()
+                if " i want to " in before_lower:
+                    idx = before_lower.find(" i want to ")
+                    role = before[:idx].strip().rstrip(".")
+                    action = before[idx + 11 :].strip().rstrip(".")
             elif text:
                 action = text.split(".")[0].strip()
             return role, action, benefit
@@ -118,21 +130,16 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
             feature_title = f"{action.capitalize()}"
             scenario_title = f"Generate a feature for {action}"
             steps = [
-                f"Given the {role} needs to {action}",
-                f"When they follow the process to {action}",
+                f"Given the {role} is on the system page",
+                f"When they {action}",
                 f"Then the outcome should support {benefit}",
             ]
-            if criteria:
-                criteria_text = "\n".join(f"  - {c}" for c in criteria)
-            else:
-                criteria_text = "  - The system meets the acceptance criteria."
             return (
                 f"Feature: {feature_title}\n\n"
-                f"Scenario: {scenario_title}\n"
-                f"{criteria_text}\n"
-                f"  {steps[0]}\n"
-                f"  {steps[1]}\n"
-                f"  {steps[2]}\n"
+                f"  Scenario: {scenario_title}\n"
+                f"    {steps[0]}\n"
+                f"    {steps[1]}\n"
+                f"    {steps[2]}\n"
             )
 
         def mock_call(prompt: str) -> str:
@@ -151,9 +158,9 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
                     }
                 )
             if "Output ONLY a valid Gherkin feature file" in prompt:
-                role = _extract_block(prompt, "Role:").splitlines()[0].strip()
-                action = _extract_block(prompt, "Action:").splitlines()[0].strip()
-                benefit = _extract_block(prompt, "Benefit:").splitlines()[0].strip()
+                role = _get_line(prompt, "Role:", "user")
+                action = _get_line(prompt, "Action:", "do something")
+                benefit = _get_line(prompt, "Benefit:", "get value")
                 criteria_block = _extract_block(prompt, "Acceptance criteria:")
                 criteria = [
                     line.strip()[2:].strip()

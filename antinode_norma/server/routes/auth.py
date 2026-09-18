@@ -2,7 +2,7 @@
 
 import secrets
 from typing import Dict, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel
 
 from antinode_norma.auth.oidc import (
@@ -18,8 +18,6 @@ from antinode_norma.auth.saml import (
     parse_saml_response_claims,
 )
 from antinode_norma.auth.models import User
-from antinode_norma.auth.roles import ADMIN_WRITE
-from antinode_norma.auth.middleware import requires_permission
 from antinode_norma.core.features import FeatureFlagResolver
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -142,9 +140,3 @@ async def saml_metadata():
     config = SAMLConfig()
     xml_metadata = generate_sp_metadata(config)
     return Response(content=xml_metadata, media_type="application/xml")
-
-
-@router.get("/protected-admin-route", dependencies=[Depends(requires_permission(ADMIN_WRITE))])
-async def protected_admin_route():
-    """Protected admin settings route requiring ADMIN_WRITE permission."""
-    return {"status": "ok", "message": "Admin access granted"}
