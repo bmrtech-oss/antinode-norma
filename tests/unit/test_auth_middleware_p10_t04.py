@@ -62,7 +62,7 @@ def test_middleware_insufficient_permissions_returns_403():
     client = TestClient(app_viewer)
     resp = client.post("/write")
     assert resp.status_code == 403
-    assert "Permission 'features:generate' required" in resp.json()["detail"]
+    assert "Permission 'feature:write' required" in resp.json()["detail"]
 
 
 def test_middleware_authorized_user_returns_200():

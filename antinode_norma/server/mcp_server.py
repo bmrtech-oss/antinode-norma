@@ -1,5 +1,6 @@
 """MCP Server for Antinode Norma BDD Platform."""
 
+import asyncio
 import json
 import sys
 from pathlib import Path
@@ -154,6 +155,39 @@ async def call_tool(name: str, arguments: dict) -> List[TextContent]:
 
 
 async def main():
-    """Main entrypoint for MCP server execution."""
-    sys.stderr.write("Norma MCP Server running...\n")
-    sys.stderr.flush()
+    """Main entrypoint for MCP server execution using stdio transport."""
+    try:
+        from mcp.server import Server
+        from mcp.server.stdio import stdio_server
+        import mcp.types as types
+
+        mcp = Server("antinode-norma")
+
+        @mcp.list_tools()
+        async def handle_list_tools() -> List[types.Tool]:
+            tools = await list_tools()
+            return [
+                types.Tool(
+                    name=t.name,
+                    description=t.description,
+                    inputSchema=t.inputSchema,
+                )
+                for t in tools
+            ]
+
+        @mcp.call_tool()
+        async def handle_call_tool(
+            name: str, arguments: dict | None
+        ) -> List[types.TextContent]:
+            results = await call_tool(name, arguments or {})
+            return [types.TextContent(type="text", text=r.text) for r in results]
+
+        async with stdio_server() as (read_stream, write_stream):
+            await mcp.run(
+                read_stream,
+                write_stream,
+                mcp.create_initialization_options(),
+            )
+    except Exception as e:
+        sys.stderr.write(f"MCP server execution warning: {e}\n")
+        sys.stderr.flush()

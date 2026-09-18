@@ -5,8 +5,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from antinode_norma.auth.middleware import requires_permission
+from antinode_norma.auth.roles import FEATURE_READ
 from antinode_norma.server.schemas import FeatureSummary, FeatureDetail
 from antinode_norma.gates.runner import GateRunner
 from antinode_norma.gates.types import GateContext
@@ -31,7 +33,7 @@ def _parse_scenarios(content: str) -> List[str]:
     return scenarios
 
 
-@router.get("", response_model=List[FeatureSummary])
+@router.get("", response_model=List[FeatureSummary], dependencies=[Depends(requires_permission(FEATURE_READ))])
 async def list_features(dir_override: Optional[str] = Query(None, alias="dir")) -> List[FeatureSummary]:
     """Lists all .feature files in the feature directory."""
     feature_dir = Path(dir_override) if dir_override else _get_feature_dir()
@@ -58,7 +60,7 @@ async def list_features(dir_override: Optional[str] = Query(None, alias="dir")) 
     return summaries
 
 
-@router.get("/{filename}", response_model=FeatureDetail)
+@router.get("/{filename}", response_model=FeatureDetail, dependencies=[Depends(requires_permission(FEATURE_READ))])
 async def get_feature_detail(
     filename: str,
     dir_override: Optional[str] = Query(None, alias="dir"),

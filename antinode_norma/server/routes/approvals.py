@@ -1,9 +1,11 @@
 """Approval queue routes for Norma BDD Platform FastAPI server."""
 
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from antinode_norma.auth.middleware import requires_permission
+from antinode_norma.auth.roles import APPROVAL_ACTION, FEATURE_READ
 from antinode_norma.governance.approval import ApprovalGate, ApprovalRequest
 
 router = APIRouter(prefix="/api/approvals", tags=["Approvals"])
@@ -23,13 +25,13 @@ class ActionApprovalPayload(BaseModel):
     reason: Optional[str] = None
 
 
-@router.get("", response_model=List[ApprovalRequest])
+@router.get("", response_model=List[ApprovalRequest], dependencies=[Depends(requires_permission(FEATURE_READ))])
 async def list_approvals() -> List[ApprovalRequest]:
     """Lists all approval requests."""
     return list(gate.requests.values())
 
 
-@router.post("", response_model=ApprovalRequest)
+@router.post("", response_model=ApprovalRequest, dependencies=[Depends(requires_permission(APPROVAL_ACTION))])
 async def create_approval(payload: CreateApprovalRequest) -> ApprovalRequest:
     """Submits a feature for approval."""
     return gate.submit_request(
@@ -39,7 +41,7 @@ async def create_approval(payload: CreateApprovalRequest) -> ApprovalRequest:
     )
 
 
-@router.post("/{request_id}/approve", response_model=ApprovalRequest)
+@router.post("/{request_id}/approve", response_model=ApprovalRequest, dependencies=[Depends(requires_permission(APPROVAL_ACTION))])
 async def approve_request(request_id: str, payload: ActionApprovalPayload) -> ApprovalRequest:
     """Approves a pending request."""
     try:
@@ -54,7 +56,7 @@ async def approve_request(request_id: str, payload: ActionApprovalPayload) -> Ap
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{request_id}/reject", response_model=ApprovalRequest)
+@router.post("/{request_id}/reject", response_model=ApprovalRequest, dependencies=[Depends(requires_permission(APPROVAL_ACTION))])
 async def reject_request(request_id: str, payload: ActionApprovalPayload) -> ApprovalRequest:
     """Rejects a pending request."""
     reason = payload.reason or "Rejected without specified reason"
