@@ -15,6 +15,7 @@ from antinode_norma.server.routes import (
     dashboard_router,
     auth_router,
     admin_router,
+    comments_router,
 )
 
 app = FastAPI(
@@ -57,6 +58,7 @@ app.include_router(traceability_router)
 app.include_router(dashboard_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
+app.include_router(comments_router)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
