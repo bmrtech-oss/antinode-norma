@@ -8,8 +8,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP](https://img.shields.io/badge/MCP-compatible-9B59B6)](https://github.com/modelcontextprotocol)
 
-BDD feature file generator with an INVEST quality gate.  
-Transform raw user stories into validated Gherkin `.feature` files.  
+BDD feature file generator with an INVEST quality gate.
+Transform raw user stories into validated Gherkin `.feature` files.
 **Now also generates executable test scripts** from those feature files.
 
 Built with a data-centric, functional philosophy – inspired by Rich Hickey.
@@ -20,16 +20,19 @@ Works with **any LLM** (Claude, GPT, OpenRouter, local) and integrates via **MCP
 
 ## 📚 Documentation
 
-- [Tutorial](docs/TUTORIAL.md) – A walkthrough for Phase 8 documentation and community onboarding.
-- [Client Usage Guide](docs/CLIENT_USAGE.md) – Step-by-step setup with JIRA and OpenRouter.
-- [Docker and Local Development](docs/DOCKER.md) – Run the full project locally with Docker/Podman.
-- [Testing Guide](docs/TESTING.md) – How to run and extend the test suite.
-- [Troubleshooting](TROUBLESHOOTING.md) – Common errors and recovery steps.
-- [Changelog](CHANGELOG.md) – Release history and version notes.
-- [Contributing Guide](CONTRIBUTING.md) – Guidelines for contributors.
-- [Code Generation Module](antinode_norma/codegen/README.md) – Generate Playwright, Cypress, and Selenium tests from Gherkin.
-- [End‑to‑End Workflow Guide](docs/E2E_WORKFLOW.md) – Complete BDD lifecycle from story to tests.
-- [Visual Testing (Phase 4)](docs/VISUAL_TESTING.md) – Playwright snapshot guidance and CLI flags.
+- [Architecture Overview](docs/ARCHITECTURE.md) – Platform architecture, IR schemas, and component design.
+- [Quality Gates & Evaluation](docs/QUALITY_GATES.md) – Hard gates Q0–Q5, soft gates Q6–Q10, and eval metrics.
+- [Configuration Guide](docs/CONFIGURATION.md) – Feature flags, norma.config.yml, and environment variables.
+- [Secrets Strategy](docs/SECRETS.md) – Secrets management, fail-fast checks, and rotation policy.
+- [Cost Model](docs/COST.md) – Token usage tracking, cost gate ($0.02 threshold), and cache ROI.
+- [Git Workflow](docs/GIT_WORKFLOW.md) – Branching strategy, commit conventions, and release tagging.
+- [Rollback & Feature Flags](docs/ROLLBACK.md) – Feature flag lifecycles and rollback procedures.
+- [Escalation Policy](docs/ESCALATION.md) – Fail-safe escalation policy and issue template triggers.
+- [Track Coordination](docs/TRACKS.md) – Parallel track ownership and convergence points.
+- [Web UI & Frontend](docs/UI.md) – React SPA dashboard, feature viewer, and approval queue.
+- [Authentication & RBAC](docs/AUTH.md) – OIDC, SAML 2.0, session management, and permission matrix.
+- [Execution Maturity](docs/EXECUTION.md) – Parallel runners, cloud grids, artifact capture, and flake detection.
+- [Plugins & Ecosystem](docs/PLUGINS.md) – Plugin manifest, hooks, lifecycle, SDK, notifications, and analytics.
 
 ---
 
@@ -325,7 +328,7 @@ orchestrator.generate(
 )
 ```
 
-For detailed step-by-step instructions with JIRA and OpenRouter, see the [Client Usage Guide](docs/CLIENT_USAGE.md).  
+For detailed step-by-step instructions with JIRA and OpenRouter, see the [Client Usage Guide](docs/CLIENT_USAGE.md).
 For full code generation documentation, see the [Code Generation Module README](antinode_norma/codegen/README.md).
 
 ---
