@@ -2,7 +2,6 @@
 Unit tests for Phase 12 Task P12-T04: Release provision verification.
 """
 
-import re
 from pathlib import Path
 import yaml
 from fastapi.testclient import TestClient
