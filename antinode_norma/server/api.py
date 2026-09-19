@@ -23,7 +23,7 @@ from antinode_norma.server.routes import (
 app = FastAPI(
     title="Norma BDD Platform API",
     description="Enterprise BDD Feature Generation, Quality Gates, Governance, and Execution Platform API",
-    version="0.1.0",
+    version="0.1.0-alpha",
 )
 
 # Configure CORS
@@ -68,7 +68,7 @@ app.include_router(analytics_router)
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
     """Health check endpoint returning API operational status."""
-    return HealthResponse(status="ok", version="0.1.0")
+    return HealthResponse(status="ok", version="0.1.0-alpha")
 
 
 # Mount static SPA if built dist exists

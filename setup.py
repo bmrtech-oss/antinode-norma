@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="antinode_norma",
-    version="0.1.0",
+    version="0.1.0-alpha",
     description="BDD feature file generator with INVEST quality gate - Antinode Labs",
     author="Antinode Labs",
     author_email="info@antinodelabs.com",
