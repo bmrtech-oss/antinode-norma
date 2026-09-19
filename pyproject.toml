@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "antinode_norma"
-version = "0.1.0-alpha"
+version = "0.1.0"
 description = "BDD feature file generator with INVEST quality gate"
 authors = [{name = "Antinode Labs", email = "info@antinodelabs.com"}]
 license = {text = "MIT"}
@@ -25,9 +25,6 @@ dependencies = [
     "behave>=1.2.6",
     "rich>=13.0.0",
     "tqdm>=4.65.0",
-    "fastapi>=0.100.0",
-    "httpx>=0.24.0",
-    "openpyxl>=3.1.0",
 ]
 
 [project.scripts]

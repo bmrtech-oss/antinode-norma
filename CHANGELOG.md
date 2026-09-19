@@ -4,11 +4,6 @@ All notable changes to Antinode Norma will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.1.0-alpha] - 2026-09-19
-
-### Added
-- Platform extension v2.0 (Phases P0-P12): structured ingestion, Quality Gates Q0-Q10, NormaAgent repair loop, prompt caching, audit logging, approval gates, TestRail/Xray delivery, parallel execution maturity, Web UI dashboard, OIDC/SAML RBAC authentication, plugin ecosystem, and automated release workflow.
-
 ## [Unreleased]
 
 ### Added

@@ -20,19 +20,16 @@ Works with **any LLM** (Claude, GPT, OpenRouter, local) and integrates via **MCP
 
 ## 📚 Documentation
 
-- [Architecture Overview](docs/ARCHITECTURE.md) – Platform architecture, IR schemas, and component design.
-- [Quality Gates & Evaluation](docs/QUALITY_GATES.md) – Hard gates Q0–Q5, soft gates Q6–Q10, and eval metrics.
-- [Configuration Guide](docs/CONFIGURATION.md) – Feature flags, norma.config.yml, and environment variables.
-- [Secrets Strategy](docs/SECRETS.md) – Secrets management, fail-fast checks, and rotation policy.
-- [Cost Model](docs/COST.md) – Token usage tracking, cost gate ($0.02 threshold), and cache ROI.
-- [Git Workflow](docs/GIT_WORKFLOW.md) – Branching strategy, commit conventions, and release tagging.
-- [Rollback & Feature Flags](docs/ROLLBACK.md) – Feature flag lifecycles and rollback procedures.
-- [Escalation Policy](docs/ESCALATION.md) – Fail-safe escalation policy and issue template triggers.
-- [Track Coordination](docs/TRACKS.md) – Parallel track ownership and convergence points.
-- [Web UI & Frontend](docs/UI.md) – React SPA dashboard, feature viewer, and approval queue.
-- [Authentication & RBAC](docs/AUTH.md) – OIDC, SAML 2.0, session management, and permission matrix.
-- [Execution Maturity](docs/EXECUTION.md) – Parallel runners, cloud grids, artifact capture, and flake detection.
-- [Plugins & Ecosystem](docs/PLUGINS.md) – Plugin manifest, hooks, lifecycle, SDK, notifications, and analytics.
+- [Tutorial](docs/TUTORIAL.md) – A walkthrough for Phase 8 documentation and community onboarding.
+- [Client Usage Guide](docs/CLIENT_USAGE.md) – Step-by-step setup with JIRA and OpenRouter.
+- [Docker and Local Development](docs/DOCKER.md) – Run the full project locally with Docker/Podman.
+- [Testing Guide](docs/TESTING.md) – How to run and extend the test suite.
+- [Troubleshooting](TROUBLESHOOTING.md) – Common errors and recovery steps.
+- [Changelog](CHANGELOG.md) – Release history and version notes.
+- [Contributing Guide](CONTRIBUTING.md) – Guidelines for contributors.
+- [Code Generation Module](antinode_norma/codegen/README.md) – Generate Playwright, Cypress, and Selenium tests from Gherkin.
+- [End‑to‑End Workflow Guide](docs/E2E_WORKFLOW.md) – Complete BDD lifecycle from story to tests.
+- [Visual Testing (Phase 4)](docs/VISUAL_TESTING.md) – Playwright snapshot guidance and CLI flags.
 
 ---
 

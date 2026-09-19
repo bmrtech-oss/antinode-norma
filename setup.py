@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="antinode_norma",
-    version="0.1.0-alpha",
+    version="0.1.0",
     description="BDD feature file generator with INVEST quality gate - Antinode Labs",
     author="Antinode Labs",
     author_email="info@antinodelabs.com",
@@ -17,9 +17,6 @@ setup(
         "jira>=3.4.0",
         "requests>=2.31.0",
         "click>=8.1.0",
-        "fastapi>=0.100.0",
-        "httpx>=0.24.0",
-        "openpyxl>=3.1.0",
     ],
     entry_points={
         "console_scripts": [
