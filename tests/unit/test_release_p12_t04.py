@@ -36,8 +36,11 @@ def test_release_workflow_configuration():
     workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
     assert workflow["name"] == "Release"
 
+    on_section = workflow.get("on") or workflow.get(True)
+    assert on_section is not None, "Missing 'on' section in release workflow."
+
     # Check triggers
-    push_triggers = workflow["on"]["push"]["tags"]
+    push_triggers = on_section["push"]["tags"]
     assert "v*" in push_triggers
     assert "[0-9]*" in push_triggers
 

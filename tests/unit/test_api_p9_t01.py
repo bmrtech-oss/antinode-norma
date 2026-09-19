@@ -15,7 +15,7 @@ class TestAPIFoundation(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["status"], "ok")
-        self.assertEqual(data["version"], "0.1.0")
+        self.assertEqual(data["version"], "0.1.0-alpha")
         self.assertIn("timestamp", data)
 
     def test_cors_headers(self):
