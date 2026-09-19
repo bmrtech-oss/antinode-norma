@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { Activity, FileText, CheckCircle2, ShieldAlert, Cpu, LayoutDashboard, ShieldCheck, GitMerge } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Activity, FileText, Cpu, LayoutDashboard, ShieldCheck, GitMerge } from 'lucide-react'
 import { Dashboard } from './components/Dashboard'
 import FeatureReview from './components/FeatureReview'
 import ApprovalQueue from './components/ApprovalQueue'

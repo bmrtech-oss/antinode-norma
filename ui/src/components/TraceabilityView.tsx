@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { GitMerge, CheckCircle2, Tag, Loader2, AlertTriangle } from 'lucide-react'
 
 interface TraceableItem {

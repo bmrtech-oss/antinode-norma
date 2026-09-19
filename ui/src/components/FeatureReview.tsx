@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { FileText, CheckCircle, AlertCircle, Cpu } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { FileText } from 'lucide-react'
 
 interface Feature {
   id: string

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FileText, ShieldCheck, ShieldAlert, KeyRound, Loader2, User } from 'lucide-react'
 
 interface AuditRecord {
