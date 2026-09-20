@@ -21,6 +21,9 @@ This document outlines the secrets management policy, handling rules, environmen
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 OPENROUTER_API_KEY=
+GEMINI_API_KEY=
+GROQ_API_KEY=
+MISTRAL_API_KEY=
 
 # Delivery Integrations
 TESTRAIL_URL=

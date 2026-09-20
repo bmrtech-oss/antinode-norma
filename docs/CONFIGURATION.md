@@ -31,7 +31,7 @@ An example `norma.config.yml` configuration:
 version: "2.0"
 
 llm:
-  provider: openai           # openai, anthropic, openrouter, local, mock
+  provider: openai           # openai, anthropic, openrouter, gemini, groq, mistral, local, mock
   model: gpt-4o-mini
   temperature: 0.2
   cache: true
@@ -83,7 +83,7 @@ Environment variables take precedence over configuration file settings.
 
 | Environment Variable | Description | Default |
 |---|---|---|
-| `NORMA_LLM_PROVIDER` | LLM provider name (`openai`, `anthropic`, `openrouter`, `local`, `mock`) | `openai` |
+| `NORMA_LLM_PROVIDER` | LLM provider name (`openai`, `anthropic`, `openrouter`, `gemini`, `groq`, `mistral`, `local`, `mock`) | `openai` |
 | `NORMA_LLM_MODEL` | Target LLM model name | `gpt-4o-mini` |
 | `NORMA_CACHE_PATH` | Path to prompt cache file | `build/llm_cache.json` |
 | `NORMA_LOG_PROMPTS` | Whether to log prompts to stdout (`true`/`false`) | `false` |
@@ -91,6 +91,9 @@ Environment variables take precedence over configuration file settings.
 | `OPENAI_API_KEY` | OpenAI API key | - |
 | `ANTHROPIC_API_KEY` | Anthropic API key | - |
 | `OPENROUTER_API_KEY` | OpenRouter API key | - |
+| `GEMINI_API_KEY` / `GOOGLE_API_KEY` | Google Gemini API key | - |
+| `GROQ_API_KEY` | Groq API key | - |
+| `MISTRAL_API_KEY` | Mistral API key | - |
 | `NORMA_OIDC_CLIENT_ID` | OIDC Client ID | - |
 | `NORMA_OIDC_CLIENT_SECRET` | OIDC Client Secret | - |
 | `NORMA_OIDC_DISCOVERY_URL` | OIDC Issuer Discovery URL | - |

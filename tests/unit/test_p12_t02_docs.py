@@ -50,6 +50,16 @@ def test_configuration_doc_content():
     assert "features" in content
     assert "norma.config.yml" in content
     assert "NORMA_LLM_PROVIDER" in content
+    assert "GEMINI_API_KEY" in content
+    assert "GROQ_API_KEY" in content
+    assert "MISTRAL_API_KEY" in content
+
+
+def test_env_example_contains_new_providers():
+    env_content = Path(".env.example").read_text()
+    assert "GEMINI_API_KEY" in env_content
+    assert "GROQ_API_KEY" in env_content
+    assert "MISTRAL_API_KEY" in env_content
 
 
 def test_readme_references_docs():
