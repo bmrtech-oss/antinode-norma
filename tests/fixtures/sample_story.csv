@@ -1,3 +1,2 @@
 id,role,action,benefit,acceptance_criteria
 TC-101,registered user,request password reset,regain account access,"click forgot password link,receive email token,set new password"
-TC-102,registered user,reset password via email token,securely regain account access,"System displays 'Forgot Password' link on login page|Submitting a registered email sends a password reset email within 2 minutes|Reset link is single-use and expires after 1 hour|Submitting a valid token and new password results in a successful login session"

@@ -13,10 +13,6 @@ def _run_cli(cmd, timeout=60):
     env = os.environ.copy()
     env.setdefault("PYTHONIOENCODING", "utf-8")
     env.setdefault("PYTHONUTF8", "1")
-    # Use the mock LLM provider for integration tests by default to avoid
-    # external network calls and rate limits during CI/local runs.
-    # Force the mock LLM provider for integration subprocesses to avoid external calls
-    env["LLM_PROVIDER"] = "mock"
     return subprocess.run(
         cmd,
         capture_output=True,
