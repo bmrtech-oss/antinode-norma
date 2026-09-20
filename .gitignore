@@ -254,3 +254,8 @@ generated_tests/**/visual-snapshots/**
 generated_tests/
 # If you also want to ignore generated feature files (optional):
 # features/
+
+# Local review artifacts not intended for commit
+features/
+docs/test_runs/
+tools/
