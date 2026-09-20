@@ -73,6 +73,137 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
 
         return openrouter_call
 
+    elif provider in ("gemini", "google", "google-gemini"):
+        api_key = config.get("api_key") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY is required for gemini provider")
+        model = config.get("model", "gemini-1.5-flash")
+        temperature = config.get("temperature", 0.2)
+        max_tokens = config.get("max_tokens", 1024)
+
+        try:
+            import google.generativeai as genai
+
+            genai.configure(api_key=api_key)
+            gen_model = genai.GenerativeModel(
+                model_name=model,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=temperature,
+                    max_output_tokens=max_tokens,
+                ),
+            )
+
+            def gemini_call(prompt: str) -> str:
+                response = gen_model.generate_content(prompt)
+                return response.text
+
+            return gemini_call
+        except ImportError:
+            try:
+                from openai import OpenAI
+
+                base_url = config.get("base_url", "https://generativelanguage.googleapis.com/v1beta/openai/")
+                client = OpenAI(base_url=base_url, api_key=api_key)
+
+                def gemini_openai_call(prompt: str) -> str:
+                    response = client.chat.completions.create(
+                        model=model,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
+                    return response.choices[0].message.content or ""
+
+                return gemini_openai_call
+            except ImportError:
+                raise ImportError("Neither 'google-generativeai' nor 'openai' package is installed for gemini provider")
+
+    elif provider == "groq":
+        api_key = config.get("api_key") or os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("GROQ_API_KEY is required for groq provider")
+        model = config.get("model", "llama-3.3-70b-versatile")
+        temperature = config.get("temperature", 0.2)
+        max_tokens = config.get("max_tokens", 1024)
+
+        try:
+            from groq import Groq
+
+            client = Groq(api_key=api_key)
+
+            def groq_call(prompt: str) -> str:
+                response = client.chat.completions.create(
+                    model=model,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                return response.choices[0].message.content or ""
+
+            return groq_call
+        except ImportError:
+            try:
+                from openai import OpenAI
+
+                base_url = config.get("base_url", "https://api.groq.com/openai/v1")
+                client = OpenAI(base_url=base_url, api_key=api_key)
+
+                def groq_openai_call(prompt: str) -> str:
+                    response = client.chat.completions.create(
+                        model=model,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
+                    return response.choices[0].message.content or ""
+
+                return groq_openai_call
+            except ImportError:
+                raise ImportError("Neither 'groq' nor 'openai' package is installed for groq provider")
+
+    elif provider in ("mistral", "mistralai"):
+        api_key = config.get("api_key") or os.getenv("MISTRAL_API_KEY")
+        if not api_key:
+            raise ValueError("MISTRAL_API_KEY is required for mistral provider")
+        model = config.get("model", "mistral-small-latest")
+        temperature = config.get("temperature", 0.2)
+        max_tokens = config.get("max_tokens", 1024)
+
+        try:
+            from mistralai import Mistral
+
+            client = Mistral(api_key=api_key)
+
+            def mistral_call(prompt: str) -> str:
+                response = client.chat.complete(
+                    model=model,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                return response.choices[0].message.content or ""
+
+            return mistral_call
+        except (ImportError, AttributeError):
+            try:
+                from openai import OpenAI
+
+                base_url = config.get("base_url", "https://api.mistral.ai/v1")
+                client = OpenAI(base_url=base_url, api_key=api_key)
+
+                def mistral_openai_call(prompt: str) -> str:
+                    response = client.chat.completions.create(
+                        model=model,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
+                    return response.choices[0].message.content or ""
+
+                return mistral_openai_call
+            except ImportError:
+                raise ImportError("Neither 'mistralai' nor 'openai' package is installed for mistral provider")
+
     elif provider == "local":
         import requests
 
