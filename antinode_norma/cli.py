@@ -5,6 +5,8 @@ import asyncio
 import sys
 import os
 import json
+import tempfile
+from datetime import datetime
 from pathlib import Path
 import click
 from dotenv import load_dotenv
@@ -21,6 +23,16 @@ from antinode_norma.utils.ui import (
 )
 
 load_dotenv()
+
+# Quick import-time trace to help diagnose subprocess hangs during tests.
+try:
+    trace_dir = os.path.join(os.getcwd(), ".tmp")
+    os.makedirs(trace_dir, exist_ok=True)
+    trace_file = os.path.join(trace_dir, "anorm_cli_import.log")
+    with open(trace_file, "a", encoding="utf-8") as fh:
+        fh.write(f"{datetime.utcnow().isoformat()}Z cli:imported\n")
+except Exception:
+    pass
 
 
 def _print_json_result(result):
@@ -122,12 +134,40 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
 
     os.environ["NORMA_OUTPUT_DIR"] = output_dir
 
+    def _trace_log(msg: str):
+        try:
+            trace_path = os.getenv("NORMA_TRACE_PATH")
+            if not trace_path:
+                trace_dir = os.path.join(os.getcwd(), ".tmp")
+                os.makedirs(trace_dir, exist_ok=True)
+                trace_path = os.path.join(trace_dir, "anorm_cli_trace.log")
+            now = datetime.utcnow().isoformat() + "Z"
+            with open(trace_path, "a", encoding="utf-8") as fh:
+                fh.write(f"{now} {msg}\n")
+        except Exception:
+            # Tracing should never break generation
+            pass
+
     async def run():
         try:
-            with progress_bar(description="Analyzing story...") as progress:
-                task = progress.add_task("[cyan]Processing...", total=None)
+            _trace_log("generate:start")
+            # Avoid using the interactive progress bar when running in subprocesses
+            # or CI where stdout may not be a TTY. Tests can disable the progress
+            # bar explicitly by setting `NORMA_DISABLE_PROGRESS=1` in the env.
+            disable_progress = os.getenv("NORMA_DISABLE_PROGRESS") or not sys.stdout.isatty()
+            _trace_log(f"generate:disable_progress={bool(disable_progress)}")
+            if disable_progress:
+                _trace_log("generate:calling_run_agent_from_raw:start")
                 result = await run_agent_from_raw(story_text, quality_only=quality_only)
-                progress.update(task, completed=True)
+                _trace_log("generate:calling_run_agent_from_raw:done")
+            else:
+                with progress_bar(description="Analyzing story...") as progress:
+                    task = progress.add_task("[cyan]Processing...", total=None)
+                    _trace_log("generate:progress_bar_entered")
+                    result = await run_agent_from_raw(story_text, quality_only=quality_only)
+                    progress.update(task, completed=True)
+                    _trace_log("generate:progress_bar_completed")
+            _trace_log(f"generate:result_keys={list(result.keys()) if isinstance(result, dict) else type(result)}")
 
             if quality_only:
                 section_header("Quality Assessment")
@@ -202,6 +242,7 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
 
             return result
         except Exception as e:
+            _trace_log(f"generate:exception:{repr(e)}")
             error_context(e, "An unexpected error occurred during generation")
             sys.exit(1)
 
@@ -223,7 +264,8 @@ def generate_from_csv(csv_file, output_dir):
         out_path = Path(output_dir)
         out_path.mkdir(parents=True, exist_ok=True)
 
-        os.environ.setdefault("LLM_PROVIDER", "mock")
+        # Force mock provider for CSV ingestion runs to avoid external LLM calls during batch generation
+        os.environ["LLM_PROVIDER"] = "mock"
         for tc in test_cases:
             raw_text = f"As a {tc.role}, I want to {tc.action} so that {tc.benefit}.\n"
             if tc.acceptance_criteria:

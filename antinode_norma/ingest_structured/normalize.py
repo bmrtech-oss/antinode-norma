@@ -1,7 +1,10 @@
 from typing import Any, List, Optional
 from antinode_norma.core.types import TestCase, DomainModel
 from antinode_norma.ingest_structured.csv import CSVIngester
-from antinode_norma.ingest_structured.xlsx import XLSXIngester
+try:
+    from antinode_norma.ingest_structured.xlsx import XLSXIngester
+except Exception:  # pragma: no cover - optional dependency
+    XLSXIngester = None
 from antinode_norma.ingest_structured.story import story_to_case
 
 
@@ -18,6 +21,8 @@ def normalize(
         ingester = CSVIngester()
         cases = ingester.ingest(source)
     elif kind_clean in {"xlsx", "excel"}:
+        if XLSXIngester is None:
+            raise ImportError("XLSX ingestion requires 'openpyxl' and the optional XLSXIngester")
         ingester = XLSXIngester(sheet_name=sheet_name)
         cases = ingester.ingest(source)
     elif kind_clean in {"story", "dict"}:

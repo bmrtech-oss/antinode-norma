@@ -12,7 +12,9 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         client = Anthropic(
             api_key=config.get("api_key") or os.getenv("ANTHROPIC_API_KEY")
         )
-        model = config.get("model", "claude-3-5-sonnet-20241022")
+        model = config.get("model")
+        if not model:
+            raise ValueError("LLM_MODEL is required for anthropic provider")
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
 
@@ -31,7 +33,9 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         from openai import OpenAI
 
         client = OpenAI(api_key=config.get("api_key") or os.getenv("OPENAI_API_KEY"))
-        model = config.get("model", "gpt-4o")
+        model = config.get("model")
+        if not model:
+            raise ValueError("LLM_MODEL is required for openai provider")
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
 
@@ -54,7 +58,9 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         if not api_key:
             raise ValueError("OPENROUTER_API_KEY is required for openrouter provider")
         client = OpenAI(base_url=base_url, api_key=api_key)
-        model = config.get("model", "openai/gpt-oss-120b:free")
+        model = config.get("model")
+        if not model:
+            raise ValueError("LLM_MODEL is required for openrouter provider")
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
         extra_body = config.get("extra_body", {})
@@ -77,7 +83,9 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         api_key = config.get("api_key") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not api_key:
             raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY is required for gemini provider")
-        model = config.get("model", "gemini-1.5-flash")
+        model = config.get("model")
+        if not model:
+            raise ValueError("LLM_MODEL is required for gemini provider")
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
 
@@ -122,7 +130,9 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         api_key = config.get("api_key") or os.getenv("GROQ_API_KEY")
         if not api_key:
             raise ValueError("GROQ_API_KEY is required for groq provider")
-        model = config.get("model", "llama-3.3-70b-versatile")
+        model = config.get("model")
+        if not model:
+            raise ValueError("LLM_MODEL is required for groq provider")
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
 
@@ -165,7 +175,9 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         api_key = config.get("api_key") or os.getenv("MISTRAL_API_KEY")
         if not api_key:
             raise ValueError("MISTRAL_API_KEY is required for mistral provider")
-        model = config.get("model", "mistral-small-latest")
+        model = config.get("model")
+        if not model:
+            raise ValueError("LLM_MODEL is required for mistral provider")
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
 
@@ -277,15 +289,25 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
             if "Convert the following user story into a JSON object" in prompt:
                 raw_story = _extract_block(prompt, "Story:")
                 role, action, benefit = _parse_story_text(raw_story)
+                # Attempt to extract acceptance criteria from the Story block
+                criteria_block = _extract_block(prompt, "Acceptance criteria:")
+                criteria = []
+                if criteria_block:
+                    for line in criteria_block.splitlines():
+                        line = line.strip()
+                        if line.startswith("- "):
+                            criteria.append(line[2:].strip())
+                if not criteria:
+                    criteria = [
+                        "The story is converted into a valid JSON schema.",
+                        "The story is suitable for Gherkin generation.",
+                    ]
                 return json.dumps(
                     {
                         "role": role,
                         "action": action,
                         "benefit": benefit,
-                        "acceptance_criteria": [
-                            "The story is converted into a valid JSON schema.",
-                            "The story is suitable for Gherkin generation.",
-                        ],
+                        "acceptance_criteria": criteria,
                     }
                 )
             if "Output ONLY a valid Gherkin feature file" in prompt:
@@ -308,6 +330,8 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
                 }
             )
 
+        # mark callable as mock for upstream optimizations/tests
+        mock_call._is_mock = True  # type: ignore[attr-defined]
         return mock_call
 
     else:

@@ -1,6 +1,11 @@
 from .csv import CSVIngester
-from .xlsx import XLSXIngester
+try:
+	from .xlsx import XLSXIngester
+except Exception:  # pragma: no cover - optional dependency
+	XLSXIngester = None
 from .story import story_to_case
 from .normalize import normalize
 
-__all__ = ["CSVIngester", "XLSXIngester", "story_to_case", "normalize"]
+__all__ = ["CSVIngester", "story_to_case", "normalize"]
+if XLSXIngester is not None:
+	__all__.insert(1, "XLSXIngester")

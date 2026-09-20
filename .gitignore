@@ -158,6 +158,16 @@ ENV/
 env.bak/
 venv.bak/
 
+# Local run artifacts / generated outputs
+.tmp/
+docs/test_runs/
+features/tc_*.feature
+tools/*.py
+
+# UI build artifacts
+ui/node_modules/
+ui/dist/
+
 # Spyder project settings
 .spyderproject
 .spyproject

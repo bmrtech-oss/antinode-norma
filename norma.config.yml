@@ -1,0 +1,51 @@
+## Norma configuration generated from .env
+## WARNING: This file references secret env var names. Do NOT embed API keys here.
+
+llm:
+  # Primary provider (from .env LLM_PROVIDER)
+  provider: openrouter
+
+  # Model slug (from .env LLM_MODEL)
+  model: openai/gpt-oss-120b:free
+
+  # Base URL for the provider API (from .env LLM_BASE_URL)
+  base_url: https://openrouter.ai/api/v1
+
+  # Numeric settings (from .env)
+  temperature: 0.2
+  max_tokens: 1024
+
+  # API key reference: store the secret in the environment and reference it here
+  # The actual secret value is NOT written to this file.
+  api_key_env: OPENROUTER_API_KEY
+
+  # Fallback env var names (order of precedence) that the app will check
+  api_key_env_fallbacks:
+    - NORMA_LLM_API_KEY
+    - LLM_API_KEY
+
+  # Environment variable fallbacks for other settings (checked in order)
+  env_fallbacks:
+    provider:
+      - LLM_PROVIDER
+      - NORMA_LLM_PROVIDER
+    model:
+      - LLM_MODEL
+      - NORMA_LLM_MODEL
+    base_url:
+      - LLM_BASE_URL
+      - NORMA_LLM_BASE_URL
+      - LLM_URL
+    temperature:
+      - LLM_TEMPERATURE
+      - NORMA_LLM_TEMPERATURE
+    max_tokens:
+      - LLM_MAX_TOKENS
+      - NORMA_LLM_MAX_TOKENS
+
+# Optional: alternate provider examples
+# alternate_providers:
+#   - provider: openai
+#     api_key_env: OPENAI_API_KEY
+#   - provider: anthropic
+#     api_key_env: ANTHROPIC_API_KEY
