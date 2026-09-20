@@ -1,0 +1,2 @@
+id,role,action,benefit,acceptance_criteria
+TC-101,registered user,request password reset,regain account access,"click forgot password link,receive email token,set new password"

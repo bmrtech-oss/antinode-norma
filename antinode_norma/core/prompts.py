@@ -1,5 +1,6 @@
-from typing import List
+from typing import List, Optional, Tuple
 from .schemas import UserStory
+from .types import TestCase, DomainModel
 
 FEATURE_GENERATION_EXAMPLES = [
     {
@@ -82,3 +83,36 @@ def select_feature_examples(story: UserStory) -> List[str]:
     if not examples:
         examples = [ex["feature"] for ex in FEATURE_GENERATION_EXAMPLES[:2]]
     return examples
+
+
+def build_feature_generation_prompt(
+    test_cases: List[TestCase],
+    domain_model: Optional[DomainModel] = None,
+    feedback: Optional[List[str]] = None,
+) -> Tuple[str, str]:
+    sys_prompt = "You are an expert BDD author. Generate valid Gherkin feature files covering all requirements."
+
+    user_parts = []
+    for tc in test_cases:
+        part = f"Test Case [{tc.id}]: {tc.title}\n"
+        part += f"Tag: @{tc.id}\n"
+        part += f"As a {tc.role}, I want to {tc.action} so that {tc.benefit}.\n"
+        if tc.acceptance_criteria:
+            part += "Acceptance Criteria:\n"
+            for ac in tc.acceptance_criteria:
+                part += f"- {ac}\n"
+        user_parts.append(part)
+
+    user_prompt = "\n\n".join(user_parts)
+
+    if domain_model and domain_model.entities:
+        user_prompt += "\n\nDomain Model Context:\n"
+        for entity in domain_model.entities:
+            user_prompt += f"Entity: {entity.name} (Attributes: {', '.join(entity.attributes)})\n"
+
+    if feedback:
+        user_prompt += "\n\nPREVIOUS EVALUATION FEEDBACK (Fix these issues):\n"
+        for fb in feedback:
+            user_prompt += f"- {fb}\n"
+
+    return sys_prompt, user_prompt

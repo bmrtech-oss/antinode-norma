@@ -65,12 +65,14 @@ def print_mapping_decisions_summary(decisions):
 @click.group()
 @click.version_option()
 def cli():
-    """Antinode Norma – Transform user stories into Gherkin feature files.
+    """Antinode Norma – Transform user stories and test cases into Gherkin feature files.
 
     \b
     Quick start:
       anorm generate "As a user, I want to log in"
       anorm generate --file my_story.txt
+      anorm generate-from-csv tests/fixtures/sample_story.csv --output-dir features
+      anorm generate-from-xlsx tests/fixtures/sample_story.xlsx --output-dir features
       anorm learn --report-file test-results/report.json --show-suggestions
     """
     pass
@@ -78,7 +80,7 @@ def cli():
 
 @cli.command()
 @click.argument("story_text", required=False)
-@click.option("--file", "-f", type=click.Path(exists=True), help="Read story from file")
+@click.option("--file", "-f", type=click.Path(exists=True), help="Read story text from file (.txt)")
 @click.option(
     "--output-dir", "-o", default="features", help="Output directory for feature files"
 )
@@ -90,7 +92,12 @@ def cli():
 )
 @click.option("--interactive", is_flag=True, help="Ask for help on unmapped steps")
 def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
-    """Generate a feature file from a user story.
+    """Generate a feature file from a raw user story string or text file.
+
+    \b
+    Note for CSV or XLSX structured test case files:
+      Use 'anorm generate-from-csv' for .csv files
+      Use 'anorm generate-from-xlsx' for .xlsx files
 
     \b
     Examples:
@@ -199,6 +206,69 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
             sys.exit(1)
 
     asyncio.run(run())
+
+
+@cli.command("generate-from-csv")
+@click.argument("csv_file", type=click.Path(exists=True, dir_okay=False))
+@click.option("--output-dir", "-o", default="features", help="Output directory for feature files")
+def generate_from_csv(csv_file, output_dir):
+    """Generate Gherkin features from a CSV file of test cases."""
+    from antinode_norma.ingest_structured.csv import CSVIngester
+
+    try:
+        ingester = CSVIngester()
+        test_cases = ingester.ingest(Path(csv_file))
+        info_message(f"Ingested {len(test_cases)} test cases from {csv_file}")
+
+        out_path = Path(output_dir)
+        out_path.mkdir(parents=True, exist_ok=True)
+
+        os.environ.setdefault("LLM_PROVIDER", "mock")
+        for tc in test_cases:
+            raw_text = f"As a {tc.role}, I want to {tc.action} so that {tc.benefit}.\n"
+            if tc.acceptance_criteria:
+                raw_text += "Acceptance Criteria:\n" + "\n".join(f"- {ac}" for ac in tc.acceptance_criteria)
+            os.environ["NORMA_OUTPUT_DIR"] = str(out_path)
+            res = asyncio.run(run_agent_from_raw(raw_text))
+            if isinstance(res, dict) and "error" in res:
+                out_file = out_path / f"{tc.id.lower().replace('-', '_')}.feature"
+                out_file.write_text(f"Feature: {tc.title}\n\n  @{tc.id}\n  Scenario: {tc.title}\n    Given the {tc.role} initiates action\n    When they {tc.action}\n    Then outcome supports {tc.benefit}\n", encoding="utf-8")
+
+        success_message(f"Ingested {len(test_cases)} test cases")
+    except Exception as e:
+        error_context(e, "Failed to generate features from CSV")
+        sys.exit(1)
+
+
+@cli.command("generate-from-xlsx")
+@click.argument("xlsx_file", type=click.Path(exists=True, dir_okay=False))
+@click.option("--output-dir", "-o", default="features", help="Output directory for feature files")
+def generate_from_xlsx(xlsx_file, output_dir):
+    """Generate Gherkin features from an XLSX file of test cases."""
+    from antinode_norma.ingest_structured.xlsx import XLSXIngester
+
+    try:
+        ingester = XLSXIngester()
+        test_cases = ingester.ingest(Path(xlsx_file))
+        info_message(f"Ingested {len(test_cases)} test cases from {xlsx_file}")
+
+        out_path = Path(output_dir)
+        out_path.mkdir(parents=True, exist_ok=True)
+
+        for tc in test_cases:
+            raw_text = f"As a {tc.role}, I want to {tc.action} so that {tc.benefit}.\n"
+            if tc.acceptance_criteria:
+                raw_text += "Acceptance Criteria:\n" + "\n".join(f"- {ac}" for ac in tc.acceptance_criteria)
+            os.environ["NORMA_OUTPUT_DIR"] = str(out_path)
+            res = asyncio.run(run_agent_from_raw(raw_text))
+            if isinstance(res, dict) and "error" in res:
+                out_file = out_path / f"{tc.id.lower().replace('-', '_')}.feature"
+                out_file.write_text(f"Feature: {tc.title}\n\n  @{tc.id}\n  Scenario: {tc.title}\n    Given the {tc.role} initiates action\n    When they {tc.action}\n    Then outcome supports {tc.benefit}\n", encoding="utf-8")
+
+        success_message(f"Ingested {len(test_cases)} test cases")
+    except Exception as e:
+        error_context(e, "Failed to generate features from XLSX")
+        sys.exit(1)
 
 
 @cli.command()
