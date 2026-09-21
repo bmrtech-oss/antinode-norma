@@ -2,8 +2,8 @@
 
 **Single-file architecture decision record. Version 3 — FINAL.**
 
-**Status:** Proposed (final). Supersedes ADR-002 v1, v2.
-**Date:** 2026-09-19
+**Status:** Proposed (final updated). Supersedes ADR-002 v1, v2, v3.
+**Date:** 2026-09-21
 **Deciders:** Engineering Lead, QA Architect, Product Owner, Security Lead, UX Lead
 **Predecessor:** ADR-001 v6 (fully implemented on branch `task/P0-T01-secrets-strategy-12288361790416289109`)
 **Nature:** Additive hardening. No re-architecture. No phase re-opening.
@@ -442,6 +442,8 @@ ADR-001 v6 §17 DoD is preserved. ADR-002 adds:
 - [ ] Plugin change verifies no raw secret is accessible to plugin code
 - [ ] Cache change includes FPR measurement against near-miss golden pairs
 - [ ] Score change updates `docs/SCORE_MODEL.md` and `docs/SCORE.md`
+- [ ] Operational docs (`docs/SCORE_MODEL.md`, `docs/DR.md`, `docs/RELEASE_CHECKLIST.md`, `docs/MIGRATION.md`) scaffolded and committed with baseline operational metrics
+- [ ] CI pipeline rule verifies automated route versioning enforcing `/v1/` prefix compliance
 
 A task is Done when all applicable items are checked and the Evidence block is attached to the PR.
 
