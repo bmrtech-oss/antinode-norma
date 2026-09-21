@@ -9,7 +9,7 @@ import argparse
 import sys
 import yaml
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 
 def migrate_v4_data(source_dir: Path, dry_run: bool = False) -> Dict[str, Any]:
