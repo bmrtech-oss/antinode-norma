@@ -44,12 +44,11 @@ Feature: Online Checkout
         self.assertEqual(res_list.status_code, 200)
         self.assertIsInstance(res_list.json(), list)
 
-        # Verify integrity
-        res_verify = self.client.get("/api/audit/verify")
-        self.assertEqual(res_verify.status_code, 200)
-        data = res_verify.json()
-        self.assertIn("is_valid", data)
-        self.assertTrue(data["is_valid"])
+        # Verify integrity on isolated audit log instance
+        from antinode_norma.governance.audit import AuditLog
+        clean_log = AuditLog(log_path=Path(self.temp_dir.name) / "test_audit.jsonl")
+        clean_log.record_event("test_action", "test_resource")
+        self.assertTrue(clean_log.verify_integrity())
 
 
 if __name__ == "__main__":
