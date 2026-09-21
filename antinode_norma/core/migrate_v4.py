@@ -33,6 +33,10 @@ def migrate_v4_data(source_dir: Path, dry_run: bool = False) -> Dict[str, Any]:
 
     source_dir = Path(source_dir)
 
+    target_dir = source_dir / "build" / "v5_migrated"
+    if not dry_run:
+        target_dir.mkdir(parents=True, exist_ok=True)
+
     # 1. Migrate norma.config.yml
     config_file = source_dir / "norma.config.yml"
     if config_file.exists():
@@ -41,8 +45,8 @@ def migrate_v4_data(source_dir: Path, dry_run: bool = False) -> Dict[str, Any]:
                 config_data = yaml.safe_load(f) or {}
             config_data["version"] = "5.0"
             if not dry_run:
-                # Store or update in v5 schema format
-                pass
+                out_config = target_dir / "norma.config.v5.yml"
+                out_config.write_text(yaml.dump(config_data), encoding="utf-8")
             stats["config_migrated"] = True
         except Exception as e:
             stats["errors"].append(f"Config migration error: {str(e)}")
@@ -50,10 +54,15 @@ def migrate_v4_data(source_dir: Path, dry_run: bool = False) -> Dict[str, Any]:
     # 2. Migrate features/ directory
     features_dir = source_dir / "features"
     if features_dir.exists() and features_dir.is_dir():
+        out_features = target_dir / "features"
+        if not dry_run:
+            out_features.mkdir(parents=True, exist_ok=True)
         for feat_path in features_dir.glob("*.feature"):
             try:
                 content = feat_path.read_text(encoding="utf-8")
                 if content.strip():
+                    if not dry_run:
+                        (out_features / feat_path.name).write_text(content, encoding="utf-8")
                     stats["features_migrated"] += 1
             except Exception as e:
                 stats["errors"].append(f"Feature '{feat_path.name}' migration error: {str(e)}")
@@ -61,8 +70,14 @@ def migrate_v4_data(source_dir: Path, dry_run: bool = False) -> Dict[str, Any]:
     # 3. Migrate stories/ or CSV/XLSX stories
     stories_dir = source_dir / "stories"
     if stories_dir.exists() and stories_dir.is_dir():
+        out_stories = target_dir / "stories"
+        if not dry_run:
+            out_stories.mkdir(parents=True, exist_ok=True)
         for story_path in list(stories_dir.glob("*.md")) + list(stories_dir.glob("*.csv")) + list(stories_dir.glob("*.xlsx")):
             try:
+                content = story_path.read_bytes()
+                if not dry_run:
+                    (out_stories / story_path.name).write_bytes(content)
                 stats["stories_migrated"] += 1
             except Exception as e:
                 stats["errors"].append(f"Story '{story_path.name}' migration error: {str(e)}")

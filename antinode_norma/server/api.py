@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from antinode_norma.server.schemas import HealthResponse, ErrorResponse
+from antinode_norma.utils.observability import get_health_status, metrics_registry
 from antinode_norma.server.routes import (
     features_router,
     approvals_router,
@@ -68,7 +69,15 @@ app.include_router(analytics_router)
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
     """Health check endpoint returning API operational status."""
-    return HealthResponse(status="ok", version="0.1.0-alpha")
+    status_info = get_health_status()
+    return HealthResponse(status=status_info["status"], version=status_info["version"])
+
+
+@app.get("/metrics", tags=["Observability"])
+async def prometheus_metrics():
+    """Returns Prometheus metrics in text format."""
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(metrics_registry.get_prometheus_metrics())
 
 
 # Mount static SPA if built dist exists

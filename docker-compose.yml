@@ -17,3 +17,32 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     command: tail -f /dev/null
+
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    container_name: antinode-norma-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./build/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:10.3.0
+    container_name: antinode-norma-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: antinode-norma-loki
+    ports:
+      - "3100:3100"
+
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: antinode-norma-tempo
+    ports:
+      - "3200:3200"
+      - "4317:4317" # OTLP gRPC
