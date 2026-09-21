@@ -1,7 +1,7 @@
 """FastAPI application server foundation for Norma BDD Platform."""
 
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -53,7 +53,21 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Register route modules
+v1_router = APIRouter(prefix="/v1")
+v1_router.include_router(features_router)
+v1_router.include_router(approvals_router)
+v1_router.include_router(audit_router)
+v1_router.include_router(traceability_router)
+v1_router.include_router(dashboard_router)
+v1_router.include_router(auth_router)
+v1_router.include_router(admin_router)
+v1_router.include_router(comments_router)
+v1_router.include_router(notifications_router)
+v1_router.include_router(analytics_router)
+
+# Mount /v1/ versioned router and legacy unversioned aliases
+app.include_router(v1_router)
+
 app.include_router(features_router)
 app.include_router(approvals_router)
 app.include_router(audit_router)
