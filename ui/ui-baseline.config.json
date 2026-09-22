@@ -1,0 +1,81 @@
+{
+  "baseUrl": "http://localhost:3000",
+  "browserMatrix": [
+    {
+      "name": "chromium",
+      "engine": "Chromium",
+      "support": "Primary acceptance browser"
+    },
+    {
+      "name": "firefox",
+      "engine": "Firefox",
+      "support": "Secondary acceptance browser"
+    },
+    {
+      "name": "webkit",
+      "engine": "WebKit",
+      "support": "Secondary acceptance browser"
+    }
+  ],
+  "viewportMatrix": [
+    {
+      "name": "mobile",
+      "width": 320,
+      "height": 720
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "name": "desktop",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "name": "wide",
+      "width": 1440,
+      "height": 900
+    }
+  ],
+  "routes": [
+    {
+      "name": "dashboard",
+      "path": "/"
+    },
+    {
+      "name": "feature-review",
+      "path": "/",
+      "tab": "review"
+    },
+    {
+      "name": "approval-queue",
+      "path": "/",
+      "tab": "approvals"
+    },
+    {
+      "name": "traceability",
+      "path": "/",
+      "tab": "traceability"
+    },
+    {
+      "name": "audit-trail",
+      "path": "/",
+      "tab": "audit"
+    }
+  ],
+  "capture": {
+    "format": "png",
+    "fullPage": true,
+    "themeModes": [
+      "dark",
+      "light"
+    ],
+    "outputDirectory": "docs/ui-baseline",
+    "visualRegressionViewports": [
+      "mobile",
+      "wide"
+    ]
+  }
+}

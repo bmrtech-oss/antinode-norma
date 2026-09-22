@@ -239,6 +239,8 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+ui/test-results/
+ui/playwright-report/
 
 # Snapshot folders created during Playwright runs (per-spec and central)
 # per-spec snapshot folders: e.g. my_test.spec.ts-snapshots/

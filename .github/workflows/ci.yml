@@ -61,6 +61,43 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
 
+  frontend:
+    name: Frontend quality gates
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install UI dependencies
+        run: npm --prefix ui ci
+
+      - name: Install Playwright browser
+        run: npx --prefix ui playwright install --with-deps chromium
+
+      - name: Lint UI
+        run: npm --prefix ui run lint
+
+      - name: Typecheck UI
+        run: npm --prefix ui run typecheck
+
+      - name: Run UI unit tests
+        run: npm --prefix ui run test
+
+      - name: Run UI e2e tests
+        run: npm --prefix ui run test:e2e
+
+      - name: Build UI
+        run: npm --prefix ui run build
+
   codegen:
     name: Codegen validation
     runs-on: ubuntu-latest
