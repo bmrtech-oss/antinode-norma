@@ -10,6 +10,9 @@ from antinode_norma.server.routes.admin import router as admin_router
 from antinode_norma.server.routes.comments import router as comments_router
 from antinode_norma.server.routes.notifications import router as notifications_router
 from antinode_norma.server.routes.analytics import router as analytics_router
+from antinode_norma.server.routes.imports import (
+    router as imports_router, generation_router, legacy_generation_router,
+)
 
 __all__ = [
     "features_router",
@@ -22,4 +25,7 @@ __all__ = [
     "comments_router",
     "notifications_router",
     "analytics_router",
+    "imports_router",
+    "generation_router",
+    "legacy_generation_router",
 ]

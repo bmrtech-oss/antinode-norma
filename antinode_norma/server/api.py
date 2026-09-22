@@ -19,6 +19,9 @@ from antinode_norma.server.routes import (
     comments_router,
     notifications_router,
     analytics_router,
+    imports_router,
+    generation_router,
+    legacy_generation_router,
 )
 
 app = FastAPI(
@@ -64,6 +67,12 @@ v1_router.include_router(admin_router)
 v1_router.include_router(comments_router)
 v1_router.include_router(notifications_router)
 v1_router.include_router(analytics_router)
+v1_router.include_router(imports_router)
+v1_router.include_router(generation_router)
+v1_router.include_router(legacy_generation_router, prefix="/api")
+# Preserve the initial Phase 1 paths while exposing the public contracts above.
+v1_router.include_router(imports_router, prefix="/api")
+v1_router.include_router(generation_router, prefix="/api")
 
 # Mount /v1/ versioned router and legacy unversioned aliases
 app.include_router(v1_router)
@@ -78,6 +87,9 @@ app.include_router(admin_router)
 app.include_router(comments_router)
 app.include_router(notifications_router)
 app.include_router(analytics_router)
+app.include_router(imports_router, prefix="/api")
+app.include_router(generation_router, prefix="/api")
+app.include_router(legacy_generation_router, prefix="/api")
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])

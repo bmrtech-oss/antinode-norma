@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { Activity, Cpu, FileText, GitMerge, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, RefreshCw, Settings, ShieldCheck, X } from 'lucide-react'
+import { Activity, Cpu, FileText, GitMerge, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, RefreshCw, Settings, ShieldCheck, UploadCloud, X } from 'lucide-react'
 import { ThemeSwitcher } from './ThemeSwitcher'
 import { getApiBaseUrl, resetApiBaseUrl, setApiBaseUrl } from '../lib/api'
 import { Button } from './ui/Button'
 import { Tooltip } from './ui/Tooltip'
 
-export type AppTab = 'dashboard' | 'review' | 'approvals' | 'traceability' | 'audit'
+export type AppTab = 'dashboard' | 'generation' | 'review' | 'approvals' | 'traceability' | 'audit'
 
 interface HealthStatus {
   version: string
@@ -28,6 +28,7 @@ const navigationItems: Array<{
   icon: typeof LayoutDashboard
 }> = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'generation', label: 'Generation', icon: UploadCloud },
   { id: 'review', label: 'Feature Review', icon: FileText },
   { id: 'approvals', label: 'Approval Queue', icon: ShieldCheck },
   { id: 'traceability', label: 'Traceability', icon: GitMerge },

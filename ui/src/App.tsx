@@ -4,6 +4,7 @@ import FeatureReview from './components/FeatureReview'
 import ApprovalQueue from './components/ApprovalQueue'
 import TraceabilityView from './components/TraceabilityView'
 import AuditTrailView from './components/AuditTrailView'
+import Generation from './components/Generation'
 import { AppShell, type AppTab } from './components/AppShell'
 import { getApiBaseUrl, getJson, resetApiBaseUrl, setApiBaseUrl } from './lib/api'
 
@@ -50,6 +51,8 @@ export default function App() {
       <div key={apiBaseUrl}>
         {activeTab === 'dashboard' ? (
           <Dashboard />
+        ) : activeTab === 'generation' ? (
+          <Generation />
         ) : activeTab === 'review' ? (
           <FeatureReview />
         ) : activeTab === 'approvals' ? (
