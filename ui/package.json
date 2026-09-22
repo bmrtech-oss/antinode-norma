@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test --config playwright.config.ts",
-    "ci:ui": "npm run lint && npm run typecheck && npm run test && npm run test:e2e && npm run build"
+    "test:e2e:quality": "playwright test e2e/app.spec.ts e2e/accessibility.spec.ts --config playwright.config.ts",
+    "ci:ui": "npm run lint && npm run typecheck && npm run test && npm run test:e2e:quality && npm run build"
   },
   "dependencies": {
     "lucide-react": "^0.344.0",
