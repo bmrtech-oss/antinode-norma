@@ -33,6 +33,12 @@ Works with **any LLM** (Claude, GPT, OpenRouter, local) and integrates via **MCP
 - [Authentication & RBAC](docs/AUTH.md) – OIDC, SAML 2.0, session management, and permission matrix.
 - [Execution Maturity](docs/EXECUTION.md) – Parallel runners, cloud grids, artifact capture, and flake detection.
 - [Plugins & Ecosystem](docs/PLUGINS.md) – Plugin manifest, hooks, lifecycle, SDK, notifications, and analytics.
+- [Hardening Summary](docs/HARDENING_SUMMARY.md) – Post-implementation hardening deliverables and task mapping (ADR-002).
+- [Score Model & Re-Scoring](docs/SCORE.md) – Evaluated 13-dimension platform score model and deltas (`docs/SCORE_MODEL.md`).
+- [Release Checklist](docs/RELEASE_CHECKLIST.md) – Production release validation criteria and sign-off matrix.
+- [Disaster Recovery](docs/DR.md) – SQLite database snapshot backup and restore drill policy.
+- [Data Migration](docs/MIGRATION.md) – Idempotent v4 to v5 data migration guide.
+- [API Versioning](docs/API_VERSIONING.md) – API route versioning policy and deprecation headers.
 
 ---
 
