@@ -80,7 +80,18 @@ Antinode Norma is an enterprise-grade, collaborative BDD platform that transform
 - **Cloud Grid Drivers**: Support for BrowserStack, Sauce Labs, and LambdaTest.
 
 ### 2.6 Web UI, Auth & Ecosystem (`antinode_norma/server/`, `antinode_norma/ecosystem/`, `antinode_norma/collaboration/`)
-- **FastAPI Server**: REST API providing feature endpoints, approvals, audit logs, comments, notifications, and analytics.
-- **React SPA**: Static SPA served at `/` with interactive dashboard, feature viewer, and approval queue.
+- **FastAPI Server**: REST API providing feature endpoints, approvals, audit logs, comments, notifications, and analytics. All routes versioned under `/v1/` prefix per ADR-002 (§H2-T05).
+- **React SPA**: Static SPA served at `/` with interactive dashboard, feature viewer, approval queue, and externalized i18n (`ui/src/locales/en.json`) per ADR-002 (§H2-T06).
 - **SSO & RBAC**: OIDC (PKCE) and SAML 2.0 authentication with role-based access control (`admin`, `reviewer`, `generator`, `viewer`).
-- **Plugin System**: Manifest-driven plugin registry, lifecycle hooks, and Python SDK.
+- **Plugin System**: Manifest-driven plugin registry with brokered secret isolation (`SecretBroker`), restricted filesystem scope, and domain allowlists per ADR-002 (§H3-T01).
+
+---
+
+## 3. Post-Implementation Hardening (ADR-002)
+
+The architecture includes the post-implementation hardening layer (ADR-002 Tasks H1–H5):
+- **Backup & DR (`antinode_norma/core/backup.py`)**: SQLite `VACUUM INTO` snapshots with integrity verification (`PRAGMA quick_check`). See `docs/DR.md`.
+- **v4 → v5 Migration (`antinode_norma/core/migrate_v4.py`)**: Idempotent data migration with `--dry-run` support. See `docs/MIGRATION.md`.
+- **Observability Stack (`antinode_norma/utils/observability.py`)**: Prometheus metrics, `/health`, `/metrics`, and request correlation IDs.
+- **Cross-Track Regression Gate (`bin/run_regression_gate.py`)**: CI release gate executing unit tests, walking skeleton, load tests, and DR smoke checks. See `docs/RELEASE_CHECKLIST.md`.
+- **Hardening Summary**: Complete task mapping and verification details are recorded in `docs/HARDENING_SUMMARY.md`.
