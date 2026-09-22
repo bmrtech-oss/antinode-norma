@@ -44,8 +44,8 @@ The workflow must support large files, long-running LLM operations, partial succ
   progress polling, cancellation, retry, job history, and artifact downloads.
 - Feature Review integration now includes submitted generated results, approval
   state, generation job/result traceability, and direct approve/reject actions.
-- SSE updates, authorization, rate limits, retention, metrics, and complete audit
-  coverage remain Phase 4 work.
+- Authorization, rate limits, retention, metrics, and complete audit coverage remain
+  Phase 4 work. SSE updates are implemented with polling fallback.
 - The current CLI contains fallback behavior that writes synthetic feature content
   after generation errors; the UI workflow must expose failures explicitly instead.
 
@@ -436,15 +436,26 @@ GET /v1/generation-jobs/{job_id}
 
 Poll every 1–2 seconds while a job is active. Apply backoff after connection failures and stop polling in terminal states.
 
-### Follow-up version
+### Implemented (GEN-4-T01)
 
-Add Server-Sent Events:
+`GET /v1/generation-jobs/{job_id}/events` emits durable `generation.progress`,
+`generation.completed`, `generation.failed`, and `generation.cancelled` events. Each
+event has a monotonically increasing SQLite event ID and contains the same job
+progress shape as the polling endpoint. Clients may reconnect with the
+`Last-Event-ID` header (or `lastEventId` query parameter) to replay missed events.
+The stream sends a terminal event and closes; disconnects are detected through the
+request lifecycle. The Generation UI prefers SSE and transparently falls back to
+the existing 1.5-second polling loop when the stream is unavailable.
+
+### Future transport enhancements
 
 ```text
 GET /v1/generation-jobs/{job_id}/events
 ```
 
-SSE is preferred over WebSockets because the UI primarily receives progress updates.
+The endpoint is now implemented; future work can add shared event storage for
+multi-process deployments and stronger stream authorization for external identity
+providers.
 
 The UI must display connection state and retain the last known progress if the event stream disconnects.
 
@@ -636,7 +647,15 @@ retry, and artifact results.
 
 **Status:** Core local worker, progress, cancellation, retry, results, downloads, and
 artifact-name hardening are implemented. Quality-gate integration and stronger worker
-lifecycle recovery remain open.
+lifecycle recovery are implemented through startup abandoned-job recovery.
+
+Worker recovery is enabled with `NORMA_GENERATION_ABANDON_TIMEOUT_SECONDS` (default
+`3600`). On process startup, queued jobs older than the timeout and running or
+cancelling jobs whose `started_at` is older than the timeout become terminal
+`abandoned` jobs. They retain owner/tenant and row progress metadata and can be
+retried through the existing owner-checked retry endpoint. A stale worker observes
+the abandoned state before writing further progress, while process-local capacity
+leases are naturally released on restart.
 
 ### Phase 3 — UI workflow
 
@@ -686,12 +705,12 @@ access, observable execution, and recoverable failures.
 
 | Task | Implementation | Deliverable | Evidence | Progress |
 |---|---|---|---|---|
-| GEN-4-T01 | Add SSE progress events with polling fallback | Near-real-time job updates | SSE contract and reconnect tests | Planned |
-| GEN-4-T02 | Add authentication and authorization to imports, jobs, results, and artifacts | User/tenant ownership checks | Unauthorized and cross-user access tests | Planned |
-| GEN-4-T03 | Add upload rate limits and worker concurrency limits | Abuse and resource controls | Load and limit tests | Planned |
-| GEN-4-T04 | Add abandoned-job detection and recovery | Jobs cannot remain running indefinitely | Recovery test after worker interruption | Planned |
-| GEN-4-T05 | Add artifact and import retention policies | Configurable cleanup process | Retention and protected-active-job tests | Planned |
-| GEN-4-T06 | Add structured metrics and operational alerts | Queue depth, duration, failure, and provider metrics | Metrics assertions and alert runbook | Planned |
+| GEN-4-T01 | Add SSE progress events with polling fallback | Near-real-time job updates | Durable SSE contract and reconnect tests | Complete |
+| GEN-4-T02 | Add authentication and authorization to imports, jobs, results, and artifacts | User/tenant ownership checks | Unauthorized and cross-user access tests | Complete |
+| GEN-4-T03 | Add upload rate limits and worker concurrency limits | Abuse and resource controls | Load and limit tests | Complete |
+| GEN-4-T04 | Add abandoned-job detection and recovery | Jobs cannot remain running indefinitely | Recovery test after worker interruption | Complete |
+| GEN-4-T05 | Add artifact and import retention policies | Configurable cleanup process | Retention and protected-active-job tests | Complete |
+| GEN-4-T06 | Add structured metrics and operational alerts | Queue depth, duration, failure, and provider metrics | Metrics assertions and alert runbook | Next |
 | GEN-4-T07 | Add lifecycle audit events | Auditable upload, validation, generation, cancellation, retry, download, and approval events | Audit completeness test | Planned |
 | GEN-4-T08 | Add provider timeout, retry, and circuit-breaker behavior | Explicit provider failure handling | Provider failure and retry tests | Planned |
 
@@ -767,8 +786,9 @@ The workflow is complete when:
 
 ## 15. Recommended Next Task
 
-Begin Phase 4 with live progress updates:
+Continue Phase 4 with structured metrics and operational alerts:
 
-1. Add SSE progress events for queued and running generation jobs.
-2. Keep polling as a reconnect and compatibility fallback.
-3. Add focused SSE contract and reconnect tests.
+1. Instrument queue depth, job duration, throughput, failure, abandonment, and
+   provider-facing metrics.
+2. Expose a stable metrics surface for dashboards and monitoring.
+3. Add metrics assertions and an operational alert/runbook checklist.

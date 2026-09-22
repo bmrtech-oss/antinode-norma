@@ -18,6 +18,8 @@ class ApprovalRequest(BaseModel):
     gherkin_text: str = ""
     status: ApprovalStatus = ApprovalStatus.PENDING
     requested_by: str = "system"
+    owner_id: Optional[str] = None
+    tenant_id: Optional[str] = None
     source_job_id: Optional[str] = None
     source_result_id: Optional[str] = None
     reviewer: Optional[str] = None
@@ -38,6 +40,8 @@ class ApprovalGate:
         requested_by: str = "system",
         source_job_id: Optional[str] = None,
         source_result_id: Optional[str] = None,
+        owner_id: Optional[str] = None,
+        tenant_id: Optional[str] = None,
     ) -> ApprovalRequest:
         req = ApprovalRequest(
             feature_id=feature_id,
@@ -46,6 +50,8 @@ class ApprovalGate:
             requested_by=requested_by,
             source_job_id=source_job_id,
             source_result_id=source_result_id,
+            owner_id=owner_id,
+            tenant_id=tenant_id,
         )
         self.requests[req.id] = req
         self.audit_log.record_event(

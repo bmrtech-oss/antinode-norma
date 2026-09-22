@@ -97,6 +97,9 @@ Environment variables take precedence over configuration file settings.
 | `NORMA_OIDC_CLIENT_ID` | OIDC Client ID | - |
 | `NORMA_OIDC_CLIENT_SECRET` | OIDC Client Secret | - |
 | `NORMA_OIDC_DISCOVERY_URL` | OIDC Issuer Discovery URL | - |
+| `NORMA_RETENTION_CLEANUP_ENABLED` | Run the safe, idempotent artifact/import cleanup sweep at startup | `false` |
+| `NORMA_ARTIFACT_RETENTION_DAYS` | Age threshold for generated artifact files from terminal jobs | `30` |
+| `NORMA_IMPORT_RETENTION_DAYS` | Age threshold for unreferenced uploaded import files | `30` |
 
 ---
 

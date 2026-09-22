@@ -6,11 +6,13 @@ from fastapi.testclient import TestClient
 
 from antinode_norma.server.api import app
 
+AUTH_HEADERS = {"X-User-ID": "admin-test", "X-Tenant-ID": "default"}
+
 
 def test_csv_import_preview_validate_and_generation(tmp_path, monkeypatch):
     monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
     monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
-    client = TestClient(app)
+    client = TestClient(app, headers=AUTH_HEADERS)
     payload = b"ID,Summary,Action,So that\nTC-1,Login,log in,access app\n"
 
     response = client.post(
@@ -38,7 +40,7 @@ def test_csv_import_preview_validate_and_generation(tmp_path, monkeypatch):
 def test_public_phase_one_contract_paths(tmp_path, monkeypatch):
     monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
     monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
-    client = TestClient(app)
+    client = TestClient(app, headers=AUTH_HEADERS)
     response = client.post(
         "/v1/imports",
         files={"file": ("cases.csv", io.BytesIO(b"ID,Summary,Action\nTC-1,Login,log in\n"), "text/csv")},
@@ -54,7 +56,7 @@ def test_public_phase_one_contract_paths(tmp_path, monkeypatch):
 def test_import_rejects_unsupported_files(tmp_path, monkeypatch):
     monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
     monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
-    response = TestClient(app).post(
+    response = TestClient(app, headers=AUTH_HEADERS).post(
         "/v1/api/imports/upload",
         files={"file": ("cases.txt", io.BytesIO(b"not supported"), "text/plain")},
     )
@@ -74,7 +76,7 @@ def test_xlsx_preview_exposes_worksheets_and_mapping_drives_validation(tmp_path,
     path = tmp_path / "requirements.xlsx"
     workbook.save(path)
 
-    client = TestClient(app)
+    client = TestClient(app, headers=AUTH_HEADERS)
     response = client.post(
         "/v1/imports",
         files={"file": ("requirements.xlsx", path.read_bytes(),
@@ -110,7 +112,7 @@ def test_xlsx_preview_exposes_worksheets_and_mapping_drives_validation(tmp_path,
 def test_mapping_rejects_unknown_columns(tmp_path, monkeypatch):
     monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
     monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
-    client = TestClient(app)
+    client = TestClient(app, headers=AUTH_HEADERS)
     imported = client.post(
         "/v1/imports",
         files={"file": ("cases.csv", io.BytesIO(b"Key,Action\nTC-1,run\n"), "text/csv")},
@@ -125,7 +127,7 @@ def test_generation_sanitizes_artifact_names_and_supports_download(tmp_path, mon
     monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
     monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
     monkeypatch.setenv("NORMA_ARTIFACT_DIR", str(tmp_path / "artifacts"))
-    client = TestClient(app)
+    client = TestClient(app, headers=AUTH_HEADERS)
     imported = client.post(
         "/v1/imports",
         files={"file": ("cases.csv", io.BytesIO(b"ID,Summary,Action\n../escape,Login,log in\n"), "text/csv")},
@@ -152,7 +154,7 @@ def test_generation_sanitizes_artifact_names_and_supports_download(tmp_path, mon
 def test_generation_job_history_supports_status_filter_and_pagination(tmp_path, monkeypatch):
     monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
     monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
-    client = TestClient(app)
+    client = TestClient(app, headers=AUTH_HEADERS)
     imported = client.post(
         "/v1/imports",
         files={"file": ("history.csv", io.BytesIO(b"ID,Summary,Action\nTC-1,Login,log in\n"), "text/csv")},
@@ -172,10 +174,43 @@ def test_generation_job_history_supports_status_filter_and_pagination(tmp_path, 
     assert history["items"][0]["source_filename"] == "history.csv"
 
 
+def test_generation_sse_emits_terminal_event_and_replays_after_cursor(tmp_path, monkeypatch):
+    monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
+    monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
+    client = TestClient(app, headers=AUTH_HEADERS)
+    imported = client.post(
+        "/v1/imports",
+        files={"file": ("events.csv", io.BytesIO(b"ID,Summary,Action\nTC-1,Login,log in\n"), "text/csv")},
+    ).json()
+    job = client.post("/v1/generation-jobs", json={"import_id": imported["id"]}).json()
+    for _ in range(100):
+        if client.get(f"/v1/generation-jobs/{job['id']}").json()["status"] == "completed":
+            break
+        time.sleep(0.01)
+
+    response = client.get(f"/v1/generation-jobs/{job['id']}/events")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    assert "event: generation.completed" in response.text
+    event_ids = [line.removeprefix("id: ") for line in response.text.splitlines() if line.startswith("id: ")]
+    assert event_ids
+    assert '"status": "completed"' in response.text
+
+    replay = client.get(
+        f"/v1/generation-jobs/{job['id']}/events",
+        headers={"Last-Event-ID": event_ids[0]},
+    )
+    assert replay.status_code == 200
+    assert "event: generation.completed" in replay.text
+    assert any(int(value) > int(event_ids[0]) for value in (
+        line.removeprefix("id: ") for line in replay.text.splitlines() if line.startswith("id: ")
+    ))
+
+
 def test_successful_generation_result_can_be_submitted_for_approval(tmp_path, monkeypatch):
     monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
     monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
-    client = TestClient(app)
+    client = TestClient(app, headers=AUTH_HEADERS)
     imported = client.post(
         "/v1/imports",
         files={"file": ("approval.csv", io.BytesIO(b"ID,Summary,Action\nTC-1,Login,log in\n"), "text/csv")},
@@ -200,7 +235,7 @@ def test_successful_generation_result_can_be_submitted_for_approval(tmp_path, mo
 def test_failed_generation_result_cannot_be_submitted_for_approval(tmp_path, monkeypatch):
     monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
     monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
-    client = TestClient(app)
+    client = TestClient(app, headers=AUTH_HEADERS)
     imported = client.post(
         "/v1/imports",
         files={"file": ("approval.csv", io.BytesIO(b"ID,Summary,Action\nTC-1,,\n"), "text/csv")},
@@ -216,7 +251,7 @@ def test_failed_generation_result_cannot_be_submitted_for_approval(tmp_path, mon
 def test_submitted_generation_result_appears_in_feature_review_with_traceability(tmp_path, monkeypatch):
     monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
     monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
-    client = TestClient(app)
+    client = TestClient(app, headers=AUTH_HEADERS)
     imported = client.post(
         "/v1/imports",
         files={"file": ("review.csv", io.BytesIO(b"ID,Summary,Action\nTC-9,Review me,review the result\n"), "text/csv")},
@@ -251,7 +286,7 @@ def test_submitted_generation_result_appears_in_feature_review_with_traceability
 def test_selected_generation_results_can_be_submitted_in_bulk(tmp_path, monkeypatch):
     monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
     monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
-    client = TestClient(app)
+    client = TestClient(app, headers=AUTH_HEADERS)
     imported = client.post(
         "/v1/imports",
         files={"file": ("bulk.csv", io.BytesIO(

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Download, Eye, FileSpreadsheet, Loader2, RotateCcw, UploadCloud } from 'lucide-react'
-import { getBlob, getJson, postForm, postJson } from '../lib/api'
+import { getApiBaseUrl, getBlob, getJson, postForm, postJson } from '../lib/api'
 import { Alert } from './ui/Alert'
 import { Button } from './ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card'
@@ -94,6 +94,8 @@ export default function Generation() {
   const [selectedResult, setSelectedResult] = useState<GenerationResult | null>(null)
   const [submittedResults, setSubmittedResults] = useState<Set<string>>(new Set())
   const [selectedResults, setSelectedResults] = useState<Set<string>>(new Set())
+  const [connectionState, setConnectionState] = useState<'connecting' | 'live' | 'polling'>('connecting')
+  const pollTimerRef = useRef<number | null>(null)
 
   const selectFile = (selectedFile: File | undefined) => {
     setError(null)
@@ -231,15 +233,54 @@ export default function Generation() {
       .catch(() => window.localStorage.removeItem(ACTIVE_GENERATION_JOB_KEY))
   }, [loadHistory])
 
+  const activeJobId = generationJob?.id
+  const activeJobStatus = generationJob?.status
+
   useEffect(() => {
-    if (!generationJob || !['queued', 'running'].includes(generationJob.status)) return
-    const timer = window.setInterval(() => {
-      void getJson<GenerationJobResponse>(`/v1/generation-jobs/${generationJob.id}`)
-        .then(setGenerationJob)
+    if (!activeJobId || !activeJobStatus || !['queued', 'running'].includes(activeJobStatus)) return
+    const jobId = activeJobId
+    const poll = () => {
+      setConnectionState('polling')
+      void getJson<GenerationJobResponse>(`/v1/generation-jobs/${jobId}`)
+        .then((job) => {
+          setGenerationJob(job)
+          if (!['queued', 'running'].includes(job.status) && pollTimerRef.current !== null) {
+            window.clearInterval(pollTimerRef.current)
+            pollTimerRef.current = null
+          }
+        })
         .catch((pollError) => setError(pollError instanceof Error ? pollError.message : 'Unable to read generation progress.'))
-    }, 1500)
-    return () => window.clearInterval(timer)
-  }, [generationJob])
+    }
+    const startPolling = () => {
+      if (pollTimerRef.current === null) {
+        poll()
+        pollTimerRef.current = window.setInterval(poll, 1500)
+      }
+    }
+    setConnectionState('connecting')
+    const source = new EventSource(`${getApiBaseUrl()}/v1/generation-jobs/${jobId}/events`)
+    const handleEvent = (event: MessageEvent<string>) => {
+      setConnectionState('live')
+      try {
+        setGenerationJob(JSON.parse(event.data) as GenerationJobResponse)
+      } catch {
+        startPolling()
+      }
+    }
+    source.addEventListener('generation.progress', handleEvent)
+    source.addEventListener('generation.completed', handleEvent)
+    source.addEventListener('generation.failed', handleEvent)
+    source.addEventListener('generation.cancelled', handleEvent)
+    source.onopen = () => setConnectionState('live')
+    source.onerror = () => startPolling()
+    return () => {
+      source.close()
+      if (pollTimerRef.current !== null) {
+        window.clearInterval(pollTimerRef.current)
+        pollTimerRef.current = null
+      }
+    }
+  }, [activeJobId, activeJobStatus])
 
   const generationStatus = generationJob?.status
 
@@ -250,14 +291,14 @@ export default function Generation() {
   }, [generationStatus, loadHistory])
 
   useEffect(() => {
-    if (!generationJob || !['completed', 'completed_with_errors', 'failed', 'cancelled'].includes(generationJob.status)) return
-    void getJson<{ results: GenerationResult[] }>(`/v1/generation-jobs/${generationJob.id}/results`)
+    if (!activeJobId || !activeJobStatus || !['completed', 'completed_with_errors', 'failed', 'cancelled'].includes(activeJobStatus)) return
+    void getJson<{ results: GenerationResult[] }>(`/v1/generation-jobs/${activeJobId}/results`)
       .then((response) => {
         setResults(response.results)
         setSubmittedResults(new Set(response.results.filter((result) => result.approval_status).map((result) => result.id)))
       })
       .catch((resultsError) => setError(resultsError instanceof Error ? resultsError.message : 'Unable to read generation results.'))
-  }, [generationJob])
+  }, [activeJobId, activeJobStatus])
 
   const updateJob = async (action: 'cancel' | 'retry') => {
     if (!generationJob) return
@@ -308,35 +349,36 @@ export default function Generation() {
       setError(downloadError instanceof Error ? downloadError.message : 'Unable to download this artifact.')
     }
 
-    const submitForApproval = async (result: GenerationResult) => {
-      if (!generationJob) return
-      setLoading(true)
-      try {
-        await postJson(`/v1/generation-jobs/${generationJob.id}/results/${result.id}/submit-approval`, {})
-        setSubmittedResults((current) => new Set(current).add(result.id))
-      } catch (approvalError) {
-        setError(approvalError instanceof Error ? approvalError.message : 'Unable to submit this result for approval.')
-      } finally {
-        setLoading(false)
-      }
+  }
 
-      const submitSelectedForApproval = async () => {
-        if (!generationJob || selectedResults.size === 0) return
-        setLoading(true)
-        try {
-          await postJson(`/v1/generation-jobs/${generationJob.id}/results/submit-approval`, {
-            result_ids: Array.from(selectedResults),
-          })
-          setSelectedResults(new Set())
-          const response = await getJson<{ results: GenerationResult[] }>(`/v1/generation-jobs/${generationJob.id}/results`)
-          setResults(response.results)
-          setSubmittedResults(new Set(response.results.filter((result) => result.approval_status).map((result) => result.id)))
-        } catch (approvalError) {
-          setError(approvalError instanceof Error ? approvalError.message : 'Unable to submit selected results for approval.')
-        } finally {
-          setLoading(false)
-        }
-      }
+  const submitForApproval = async (result: GenerationResult) => {
+    if (!generationJob) return
+    setLoading(true)
+    try {
+      await postJson(`/v1/generation-jobs/${generationJob.id}/results/${result.id}/submit-approval`, {})
+      setSubmittedResults((current) => new Set(current).add(result.id))
+    } catch (approvalError) {
+      setError(approvalError instanceof Error ? approvalError.message : 'Unable to submit this result for approval.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const submitSelectedForApproval = async () => {
+    if (!generationJob || selectedResults.size === 0) return
+    setLoading(true)
+    try {
+      await postJson(`/v1/generation-jobs/${generationJob.id}/results/submit-approval`, {
+        result_ids: Array.from(selectedResults),
+      })
+      setSelectedResults(new Set())
+      const response = await getJson<{ results: GenerationResult[] }>(`/v1/generation-jobs/${generationJob.id}/results`)
+      setResults(response.results)
+      setSubmittedResults(new Set(response.results.filter((result) => result.approval_status).map((result) => result.id)))
+    } catch (approvalError) {
+      setError(approvalError instanceof Error ? approvalError.message : 'Unable to submit selected results for approval.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -612,6 +654,11 @@ export default function Generation() {
               <Metric label="Failed" value={generationJob.failed_rows} />
             </div>
             {generationJob.current_item && <p className="text-xs text-muted-foreground">Current item: {generationJob.current_item}</p>}
+            {['queued', 'running'].includes(generationJob.status) && (
+              <p className="text-xs text-muted-foreground" role="status">
+                Updates: {connectionState === 'live' ? 'live stream' : connectionState === 'polling' ? 'polling fallback' : 'connecting'}
+              </p>
+            )}
             {generationJob.error && <p className="text-xs text-destructive">{generationJob.error}</p>}
             {generationJob.status === 'running' && <Loader2 className="h-4 w-4 animate-spin text-primary" aria-label="Generation is running" />}
             {results.length > 0 && (

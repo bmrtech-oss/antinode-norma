@@ -5,29 +5,38 @@ import uuid
 import io
 import zipfile
 import csv
+import asyncio
+import json
 import openpyxl
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import PlainTextResponse, StreamingResponse
 
 from antinode_norma.ingest_structured.csv import CSVIngester
 from antinode_norma.ingest_structured.xlsx import XLSXIngester
 from antinode_norma.core.normalize import normalize_header
 from antinode_norma.server.import_storage import (
-    get_generation, get_import, save_generation, save_import, update_import, get_generation_results,
+    get_generation, get_import, save_generation, save_import, update_import, update_generation, get_generation_results,
     get_generation_result,
     list_generations,
     save_generation_result,
+    list_generation_events,
 )
 from antinode_norma.server.schemas import (
     GenerationJobResponse, GenerationJobListResponse, ImportResponse, ImportValidationResponse,
     GenerationJobRequest, GenerationApprovalRequest, ImportMappingRequest,
 )
-from antinode_norma.server.generation_worker import enqueue, cancel, retry, retry_result, wait_for
+from antinode_norma.server.generation_worker import (
+    enqueue, cancel, retry, retry_result, wait_for, GenerationQueueFull,
+)
+from antinode_norma.server.rate_limits import allow, user_key
 from antinode_norma.server.routes.approvals import gate
+from antinode_norma.auth.middleware import ensure_resource_owner, requires_permission
+from antinode_norma.auth.models import Role, User
+from antinode_norma.auth.roles import FEATURE_READ, FEATURE_WRITE
 
 router = APIRouter(prefix="/imports", tags=["Imports"])
 generation_router = APIRouter(prefix="/generation-jobs", tags=["Generation jobs"])
@@ -89,7 +98,9 @@ def _apply_mapping(source_rows: list[dict[str, Any]], mapping: dict[str, str]) -
     return result
 
 
-async def _create_import(file: UploadFile) -> ImportResponse:
+async def _create_import(file: UploadFile, user: User) -> ImportResponse:
+    if not allow("upload", user_key(user), "NORMA_UPLOAD_RATE_LIMIT", 30):
+        raise HTTPException(status_code=429, detail="Upload rate limit exceeded")
     filename = Path(file.filename or "").name
     extension = Path(filename).suffix.lower().lstrip(".")
     if extension not in {"csv", "xlsx"}:
@@ -114,6 +125,7 @@ async def _create_import(file: UploadFile) -> ImportResponse:
         "rows": rows, "created_at": _now(),
         "columns": columns, "worksheet_names": worksheet_names, "worksheet": worksheet,
         "mapping": {},
+        "owner_id": user.id, "tenant_id": user.tenant_id or "default",
     }
     save_import(record)
     return ImportResponse(**{k: record.get(k) for k in (
@@ -122,20 +134,21 @@ async def _create_import(file: UploadFile) -> ImportResponse:
 
 
 @router.post("/upload", response_model=ImportResponse, status_code=201)
-async def upload_import(file: UploadFile = File(...)) -> ImportResponse:
-    return await _create_import(file)
+async def upload_import(file: UploadFile = File(...), user: User = Depends(requires_permission(FEATURE_WRITE))) -> ImportResponse:
+    return await _create_import(file, user)
 
 
 @router.post("", response_model=ImportResponse, status_code=201)
-async def create_import(file: UploadFile = File(...)) -> ImportResponse:
-    return await _create_import(file)
+async def create_import(file: UploadFile = File(...), user: User = Depends(requires_permission(FEATURE_WRITE))) -> ImportResponse:
+    return await _create_import(file, user)
 
 
 @router.get("/{import_id}/preview")
-async def preview_import(import_id: str, limit: int = 100) -> dict[str, Any]:
+async def preview_import(import_id: str, limit: int = 100, user: User = Depends(requires_permission(FEATURE_READ))) -> dict[str, Any]:
     record = get_import(import_id)
     if record is None:
         raise HTTPException(status_code=404, detail="Import not found")
+    ensure_resource_owner(user, record)
     columns = record.get("columns", [])
     worksheet_names = record.get("worksheet_names", [])
     _, source_rows, _, _ = _source_preview(
@@ -153,10 +166,11 @@ async def preview_import(import_id: str, limit: int = 100) -> dict[str, Any]:
 
 
 @router.post("/{import_id}/mapping")
-async def map_import(import_id: str, request: ImportMappingRequest) -> dict[str, Any]:
+async def map_import(import_id: str, request: ImportMappingRequest, user: User = Depends(requires_permission(FEATURE_WRITE))) -> dict[str, Any]:
     record = get_import(import_id)
     if record is None:
         raise HTTPException(status_code=404, detail="Import not found")
+    ensure_resource_owner(user, record)
     worksheet = request.worksheet or record.get("worksheet")
     if worksheet and worksheet not in record.get("worksheet_names", []):
         raise HTTPException(status_code=422, detail="Worksheet not found")
@@ -181,10 +195,11 @@ async def map_import(import_id: str, request: ImportMappingRequest) -> dict[str,
 
 
 @router.post("/{import_id}/validate", response_model=ImportValidationResponse)
-async def validate_import(import_id: str) -> ImportValidationResponse:
+async def validate_import(import_id: str, user: User = Depends(requires_permission(FEATURE_READ))) -> ImportValidationResponse:
     record = get_import(import_id)
     if record is None:
         raise HTTPException(status_code=404, detail="Import not found")
+    ensure_resource_owner(user, record)
     errors: list[dict[str, Any]] = []
     seen: set[str] = set()
     for index, row in enumerate(record["rows"], 1):
@@ -198,15 +213,16 @@ async def validate_import(import_id: str) -> ImportValidationResponse:
 
 
 @router.get("/{import_id}/validation", response_model=ImportValidationResponse)
-async def get_import_validation(import_id: str) -> ImportValidationResponse:
-    return await validate_import(import_id)
+async def get_import_validation(import_id: str, user: User = Depends(requires_permission(FEATURE_READ))) -> ImportValidationResponse:
+    return await validate_import(import_id, user)
 
 
 @router.get("/{import_id}", response_model=ImportResponse)
-async def get_import_details(import_id: str) -> ImportResponse:
+async def get_import_details(import_id: str, user: User = Depends(requires_permission(FEATURE_READ))) -> ImportResponse:
     record = get_import(import_id)
     if record is None:
         raise HTTPException(status_code=404, detail="Import not found")
+    ensure_resource_owner(user, record)
     return ImportResponse(**{
         key: record[key]
         for key in ("id", "filename", "format", "status", "row_count", "created_at",
@@ -215,19 +231,25 @@ async def get_import_details(import_id: str) -> ImportResponse:
 
 
 @generation_router.post("", response_model=GenerationJobResponse, status_code=201)
-async def create_generation_job(request: GenerationJobRequest) -> GenerationJobResponse:
+async def create_generation_job(request: GenerationJobRequest, user: User = Depends(requires_permission(FEATURE_WRITE))) -> GenerationJobResponse:
     import_id = request.import_id
     record = get_import(str(import_id)) if import_id else None
     if record is None:
         raise HTTPException(status_code=404, detail="Import not found")
-    validation = await validate_import(str(import_id))
+    ensure_resource_owner(user, record)
+    validation = await validate_import(str(import_id), user)
+    if validation.valid and not allow(
+        "generation", user_key(user), "NORMA_GENERATION_RATE_LIMIT", 10
+    ):
+        raise HTTPException(status_code=429, detail="Generation rate limit exceeded")
     job_id = str(uuid.uuid4())
     result = {"import_id": import_id, "row_count": record["row_count"], "valid": validation.valid,
               "errors": validation.errors}
     job = {"id": job_id, "import_id": import_id,
            "status": "queued" if validation.valid else "failed", "result": result,
            "total_rows": record["row_count"], "created_at": _now(),
-           "error": None if validation.valid else "Validation failed"}
+           "error": None if validation.valid else "Validation failed",
+           "owner_id": user.id, "tenant_id": user.tenant_id or "default"}
     save_generation(job)
     # Create durable row work items before handing the job to the worker.
     for row_number, row in enumerate(record["rows"], 1):
@@ -235,9 +257,16 @@ async def create_generation_job(request: GenerationJobRequest) -> GenerationJobR
             "id": str(uuid.uuid4()), "job_id": job_id, "row_number": row_number,
             "case_id": str(row.get("id") or row.get("story_id") or f"row-{row_number}"),
             "status": "pending", "created_at": _now(),
+            "owner_id": user.id, "tenant_id": user.tenant_id or "default",
         })
     if validation.valid:
-        enqueue(job_id)
+        try:
+            enqueue(job_id)
+        except GenerationQueueFull as exc:
+            # Do not leave a durable job advertising queued work that was
+            # rejected by the bounded executor.
+            update_generation(job_id, status="failed", error=str(exc), completed_at=_now())
+            raise HTTPException(status_code=503, detail="Generation queue is full; try again later") from exc
     return GenerationJobResponse(**job)
 
 
@@ -246,8 +275,12 @@ async def list_generation_jobs(
     status: str | None = Query(default=None),
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
+    user: User = Depends(requires_permission(FEATURE_READ)),
 ) -> GenerationJobListResponse:
-    jobs, total = list_generations(status=status, offset=offset, limit=limit)
+    jobs, total = list_generations(status=status, owner_id=user.id,
+                                   tenant_id=user.tenant_id or "default",
+                                   include_all=Role.ADMIN in user.roles,
+                                   offset=offset, limit=limit)
     items = []
     for job in jobs:
         total_rows = job.get("total_rows", 0)
@@ -260,31 +293,38 @@ async def list_generation_jobs(
 
 
 @generation_router.post("/{job_id}/cancel", response_model=GenerationJobResponse)
-async def cancel_generation_job(job_id: str) -> GenerationJobResponse:
+async def cancel_generation_job(job_id: str, user: User = Depends(requires_permission(FEATURE_WRITE))) -> GenerationJobResponse:
     job = get_generation(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Generation job not found")
-    if job["status"] in {"completed", "completed_with_errors", "failed", "cancelled"}:
+    ensure_resource_owner(user, job)
+    if job["status"] in {"completed", "completed_with_errors", "failed", "cancelled", "abandoned"}:
         raise HTTPException(status_code=409, detail="Generation job is not cancellable")
     cancel(job_id)
-    return await get_generation_job(job_id)
+    return await get_generation_job(job_id, user)
 
 
 @generation_router.post("/{job_id}/retry", response_model=GenerationJobResponse)
-async def retry_generation_job(job_id: str) -> GenerationJobResponse:
+async def retry_generation_job(job_id: str, user: User = Depends(requires_permission(FEATURE_WRITE))) -> GenerationJobResponse:
     job = get_generation(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Generation job not found")
-    if job["status"] not in {"failed", "completed_with_errors", "cancelled"}:
+    ensure_resource_owner(user, job)
+    if job["status"] not in {"failed", "completed_with_errors", "cancelled", "abandoned"}:
         raise HTTPException(status_code=409, detail="Only failed or cancelled jobs can be retried")
-    retry(job_id)
-    return await get_generation_job(job_id)
+    try:
+        retry(job_id)
+    except GenerationQueueFull as exc:
+        raise HTTPException(status_code=503, detail="Generation queue is full; try again later") from exc
+    return await get_generation_job(job_id, user)
 
 
 @generation_router.get("/{job_id}/results")
-async def generation_results(job_id: str) -> dict[str, Any]:
-    if get_generation(job_id) is None:
+async def generation_results(job_id: str, user: User = Depends(requires_permission(FEATURE_READ))) -> dict[str, Any]:
+    job = get_generation(job_id)
+    if job is None:
         raise HTTPException(status_code=404, detail="Generation job not found")
+    ensure_resource_owner(user, job)
     results = get_generation_results(job_id)
     approvals = {
         request.source_result_id: request
@@ -299,24 +339,31 @@ async def generation_results(job_id: str) -> dict[str, Any]:
 
 
 @generation_router.post("/{job_id}/results/{result_id}/retry", response_model=GenerationJobResponse)
-async def retry_generation_result(job_id: str, result_id: str) -> GenerationJobResponse:
+async def retry_generation_result(job_id: str, result_id: str, user: User = Depends(requires_permission(FEATURE_WRITE))) -> GenerationJobResponse:
     job = get_generation(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Generation job not found")
+    ensure_resource_owner(user, job)
     result = get_generation_result(job_id, result_id)
     if result is None:
         raise HTTPException(status_code=404, detail="Generation result not found")
     if result["status"] != "failed":
         raise HTTPException(status_code=409, detail="Only failed results can be retried")
-    if not retry_result(job_id, result_id):
+    try:
+        retried = retry_result(job_id, result_id)
+    except GenerationQueueFull as exc:
+        raise HTTPException(status_code=503, detail="Generation queue is full; try again later") from exc
+    if not retried:
         raise HTTPException(status_code=409, detail="Generation result could not be retried")
-    return await get_generation_job(job_id)
+    return await get_generation_job(job_id, user)
 
 
 @generation_router.post("/{job_id}/results/{result_id}/submit-approval")
-async def submit_generation_result_for_approval(job_id: str, result_id: str) -> dict[str, Any]:
-    if get_generation(job_id) is None:
+async def submit_generation_result_for_approval(job_id: str, result_id: str, user: User = Depends(requires_permission(FEATURE_WRITE))) -> dict[str, Any]:
+    job = get_generation(job_id)
+    if job is None:
         raise HTTPException(status_code=404, detail="Generation job not found")
+    ensure_resource_owner(user, job)
     result = get_generation_result(job_id, result_id)
     if result is None:
         raise HTTPException(status_code=404, detail="Generation result not found")
@@ -328,6 +375,7 @@ async def submit_generation_result_for_approval(job_id: str, result_id: str) -> 
         requested_by="generation-workflow",
         source_job_id=job_id,
         source_result_id=result_id,
+        owner_id=user.id, tenant_id=user.tenant_id or "default",
     )
     return approval.model_dump()
 
@@ -336,9 +384,12 @@ async def submit_generation_result_for_approval(job_id: str, result_id: str) -> 
 async def submit_generation_results_for_approval(
     job_id: str,
     request: GenerationApprovalRequest,
+    user: User = Depends(requires_permission(FEATURE_WRITE)),
 ) -> dict[str, Any]:
-    if get_generation(job_id) is None:
+    job = get_generation(job_id)
+    if job is None:
         raise HTTPException(status_code=404, detail="Generation job not found")
+    ensure_resource_owner(user, job)
     submitted: list[dict[str, Any]] = []
     rejected: list[dict[str, str]] = []
     for result_id in request.result_ids:
@@ -355,15 +406,18 @@ async def submit_generation_results_for_approval(
             requested_by="generation-workflow",
             source_job_id=job_id,
             source_result_id=result_id,
+            owner_id=user.id, tenant_id=user.tenant_id or "default",
         )
         submitted.append(approval.model_dump())
     return {"job_id": job_id, "submitted": submitted, "rejected": rejected}
 
 
 @generation_router.get("/{job_id}/results/{result_id}/download")
-async def download_generation_result(job_id: str, result_id: str):
-    if get_generation(job_id) is None:
+async def download_generation_result(job_id: str, result_id: str, user: User = Depends(requires_permission(FEATURE_READ))):
+    job = get_generation(job_id)
+    if job is None:
         raise HTTPException(status_code=404, detail="Generation job not found")
+    ensure_resource_owner(user, job)
     result = get_generation_result(job_id, result_id)
     if result is None or not result.get("content"):
         raise HTTPException(status_code=404, detail="Generated artifact not found")
@@ -376,9 +430,11 @@ async def download_generation_result(job_id: str, result_id: str):
 
 
 @generation_router.get("/{job_id}/download")
-async def download_generation(job_id: str):
-    if get_generation(job_id) is None:
+async def download_generation(job_id: str, user: User = Depends(requires_permission(FEATURE_READ))):
+    job = get_generation(job_id)
+    if job is None:
         raise HTTPException(status_code=404, detail="Generation job not found")
+    ensure_resource_owner(user, job)
     results = [item for item in get_generation_results(job_id) if item.get("content")]
     if not results:
         raise HTTPException(status_code=404, detail="No generated artifacts available")
@@ -392,25 +448,98 @@ async def download_generation(job_id: str):
 
 
 @generation_router.get("/{job_id}", response_model=GenerationJobResponse)
-async def get_generation_job(job_id: str) -> GenerationJobResponse:
+async def get_generation_job(job_id: str, user: User = Depends(requires_permission(FEATURE_READ))) -> GenerationJobResponse:
     job = get_generation(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Generation job not found")
+    ensure_resource_owner(user, job)
     total = job.get("total_rows", 0)
     job["progress_percent"] = round(job.get("processed_rows", 0) * 100 / total, 1) if total else 0
     return GenerationJobResponse(**job)
 
 
+def _sse_payload(job: dict[str, Any]) -> dict[str, Any]:
+    total = job.get("total_rows", 0)
+    job = dict(job)
+    job["progress_percent"] = round(job.get("processed_rows", 0) * 100 / total, 1) if total else 0
+    return GenerationJobResponse(**job).model_dump()
+
+
+@generation_router.get("/{job_id}/events")
+async def generation_job_events(
+    job_id: str,
+    request: Request,
+    last_event_id: str | None = Query(default=None, alias="lastEventId"),
+    user: User = Depends(requires_permission(FEATURE_READ)),
+) -> StreamingResponse:
+    """Stream durable generation state events, replaying events after the client cursor."""
+    job = get_generation(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Generation job not found")
+    ensure_resource_owner(user, job)
+    header_cursor = request.headers.get("last-event-id")
+    try:
+        cursor = int(header_cursor or last_event_id or "0")
+    except ValueError:
+        cursor = 0
+
+    async def stream():
+        nonlocal cursor
+        sent_terminal = False
+        yield "retry: 3000\n\n"
+        while not await request.is_disconnected():
+            events = list_generation_events(job_id, cursor)
+            if not events:
+                job = get_generation(job_id)
+                if job is None:
+                    return
+                if job["status"] in {"completed", "completed_with_errors", "failed", "cancelled", "abandoned"}:
+                    if cursor == 0:
+                        payload = _sse_payload(job)
+                        event_type = "generation.abandoned" if job["status"] == "abandoned" else (
+                            "generation.failed" if job["status"] == "failed" else (
+                            "generation.cancelled" if job["status"] == "cancelled" else "generation.completed"
+                            )
+                        )
+                        yield f"event: {event_type}\ndata: {json.dumps(payload)}\n\n"
+                    return
+                await asyncio.sleep(0.5)
+                yield ": heartbeat\n\n"
+                continue
+            for event in events:
+                cursor = event["id"]
+                payload = event["payload"]
+                payload.pop("result_json", None)
+                payload = _sse_payload(payload)
+                yield f"id: {cursor}\nevent: {event['event_type']}\ndata: {json.dumps(payload)}\n\n"
+                if payload["status"] in {"completed", "completed_with_errors", "failed", "cancelled", "abandoned"}:
+                    sent_terminal = True
+                    break
+            if sent_terminal:
+                return
+            await asyncio.sleep(0.05)
+
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
 @legacy_generation_router.post("", response_model=GenerationJobResponse, status_code=201)
-async def create_legacy_generation_job(request: GenerationJobRequest) -> GenerationJobResponse:
-    response = await create_generation_job(request)
+async def create_legacy_generation_job(request: GenerationJobRequest, user: User = Depends(requires_permission(FEATURE_WRITE))) -> GenerationJobResponse:
+    response = await create_generation_job(request, user)
     # Preserve the Phase 1 legacy contract while the public endpoint is asynchronous.
     if response.status == "queued":
         job = wait_for(response.id)
-        return await get_generation_job(response.id) if job else response
+        return await get_generation_job(response.id, user) if job else response
     return response
 
 
 @legacy_generation_router.get("/{job_id}", response_model=GenerationJobResponse)
-async def get_legacy_generation_job(job_id: str) -> GenerationJobResponse:
-    return await get_generation_job(job_id)
+async def get_legacy_generation_job(job_id: str, user: User = Depends(requires_permission(FEATURE_READ))) -> GenerationJobResponse:
+    return await get_generation_job(job_id, user)

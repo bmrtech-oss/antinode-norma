@@ -1,6 +1,8 @@
 """FastAPI application server foundation for Norma BDD Platform."""
 
+import os
 from pathlib import Path
+import os
 from fastapi import FastAPI, APIRouter, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -29,6 +31,18 @@ app = FastAPI(
     description="Enterprise BDD Feature Generation, Quality Gates, Governance, and Execution Platform API",
     version="0.1.0-alpha",
 )
+
+
+@app.on_event("startup")
+async def recover_generation_jobs() -> None:
+    """Sweep durable jobs left behind by a previous worker process."""
+    from antinode_norma.server.generation_worker import recover_abandoned_jobs
+    recover_abandoned_jobs()
+    # Retention is opt-in: deployments can run this safe, idempotent sweep at
+    # startup without risking broad deletion of active job storage.
+    if os.getenv("NORMA_RETENTION_CLEANUP_ENABLED", "false").lower() in {"1", "true", "yes", "on"}:
+        from antinode_norma.server.import_storage import cleanup_retention
+        cleanup_retention()
 
 # Configure CORS
 app.add_middleware(

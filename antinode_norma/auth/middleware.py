@@ -10,6 +10,7 @@ from antinode_norma.auth.roles import has_permission
 async def get_current_user(
     request: Request,
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    x_tenant_id: Optional[str] = Header(None, alias="X-Tenant-ID"),
 ) -> Optional[User]:
     """Dependency to retrieve currently authenticated user from request state or header."""
     if hasattr(request.state, "user") and request.state.user:
@@ -25,10 +26,27 @@ async def get_current_user(
             email=f"{header_val}@norma.local",
             roles=roles,
             is_active=True,
+            tenant_id=(x_tenant_id if isinstance(x_tenant_id, str) else None)
+            or request.headers.get("x-tenant-id") or "default",
         )
 
     # Return default active viewer user for dev/unauthenticated requests unless overridden
     return getattr(request.state, "default_user", None)
+
+
+def ensure_resource_owner(user: User, resource: dict) -> None:
+    """Require a resource to belong to the authenticated user and tenant.
+
+    Legacy rows without ownership metadata remain readable to authenticated users
+    so existing local databases continue to work; all newly-created rows carry
+    both fields.
+    """
+    owner_id = resource.get("owner_id")
+    tenant_id = resource.get("tenant_id")
+    if tenant_id and tenant_id != (user.tenant_id or "default"):
+        raise HTTPException(status_code=404, detail="Resource not found")
+    if owner_id and owner_id != user.id and Role.ADMIN not in user.roles:
+        raise HTTPException(status_code=404, detail="Resource not found")
 
 
 def requires_permission(permission: str) -> Callable:
