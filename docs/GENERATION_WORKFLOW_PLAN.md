@@ -929,8 +929,13 @@ above. Before production release, complete the following:
   generated runtime data are staged.
 - [x] Confirm authorization, rate-limit, retention, audit-redaction,
   provider-resilience, and recovery tests pass.
-- [ ] Run live-provider integration with approved non-production credentials,
-  or document an approved provider-mock equivalence for the deployment.
+- [x] Document the approved provider-mock equivalence path for deployments
+  without non-production provider credentials. This validates workflow,
+  lifecycle, security, and operational behavior without external calls; it does
+  not replace provider-specific compatibility, quota, credential, or model
+  quality validation.
+- [ ] Run live-provider integration with approved non-production credentials
+  before enabling a real provider in production.
 - [ ] Complete the formal full security review, including path traversal,
   tenant isolation, artifact access, upload parsing, and secret/log hygiene.
 - [ ] Triage the existing dependency deprecation warnings and record owners.
@@ -940,3 +945,108 @@ above. Before production release, complete the following:
 Until the unchecked provider, security-review, dependency, and deployment
 items are completed, this is a validated deterministic release candidate and
 not a production-release approval.
+
+## 17. Acceptance-Criteria Functional Test Plan
+
+Section 14 defines the product outcome; this section turns each criterion into
+an executable functional-test contract. The test IDs below are the traceability
+keys to use in test names, reports, and release evidence.
+
+### Test strategy
+
+Use three complementary layers:
+
+1. **API workflow tests** in `tests/integration/` for the public contract,
+   persistence, authorization, state transitions, and artifact behavior.
+2. **Service/worker tests** in `tests/unit/` for deterministic failure,
+   retry, cancellation, provider, audit, metrics, and retention behavior.
+3. **Browser functional tests** in `ui/e2e/` for the user-visible upload,
+   mapping, progress, recovery, approval, and download workflow. Mock API
+   responses at the network boundary for deterministic browser runs; reserve
+   live-provider tests for a separately credentialed environment.
+
+Do not make a functional test depend on wall-clock timing, an external LLM, or
+developer `.env` state. Inject a deterministic provider/clock where needed,
+poll using bounded retry helpers, and assert terminal state plus persisted
+evidence rather than implementation-specific thread timing.
+
+### Acceptance-criteria traceability matrix
+
+| ID | Acceptance criterion | Primary test surface | Required scenario and assertions |
+|---|---|---|---|
+| AC-01 | Upload valid CSV/XLSX | API + browser | Upload one valid CSV and one valid XLSX; assert `201`, format metadata, row count, and visible success state. |
+| AC-02 | Show bounded preview | API + browser | Upload a fixture larger than the preview limit; assert the response contains only the bounded rows/columns and the UI exposes preview before Generate. |
+| AC-03 | Select XLSX worksheet | API + browser | Upload a workbook with two sheets; select the non-default sheet; assert preview, mapping, validation, and generated content use only that sheet. |
+| AC-04 | Map arbitrary headers | API + browser | Map non-canonical headers to `id`, title/summary, action, and expected result; assert persisted mapping and downstream generated values. |
+| AC-05 | Report row-level errors/warnings | API + browser | Use mixed valid, invalid, and warning rows; assert row number, field, severity, message, and summary counts; assert valid rows remain actionable. |
+| AC-06 | Enforce validation policy | API + browser | Attempt generation before validation and with rejected rows; assert the documented `4xx` response and disabled/blocked Generate action; verify allowed warning policy. |
+| AC-07 | Async generation survives refresh | API + browser | Start a multi-row job; assert `queued`/`running`, reload the page, reopen active/history job, and assert the same job reaches its terminal state. |
+| AC-08 | Persist accurate progress | API + browser | Use a deterministic multi-row worker; assert monotonic persisted `processed_rows`, bounded percentage, terminal totals, and semantic progressbar value. |
+| AC-09 | Cancel and retry by state | API + browser | Cancel queued/running work; assert `cancelling` then `cancelled`; retry an eligible job and assert a new/updated run; reject retry from an ineligible state. |
+| AC-10 | Expose partial success | API + browser | Force one row to fail while others succeed; assert `completed_with_errors`, visible successful and failed rows, per-row errors, and retry only for failed rows. |
+| AC-11 | Preview/download artifacts | API + browser | Assert artifact content and metadata in result preview, individual download, and ZIP download; verify safe names and correct media/disposition headers. |
+| AC-12 | Attach quality-gate results | API + browser | Return deterministic quality findings; assert each result contains gate status, checks, warnings/errors, and that the UI renders them without hiding content. |
+| AC-13 | Submit successful results for approval | API + browser | Submit one and bulk eligible results; assert approval IDs/status metadata, duplicate-submission behavior, and visible success/error feedback. |
+| AC-14 | Preserve source traceability | API + browser | Assert every result links to source job/import/result/row metadata and Feature Review displays the source relationship. |
+| AC-15 | Create lifecycle audit events | API + service | Execute upload, validation, queue/start, completion/failure, cancel, retry, download, and approval actions; assert event type, actor/tenant context, ordering/integrity, and sensitive-content exclusions. |
+| AC-16 | Enforce security limits/authorization | API + service | Assert unsupported/malformed/oversized rejection, owner/tenant isolation, admin rules, rate limits, queue capacity, path-safe artifacts, secret redaction, and retention protections. |
+| AC-17 | Cover happy/failure paths | CI aggregation | Require all AC IDs to have a passing API/service test and the user-facing criteria to have a browser scenario; publish the matrix with CI results. |
+
+### Planned test files and fixtures
+
+Create or extend the following focused suites rather than adding all cases to
+the existing broad regression file:
+
+- `tests/integration/test_generation_acceptance.py`: AC-01 through AC-16
+  public API workflows using `TestClient`, temporary SQLite/storage roots, and
+  authenticated owner/tenant headers.
+- `tests/unit/test_generation_acceptance_components.py`: deterministic worker,
+  validation-policy, provider, audit, artifact, and retention cases that do
+  not require HTTP.
+- `ui/e2e/generation-workflow.spec.ts`: AC-01 through AC-14 user journeys
+  using route fixtures for imports, mappings, validation, jobs, SSE/polling,
+  results, approvals, and downloads.
+- `tests/fixtures/generation/valid_cases.csv`: canonical happy-path fixture.
+- `tests/fixtures/generation/mixed_validation.csv`: valid, warning, and
+  rejected rows with stable expected diagnostics.
+- `tests/fixtures/generation/multi_sheet.xlsx`: `Requirements` and `Notes`
+  sheets for worksheet selection.
+- `tests/fixtures/generation/arbitrary_headers.csv`: non-canonical mapping
+  fixture.
+- `tests/fixtures/generation/partial_failure.csv`: stable row-level provider
+  failure fixture.
+
+Existing focused tests should be reused or migrated into these suites where
+they already satisfy an AC instead of duplicating assertions. Keep security,
+provider-resilience, accessibility, and visual regression suites as
+specialized supporting evidence.
+
+### Implementation sequence
+
+1. Add shared fixture builders and deterministic provider/worker controls.
+2. Implement AC-01–AC-06 import, preview, worksheet, mapping, and validation
+   contract tests.
+3. Implement AC-07–AC-10 lifecycle, progress, cancellation, retry, and
+   partial-success tests.
+4. Implement AC-11–AC-14 artifact, quality, approval, and traceability tests.
+5. Consolidate AC-15–AC-16 audit and security assertions with existing Phase 4
+   suites, adding missing matrix cases only.
+6. Add the browser workflow spec for the critical user journey and its failure
+   branches.
+7. Add a CI report or machine-readable summary that fails when an AC test ID
+   is missing or fails.
+8. Run the full deterministic backend/UI/browser gates and update the
+   acceptance matrix with test names, results, and artifact links.
+
+### Definition of done
+
+- Every AC-01–AC-17 row has at least one executable test and named fixture or
+  setup path.
+- The critical path from upload through artifact download and approval runs in
+  one deterministic API test and one browser test.
+- Failure paths cover malformed input, validation rejection, provider failure,
+  cancellation, retry, authorization, rate limiting, and partial success.
+- Tests assert externally observable behavior and persisted state, not private
+  implementation details.
+- CI publishes pass/fail evidence grouped by AC ID and blocks release when a
+  required criterion has no test or a test fails.

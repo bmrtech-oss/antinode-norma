@@ -114,6 +114,17 @@ Environment variables take precedence over configuration file settings.
 | `NORMA_GENERATION_CIRCUIT_FAILURE_THRESHOLD` | Consecutive provider failures before opening the circuit | `3` |
 | `NORMA_GENERATION_CIRCUIT_RESET_SECONDS` | Open-circuit cooldown before a recovery probe | `30` |
 
+### Deterministic deployment validation
+
+For deployments without approved non-production provider credentials, use
+`LLM_PROVIDER=mock` and leave `NORMA_GENERATION_PROVIDER` unset. This is the
+approved provider-mock equivalence path for validating upload, validation,
+queueing, progress, recovery, approval, artifact, audit, and retention
+behavior without external network calls or secrets. It does not validate model
+quality, provider-specific request compatibility, provider quotas, or live
+credential configuration. A production deployment using a real provider must
+complete a separate non-production live-provider integration before release.
+
 ---
 
 ## 4. Migration & Rollback Policy (ADR-002 H3-T03)
