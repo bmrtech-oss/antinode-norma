@@ -46,7 +46,7 @@ Works with **any LLM** (Claude, GPT, OpenRouter, local) and integrates via **MCP
 
 ```bash
 # Install
-git clone https://github.com/antinodelabs/antinode-norma.git
+git clone https://github.com/bmrtech-oss/antinode-norma.git
 cd antinode-norma
 pip install -e .
 
@@ -128,7 +128,7 @@ Usage example (MCP or CLI wrapper):
 ## Installation
 
 ```bash
-git clone https://github.com/antinodelabs/antinode-norma.git
+git clone https://github.com/bmrtech-oss/antinode-norma.git
 cd antinode-norma
 pip install -e .
 ```

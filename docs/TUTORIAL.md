@@ -23,7 +23,7 @@ This tutorial walks through a complete Phase 8 demo of Antinode Norma using mark
 ## 2. Install the project
 
 ```bash
-git clone https://github.com/antinodelabs/antinode-norma.git
+git clone https://github.com/bmrtech-oss/antinode-norma.git
 cd antinode-norma
 pip install -e .
 pip install -r requirements-dev.txt

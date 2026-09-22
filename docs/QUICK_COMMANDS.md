@@ -4,7 +4,7 @@
 
 ```bash
 # Clone and enter the project
-git clone https://github.com/antinodelabs/antinode-norma.git
+git clone https://github.com/bmrtech-oss/antinode-norma.git
 cd antinode-norma
 
 # Create and activate virtual environment
