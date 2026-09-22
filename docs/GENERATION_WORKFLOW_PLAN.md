@@ -1015,6 +1015,11 @@ the existing broad regression file:
   fixture.
 - `tests/fixtures/generation/partial_failure.csv`: stable row-level provider
   failure fixture.
+- `test data/sample_stories.csv`: local UI happy-path CSV fixture with
+  INVEST-compatible stories.
+- `test data/invest_passing_stories.xlsx`: local UI XLSX fixture with eight
+  INVEST-compatible stories on the `Stories` worksheet and an
+  `Instructions` worksheet.
 
 Existing focused tests should be reused or migrated into these suites where
 they already satisfy an AC instead of duplicating assertions. Keep security,

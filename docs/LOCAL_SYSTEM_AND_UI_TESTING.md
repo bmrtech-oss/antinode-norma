@@ -8,15 +8,16 @@ LLM credentials and keeps manual testing deterministic.
 
 ## 1. Prerequisites
 
-Use:
+Use one of these supported environments:
 
-- Windows 10/11
+- Windows 10/11 with PowerShell 5.1 or newer
+- Linux with Bash, `ps`, and standard process utilities
 - Python 3.10 or newer
 - Node.js 18 or newer
 - npm
 - Git
 
-From PowerShell, verify:
+On Windows, verify from PowerShell:
 
 ```powershell
 python --version
@@ -25,15 +26,30 @@ npm --version
 git --version
 ```
 
-Run all commands below from the repository root:
+On Linux, verify from Bash:
+
+```bash
+python3 --version
+node --version
+npm --version
+git --version
+```
+
+Run commands from the repository root. On Windows:
 
 ```text
 D:\work-root\codebase\bmrtech-oss\antinode-norma
 ```
 
+On Linux:
+
+```text
+/path/to/antinode-norma
+```
+
 ## 2. Install dependencies
 
-Create or activate the backend virtual environment:
+### Windows PowerShell
 
 ```powershell
 Set-Location D:\work-root\codebase\bmrtech-oss\antinode-norma
@@ -53,12 +69,45 @@ executable instead:
 .\.venv\Scripts\python.exe -m pip install -e .
 ```
 
+### Linux Bash
+
+```bash
+cd /path/to/antinode-norma
+if [ ! -x .venv/bin/python ]; then
+  python3 -m venv .venv
+fi
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e .
+python -m pip install -r requirements-dev.txt
+```
+
+If activation is not desired, use `.venv/bin/python` explicitly:
+
+```bash
+.venv/bin/python -m pip install -e .
+```
+
 Install the UI dependencies:
 
 ```powershell
 Set-Location D:\work-root\codebase\bmrtech-oss\antinode-norma\ui
 npm install
 npx playwright install chromium
+```
+
+On Linux, run the equivalent commands with Bash:
+
+```bash
+cd /path/to/antinode-norma/ui
+npm install
+npx playwright install chromium
+```
+
+If Playwright reports missing Linux libraries, install them with:
+
+```bash
+npx playwright install --with-deps chromium
 ```
 
 ## 3. Exact local environment configuration
@@ -118,10 +167,18 @@ starting it:
 $env:VITE_API_BASE_URL = "http://localhost:8000"
 ```
 
+On Linux Bash:
+
+```bash
+export VITE_API_BASE_URL="http://localhost:8000"
+```
+
 The UI also supports changing the API URL from **Settings**. The selected URL
 is stored in browser local storage under `norma-ui-api-base-url`.
 
 ## 4. Start the backend
+
+### Windows PowerShell
 
 Use a dedicated PowerShell terminal:
 
@@ -151,7 +208,39 @@ Logs are written to `.runtime\backend.log` and
 .\scripts\stop-backend.ps1
 ```
 
+### Linux Bash
+
+Use a dedicated terminal:
+
+```bash
+cd /path/to/antinode-norma
+source .venv/bin/activate
+python -m uvicorn antinode_norma.server.api:app --host 0.0.0.0 --port 8000
+```
+
+Verify the backend:
+
+```bash
+curl --fail --silent http://localhost:8000/health
+```
+
+For a background process with logs and a PID file:
+
+```bash
+./scripts/backend.sh start
+./scripts/backend.sh status
+```
+
+Linux backend logs are written to `.runtime/backend.log`. Stop the managed
+process with:
+
+```bash
+./scripts/backend.sh stop
+```
+
 ## 5. Start the frontend
+
+### Windows PowerShell
 
 Use a second PowerShell terminal:
 
@@ -179,13 +268,68 @@ Managed frontend logs are written to `.runtime\frontend.log` and
 .\scripts\stop-frontend.ps1
 ```
 
+### Linux Bash
+
+Use a second terminal:
+
+```bash
+cd /path/to/antinode-norma/ui
+npm run dev -- --host 0.0.0.0
+```
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+Alternatively, from the repository root:
+
+```bash
+./scripts/frontend.sh start
+./scripts/frontend.sh status
+```
+
+Linux frontend logs are written to `.runtime/frontend.log`. Stop the managed
+process with:
+
+```bash
+./scripts/frontend.sh stop
+```
+
 ## 6. Manual UI functional test
 
-Use the supplied fixture:
+Use one of the supplied INVEST-passing fixtures:
+
+Windows path:
 
 ```text
 test data\sample_stories.csv
 ```
+
+Linux path:
+
+```text
+test data/sample_stories.csv
+```
+
+For XLSX worksheet-selection testing, use:
+
+Windows:
+
+```text
+test data\invest_passing_stories.xlsx
+```
+
+Linux:
+
+```text
+test data/invest_passing_stories.xlsx
+```
+
+The workbook contains a `Stories` worksheet with eight stories that pass the
+implemented INVEST gate, plus an `Instructions` worksheet. Select `Stories`
+when testing worksheet selection and mapping.
 
 In the browser:
 
@@ -240,9 +384,18 @@ $headers = @{
 Invoke-RestMethod -Headers $headers http://localhost:8000/v1/generation-jobs
 ```
 
+On Linux Bash:
+
+```bash
+curl --fail --silent \
+  -H "X-User-ID: manual-user" \
+  -H "X-Tenant-ID: default" \
+  http://localhost:8000/v1/generation-jobs
+```
+
 ## 8. Run automated tests locally
 
-Backend:
+### Windows PowerShell
 
 ```powershell
 Set-Location D:\work-root\codebase\bmrtech-oss\antinode-norma
@@ -266,12 +419,38 @@ npx playwright test --config playwright.config.ts
 npx playwright test e2e/accessibility.spec.ts --config playwright.config.ts
 ```
 
+### Linux Bash
+
+Backend:
+
+```bash
+cd /path/to/antinode-norma
+.venv/bin/python -m pytest tests/unit tests/integration --tb=no -q
+```
+
+Frontend unit and static checks:
+
+```bash
+cd /path/to/antinode-norma/ui
+npm run lint
+npm run typecheck
+npm run test -- --run
+npm run build
+```
+
+Frontend browser tests:
+
+```bash
+npx playwright test --config playwright.config.ts
+npx playwright test e2e/accessibility.spec.ts --config playwright.config.ts
+```
+
 The Playwright tests use deterministic API fixtures. They validate the UI
 contract and behavior without requiring a live LLM provider.
 
 ## 9. Troubleshooting
 
-### Port 8000 is already in use
+### Windows: port 8000 is already in use
 
 Find the process:
 
@@ -286,7 +465,23 @@ Stop only the identified process if it belongs to this project:
 Stop-Process -Id <PID>
 ```
 
-### Port 3000 is already in use
+### Linux: port 8000 is already in use
+
+Find the process:
+
+```bash
+ss -ltnp | grep ':8000'
+# or
+lsof -nP -iTCP:8000 -sTCP:LISTEN
+```
+
+Stop only the identified project process:
+
+```bash
+kill <PID>
+```
+
+### Windows: port 3000 is already in use
 
 Start Vite on another port and update the browser URL:
 
@@ -296,16 +491,28 @@ npm run dev -- --host 0.0.0.0 --port 3001
 
 The backend remains on port 8000.
 
+### Linux: port 3000 is already in use
+
+Start Vite on another port:
+
+```bash
+npm run dev -- --host 0.0.0.0 --port 3001
+```
+
+The backend remains on port 8000.
+
 ### UI shows API disconnected
 
-1. Confirm `Invoke-RestMethod http://localhost:8000/health` succeeds.
+1. On Windows, confirm `Invoke-RestMethod http://localhost:8000/health`
+   succeeds. On Linux, confirm `curl --fail http://localhost:8000/health`
+   succeeds.
 2. Open **Settings** in the UI.
 3. Set API URL to `http://localhost:8000`.
 4. Save and retry the API status check.
 5. If using a prior configuration, clear the `norma-ui-api-base-url` local
    storage entry and reload.
 
-### Backend fails during startup
+### Windows: backend fails during startup
 
 Check:
 
@@ -321,14 +528,33 @@ Test-Path .venv\Scripts\python.exe
 New-Item -ItemType Directory -Force .runtime\imports,.runtime\artifacts
 ```
 
+### Linux: backend fails during startup
+
+Check:
+
+```bash
+tail -n 80 .runtime/backend.log
+test -x .venv/bin/python
+mkdir -p .runtime/imports .runtime/artifacts
+```
+
 ### Reset local test state
 
-Stop both managed processes first, then remove only the local runtime data:
+Stop both managed processes first, then remove only the local runtime data.
+On Windows:
 
 ```powershell
 .\scripts\stop-frontend.ps1
 .\scripts\stop-backend.ps1
 Remove-Item -Recurse -Force .runtime
+```
+
+On Linux:
+
+```bash
+./scripts/frontend.sh stop
+./scripts/backend.sh stop
+rm -rf .runtime
 ```
 
 The next backend start recreates the database and artifact directories.
