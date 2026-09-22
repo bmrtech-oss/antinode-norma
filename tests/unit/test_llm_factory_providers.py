@@ -65,3 +65,42 @@ def test_mistral_openai_fallback():
             llm = create_llm_callable({"provider": "mistral", "api_key": "dummy_key"})
             result = llm("Hello Mistral")
             assert result == "Mistral response"
+
+
+def test_anthropic_retries_without_temperature_when_sdk_rejects_it():
+    mock_anthropic = MagicMock()
+    with patch.dict("sys.modules", {"anthropic": MagicMock(Anthropic=mock_anthropic)}):
+        client = MagicMock()
+        mock_anthropic.return_value = client
+        response = MagicMock()
+        response.content = [MagicMock(text="Anthropic response")]
+        client.messages.create.side_effect = [
+            TypeError("unexpected keyword argument 'temperature'"),
+            response,
+        ]
+
+        llm = create_llm_callable(
+            {"provider": "anthropic", "api_key": "dummy_key", "temperature": 0.2}
+        )
+        assert llm("Hello Anthropic") == "Anthropic response"
+
+        first_call = client.messages.create.call_args_list[0].kwargs
+        second_call = client.messages.create.call_args_list[1].kwargs
+        assert first_call["temperature"] == 0.2
+        assert "temperature" not in second_call
+
+
+def test_anthropic_preserves_temperature_when_sdk_accepts_it():
+    mock_anthropic = MagicMock()
+    with patch.dict("sys.modules", {"anthropic": MagicMock(Anthropic=mock_anthropic)}):
+        client = MagicMock()
+        mock_anthropic.return_value = client
+        response = MagicMock()
+        response.content = [MagicMock(text="Anthropic response")]
+        client.messages.create.return_value = response
+
+        llm = create_llm_callable(
+            {"provider": "anthropic", "api_key": "dummy_key", "temperature": 0.7}
+        )
+        assert llm("Hello Anthropic") == "Anthropic response"
+        assert client.messages.create.call_args.kwargs["temperature"] == 0.7

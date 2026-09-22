@@ -5,6 +5,168 @@
 
 ---
 
+## New Developer Onboarding & End-to-End Verification Plan
+
+Use this path when a developer or QA engineer joins the project and needs to validate the system from a clean machine.
+
+### 1. Prerequisites
+
+Verify these tools first:
+
+```bash
+python3 --version
+node --version
+npm --version
+git --version
+```
+
+Expected:
+- Python 3.10+
+- Node 18+ / 20+
+- npm available
+- Git installed
+
+If any tool is missing, install it before continuing.
+
+### 2. Clone and enter the repo
+
+```bash
+git clone https://github.com/bmrtech-oss/antinode-norma.git
+cd antinode-norma
+```
+
+### 3. Create a local Python environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+python -m pip install --upgrade pip
+```
+
+### 4. Install project dependencies
+
+```bash
+pip install -e .
+pip install -r requirements-dev.txt
+```
+
+Verify the CLI is installed:
+
+```bash
+anorm --version
+```
+
+### 5. Configure local environment
+
+```bash
+cp .env.example .env
+```
+
+For zero-secret local testing, prefer:
+
+```bash
+cp .env.docker.example .env
+```
+
+Then verify the key values:
+
+```bash
+grep -E 'LLM_PROVIDER|OPENAI_API_KEY|ANTHROPIC_API_KEY|OPENROUTER_API_KEY' .env
+```
+
+For a local-first environment, use `LLM_PROVIDER=mock` unless you want to test a real provider.
+
+### 6. Install frontend dependencies
+
+```bash
+cd ui
+npm install
+```
+
+### 7. Verify the backend is healthy
+
+In the repo root and with the virtual environment active:
+
+```bash
+uvicorn antinode_norma.server.api:app --host 0.0.0.0 --port 8000
+```
+
+In another terminal:
+
+```bash
+curl -s http://localhost:8000/health
+```
+
+Expected response includes a healthy status payload.
+
+### 8. Start the frontend locally
+
+From the same repo root, start the UI:
+
+```bash
+cd ui
+npm run dev
+```
+
+Open:
+- http://localhost:3000
+
+If the UI is served from the FastAPI app instead, use:
+- http://localhost:8000
+
+### 9. Run the end-to-end local verification
+
+#### Backend smoke test
+
+```bash
+anorm generate "As a user, I want to reset my password so that I can regain access."
+```
+
+Check the generated `.feature` file under `features/`.
+
+#### UI verification
+
+From the UI folder:
+
+```bash
+npm run build
+npm run test
+npm run test:e2e
+```
+
+Expected:
+- production build succeeds
+- Vitest unit tests pass
+- Playwright browser tests pass
+
+#### API verification
+
+```bash
+curl -s http://localhost:8000/health
+curl -s http://localhost:8000/api/dashboard
+```
+
+If the backend responds and the UI loads with the dashboard, the local stack is running correctly.
+
+### 10. Final acceptance checklist
+
+Before marking onboarding complete, confirm all of the following:
+
+- [ ] Python environment is active and `anorm --version` works
+- [ ] dependencies are installed without errors
+- [ ] `.env` is configured and not missing required values
+- [ ] backend health check returns success on port 8000
+- [ ] frontend server starts successfully on port 3000
+- [ ] UI loads and shows dashboard or feature review screens
+- [ ] `npm run test` passes
+- [ ] `npm run test:e2e` passes
+- [ ] `npm run build` passes
+- [ ] generated feature files or smoke-test output are produced without errors
+
+This checklist should be used by both new developers and QA/test engineers before sign-off.
+
+---
+
 ## DISCOVER FIRST — Architecture & Dependency Inventory
 
 ### A. Dependency Inventory Table

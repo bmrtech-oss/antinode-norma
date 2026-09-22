@@ -51,6 +51,12 @@ execution:
   max_workers: 4
   retries: 2
   retry_delay: 1.0
+  provider_timeout_seconds: 30
+  provider_retry_max: 2
+  provider_retry_base_seconds: 0.5
+  provider_retry_max_seconds: 8
+  provider_circuit_failure_threshold: 3
+  provider_circuit_reset_seconds: 30
   capture_artifacts: true
   reporter: junit
   cloud_provider: null       # browserstack, saucelabs, lambdatest
@@ -97,6 +103,27 @@ Environment variables take precedence over configuration file settings.
 | `NORMA_OIDC_CLIENT_ID` | OIDC Client ID | - |
 | `NORMA_OIDC_CLIENT_SECRET` | OIDC Client Secret | - |
 | `NORMA_OIDC_DISCOVERY_URL` | OIDC Issuer Discovery URL | - |
+| `NORMA_RETENTION_CLEANUP_ENABLED` | Run the safe, idempotent artifact/import cleanup sweep at startup | `false` |
+| `NORMA_ARTIFACT_RETENTION_DAYS` | Age threshold for generated artifact files from terminal jobs | `30` |
+| `NORMA_IMPORT_RETENTION_DAYS` | Age threshold for unreferenced uploaded import files | `30` |
+| `NORMA_GENERATION_PROVIDER` | Optional provider used for generation execution; unset uses local rendering | unset |
+| `NORMA_GENERATION_PROVIDER_TIMEOUT_SECONDS` | Per-attempt provider deadline | `30` |
+| `NORMA_GENERATION_PROVIDER_MAX_RETRIES` | Maximum retries after the initial provider attempt | `2` |
+| `NORMA_GENERATION_PROVIDER_RETRY_BASE_SECONDS` | Initial exponential retry delay | `0.5` |
+| `NORMA_GENERATION_PROVIDER_RETRY_MAX_SECONDS` | Maximum retry delay | `8` |
+| `NORMA_GENERATION_CIRCUIT_FAILURE_THRESHOLD` | Consecutive provider failures before opening the circuit | `3` |
+| `NORMA_GENERATION_CIRCUIT_RESET_SECONDS` | Open-circuit cooldown before a recovery probe | `30` |
+
+### Deterministic deployment validation
+
+For deployments without approved non-production provider credentials, use
+`LLM_PROVIDER=mock` and leave `NORMA_GENERATION_PROVIDER` unset. This is the
+approved provider-mock equivalence path for validating upload, validation,
+queueing, progress, recovery, approval, artifact, audit, and retention
+behavior without external network calls or secrets. It does not validate model
+quality, provider-specific request compatibility, provider quotas, or live
+credential configuration. A production deployment using a real provider must
+complete a separate non-production live-provider integration before release.
 
 ---
 

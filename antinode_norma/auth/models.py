@@ -20,6 +20,7 @@ class User(BaseModel):
     email: str
     roles: List[Role] = Field(default_factory=lambda: [Role.VIEWER])
     is_active: bool = True
+    tenant_id: Optional[str] = None
     display_name: Optional[str] = None
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

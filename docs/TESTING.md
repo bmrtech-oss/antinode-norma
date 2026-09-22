@@ -34,7 +34,7 @@ Before running the tests, ensure you have:
 If you haven't already, clone the repository and install the package:
 
 ```bash
-git clone https://github.com/antinodelabs/antinode-norma.git
+git clone https://github.com/bmrtech-oss/antinode-norma.git
 cd antinode-norma
 python -m venv venv
 source venv/bin/activate   # On Windows: venv\Scripts\activate

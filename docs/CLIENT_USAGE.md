@@ -14,7 +14,7 @@ This guide walks you through setting up and testing **Antinode Norma** using a *
 ## 1. Clone & Install
 
 ```bash
-git clone https://github.com/antinodelabs/antinode-norma.git
+git clone https://github.com/bmrtech-oss/antinode-norma.git
 cd antinode-norma
 python -m venv venv
 source venv/bin/activate   # On Windows: venv\Scripts\activate

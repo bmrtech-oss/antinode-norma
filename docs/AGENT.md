@@ -124,7 +124,7 @@ asyncio.run(main())
 
 ### Using with Claude Desktop
 
-Once the plugin is installed (as described in the [Claude Plugin Guide](claude-plugin/README.md)), you can simply ask:
+Once the plugin is installed (as described in the [Claude Plugin Guide](CLAUDE_PLUGIN.md)), you can simply ask:
 
 > *“Use the BDD agent to generate a feature file for story: As a user, I want to reset my password.”*
 

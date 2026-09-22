@@ -1,6 +1,8 @@
 """FastAPI application server foundation for Norma BDD Platform."""
 
+import os
 from pathlib import Path
+import os
 from fastapi import FastAPI, APIRouter, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -19,6 +21,9 @@ from antinode_norma.server.routes import (
     comments_router,
     notifications_router,
     analytics_router,
+    imports_router,
+    generation_router,
+    legacy_generation_router,
 )
 
 app = FastAPI(
@@ -26,6 +31,18 @@ app = FastAPI(
     description="Enterprise BDD Feature Generation, Quality Gates, Governance, and Execution Platform API",
     version="0.1.0-alpha",
 )
+
+
+@app.on_event("startup")
+async def recover_generation_jobs() -> None:
+    """Sweep durable jobs left behind by a previous worker process."""
+    from antinode_norma.server.generation_worker import recover_abandoned_jobs
+    recover_abandoned_jobs()
+    # Retention is opt-in: deployments can run this safe, idempotent sweep at
+    # startup without risking broad deletion of active job storage.
+    if os.getenv("NORMA_RETENTION_CLEANUP_ENABLED", "false").lower() in {"1", "true", "yes", "on"}:
+        from antinode_norma.server.import_storage import cleanup_retention
+        cleanup_retention()
 
 # Configure CORS
 app.add_middleware(
@@ -64,6 +81,12 @@ v1_router.include_router(admin_router)
 v1_router.include_router(comments_router)
 v1_router.include_router(notifications_router)
 v1_router.include_router(analytics_router)
+v1_router.include_router(imports_router)
+v1_router.include_router(generation_router)
+v1_router.include_router(legacy_generation_router, prefix="/api")
+# Preserve the initial Phase 1 paths while exposing the public contracts above.
+v1_router.include_router(imports_router, prefix="/api")
+v1_router.include_router(generation_router, prefix="/api")
 
 # Mount /v1/ versioned router and legacy unversioned aliases
 app.include_router(v1_router)
@@ -78,6 +101,9 @@ app.include_router(admin_router)
 app.include_router(comments_router)
 app.include_router(notifications_router)
 app.include_router(analytics_router)
+app.include_router(imports_router, prefix="/api")
+app.include_router(generation_router, prefix="/api")
+app.include_router(legacy_generation_router, prefix="/api")
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])

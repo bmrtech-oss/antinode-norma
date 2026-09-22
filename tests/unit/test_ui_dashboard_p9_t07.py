@@ -7,10 +7,10 @@ def test_ui_dashboard_component_exists():
     content = component_path.read_text(encoding="utf-8")
     assert "export const Dashboard" in content
     assert "/api/dashboard" in content
-    assert "Total Features" in content
-    assert "Pending Approvals" in content
-    assert "Quality Gate Pass Rate" in content
-    assert "Audit Events" in content
+    assert 'label: "Total features"' in content
+    assert 'label: "Pending approvals"' in content
+    assert 'label: "Quality gate pass rate"' in content
+    assert 'label: "Audit events"' in content
 
 
 def test_ui_app_imports_dashboard():

@@ -12,6 +12,7 @@ from antinode_norma.auth.roles import FEATURE_READ
 from antinode_norma.server.schemas import FeatureSummary, FeatureDetail
 from antinode_norma.gates.runner import GateRunner
 from antinode_norma.gates.types import GateContext
+from antinode_norma.server.routes.approvals import gate
 
 router = APIRouter(prefix="/api/features", tags=["Features"])
 
@@ -33,29 +34,58 @@ def _parse_scenarios(content: str) -> List[str]:
     return scenarios
 
 
+def _feature_title(content: str, fallback: str) -> str:
+    for line in content.splitlines():
+        if line.strip().startswith("Feature:"):
+            return line.split(":", 1)[1].strip()
+    return fallback
+
+
 @router.get("", response_model=List[FeatureSummary], dependencies=[Depends(requires_permission(FEATURE_READ))])
 async def list_features(dir_override: Optional[str] = Query(None, alias="dir")) -> List[FeatureSummary]:
     """Lists all .feature files in the feature directory."""
     feature_dir = Path(dir_override) if dir_override else _get_feature_dir()
-    if not feature_dir.exists() or not feature_dir.is_dir():
-        return []
-
     summaries: List[FeatureSummary] = []
-    for path in sorted(feature_dir.glob("*.feature")):
-        try:
-            content = path.read_text(encoding="utf-8")
-            scenarios = _parse_scenarios(content)
-            mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat()
+    if feature_dir.exists() and feature_dir.is_dir():
+        for path in sorted(feature_dir.glob("*.feature")):
+            try:
+                content = path.read_text(encoding="utf-8")
+                scenarios = _parse_scenarios(content)
+                mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat()
+                summaries.append(
+                    FeatureSummary(
+                        filename=path.name,
+                        path=str(path),
+                        scenario_count=len(scenarios),
+                        modified_at=mtime,
+                        id=path.stem,
+                        title=_feature_title(content, path.stem),
+                        gherkin=content,
+                        created_at=mtime,
+                    )
+                )
+            except Exception:
+                continue
+
+    if not dir_override:
+        for request in gate.requests.values():
+            content = request.gherkin_text
             summaries.append(
                 FeatureSummary(
-                    filename=path.name,
-                    path=str(path),
-                    scenario_count=len(scenarios),
-                    modified_at=mtime,
+                    filename=f"{request.feature_id}.feature",
+                    path=f"generation://{request.source_job_id or 'unknown'}/{request.source_result_id or request.id}",
+                    scenario_count=len(_parse_scenarios(content)),
+                    modified_at=request.created_at,
+                    id=request.feature_id,
+                    title=_feature_title(content, request.feature_id),
+                    gherkin=content,
+                    status=request.status.value,
+                    created_at=request.created_at,
+                    source_job_id=request.source_job_id,
+                    source_result_id=request.source_result_id,
+                    approval_id=request.id,
                 )
             )
-        except Exception:
-            continue
 
     return summaries
 

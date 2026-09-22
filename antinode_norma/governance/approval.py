@@ -18,6 +18,10 @@ class ApprovalRequest(BaseModel):
     gherkin_text: str = ""
     status: ApprovalStatus = ApprovalStatus.PENDING
     requested_by: str = "system"
+    owner_id: Optional[str] = None
+    tenant_id: Optional[str] = None
+    source_job_id: Optional[str] = None
+    source_result_id: Optional[str] = None
     reviewer: Optional[str] = None
     reason: Optional[str] = None
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -29,19 +33,33 @@ class ApprovalGate:
         self.audit_log = audit_log or AuditLog()
         self.requests: Dict[str, ApprovalRequest] = {}
 
-    def submit_request(self, feature_id: str, gherkin_text: str, requested_by: str = "system") -> ApprovalRequest:
+    def submit_request(
+        self,
+        feature_id: str,
+        gherkin_text: str,
+        requested_by: str = "system",
+        source_job_id: Optional[str] = None,
+        source_result_id: Optional[str] = None,
+        owner_id: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+    ) -> ApprovalRequest:
         req = ApprovalRequest(
             feature_id=feature_id,
             gherkin_text=gherkin_text,
             status=ApprovalStatus.PENDING,
             requested_by=requested_by,
+            source_job_id=source_job_id,
+            source_result_id=source_result_id,
+            owner_id=owner_id,
+            tenant_id=tenant_id,
         )
         self.requests[req.id] = req
         self.audit_log.record_event(
             action="approval_submitted",
             resource=feature_id,
             actor=requested_by,
-            payload={"request_id": req.id, "status": req.status.value},
+            payload={"request_id": req.id, "status": req.status.value,
+                     "owner_id": owner_id, "tenant_id": tenant_id},
         )
         return req
 
@@ -62,7 +80,8 @@ class ApprovalGate:
             action="approval_approved",
             resource=req.feature_id,
             actor=reviewer,
-            payload={"request_id": req.id, "reason": reason, "status": req.status.value},
+            payload={"request_id": req.id, "status": req.status.value,
+                     "owner_id": req.owner_id, "tenant_id": req.tenant_id},
         )
         return req
 
@@ -83,7 +102,8 @@ class ApprovalGate:
             action="approval_rejected",
             resource=req.feature_id,
             actor=reviewer,
-            payload={"request_id": req.id, "reason": reason, "status": req.status.value},
+            payload={"request_id": req.id, "status": req.status.value,
+                     "owner_id": req.owner_id, "tenant_id": req.tenant_id},
         )
         return req
 

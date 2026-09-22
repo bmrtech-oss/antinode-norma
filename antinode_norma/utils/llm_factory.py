@@ -3,6 +3,19 @@ import json
 from typing import Callable, Dict, Any
 
 
+def _anthropic_messages_create(client: Any, **kwargs: Any) -> Any:
+    """Call Messages.create across SDK versions with differing temperature support."""
+    try:
+        return client.messages.create(**kwargs)
+    except TypeError as exc:
+        # Some supported Anthropic SDK/model combinations reject this optional
+        # argument. Retry only that compatibility case; preserve other errors.
+        if "temperature" not in str(exc).lower():
+            raise
+        kwargs.pop("temperature", None)
+        return client.messages.create(**kwargs)
+
+
 def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
     provider = config.get("provider", "anthropic").lower()
 
@@ -17,7 +30,8 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         max_tokens = config.get("max_tokens", 1024)
 
         def anthropic_call(prompt: str) -> str:
-            response = client.messages.create(
+            response = _anthropic_messages_create(
+                client,
                 model=model,
                 max_tokens=max_tokens,
                 temperature=temperature,

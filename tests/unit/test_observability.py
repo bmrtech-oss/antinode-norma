@@ -44,6 +44,25 @@ class TestObservability(unittest.TestCase):
         self.assertTrue(corr_id.startswith("corr_"))
         self.assertEqual(len(corr_id), 17)
 
+    def test_generation_operational_metrics_and_alert_signals(self):
+        metrics_registry.set_generation_capacity(10)
+        metrics_registry.record_generation_admitted()
+        metrics_registry.record_generation_started()
+        metrics_registry.record_generation_finished("completed", 1.25, 4)
+        metrics_registry.record_generation_queue_rejection()
+        metrics_registry.record_rate_limit_rejection("generation")
+        metrics_registry.record_retention_cleanup({
+            "deleted_artifacts": 2, "deleted_imports": 1, "skipped_protected": 3,
+        })
+
+        text = metrics_registry.get_prometheus_metrics()
+        self.assertIn("norma_generation_queue_depth 0", text)
+        self.assertIn("norma_generation_capacity 10", text)
+        self.assertIn('norma_generation_jobs_total{status="completed"}', text)
+        self.assertIn("norma_generation_queue_rejections_total", text)
+        self.assertIn('norma_rate_limit_rejections_total{operation="generation"}', text)
+        self.assertIn('norma_retention_cleanup_total{result="deleted_artifacts"}', text)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,148 @@
+export interface ApiErrorOptions {
+  status: number
+  statusText: string
+  detail: string
+  code?: string
+}
+
+export const API_BASE_URL_STORAGE_KEY = 'norma-ui-api-base-url'
+
+function normalizeApiBaseUrl(value: string): string {
+  const trimmedValue = value.trim()
+  if (!trimmedValue) {
+    throw new Error('API URL is required.')
+  }
+  const url = new URL(trimmedValue, window.location.origin)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error('API URL must use http or https.')
+  }
+  return `${url.origin}${url.pathname}`.replace(/\/$/, '')
+}
+
+export function getApiBaseUrl(): string {
+  const storedUrl = window.localStorage.getItem(API_BASE_URL_STORAGE_KEY)
+  if (storedUrl) {
+    try {
+      return normalizeApiBaseUrl(storedUrl)
+    } catch {
+      window.localStorage.removeItem(API_BASE_URL_STORAGE_KEY)
+    }
+  }
+
+  const configuredUrl = import.meta.env.VITE_API_BASE_URL
+  if (configuredUrl) {
+    try {
+      return normalizeApiBaseUrl(configuredUrl)
+    } catch {
+      return configuredUrl.replace(/[?#].*$/, '').replace(/\/$/, '')
+    }
+  }
+  return import.meta.env.DEV ? 'http://localhost:8000' : window.location.origin
+}
+
+export function setApiBaseUrl(value: string): string {
+  const normalizedUrl = normalizeApiBaseUrl(value)
+  window.localStorage.setItem(API_BASE_URL_STORAGE_KEY, normalizedUrl)
+  return normalizedUrl
+}
+
+export function resetApiBaseUrl(): void {
+  window.localStorage.removeItem(API_BASE_URL_STORAGE_KEY)
+}
+
+export class ApiError extends Error {
+  readonly status: number
+  readonly statusText: string
+  readonly code?: string
+
+  constructor({ status, statusText, detail, code }: ApiErrorOptions) {
+    super(detail)
+    this.name = 'ApiError'
+    this.status = status
+    this.statusText = statusText
+    this.code = code
+  }
+}
+
+interface ApiErrorPayload {
+  detail?: string
+  error_code?: string
+}
+
+async function parseError(response: Response): Promise<ApiError> {
+  let payload: ApiErrorPayload = {}
+  try {
+    payload = (await response.json()) as ApiErrorPayload
+  } catch {
+    // Non-JSON responses still become a typed ApiError below.
+  }
+
+  return new ApiError({
+    status: response.status,
+    statusText: response.statusText,
+    detail: payload.detail || `Request failed with status ${response.status}`,
+    code: payload.error_code,
+  })
+}
+
+export async function requestJson<T>(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<T> {
+  const requestUrl = typeof input === 'string' && input.startsWith('/')
+    ? `${getApiBaseUrl()}${input}`
+    : input
+  const response = await fetch(requestUrl, {
+    ...init,
+    headers: {
+      Accept: 'application/json',
+      ...init.headers,
+    },
+  })
+
+  if (!response.ok) {
+    throw await parseError(response)
+  }
+
+  if (response.status === 204) {
+    return undefined as T
+  }
+
+  return (await response.json()) as T
+}
+
+export function getJson<T>(input: RequestInfo | URL, signal?: AbortSignal): Promise<T> {
+  return requestJson<T>(input, { method: 'GET', signal })
+}
+
+export function postJson<TResponse, TBody>(
+  input: RequestInfo | URL,
+  body: TBody,
+  signal?: AbortSignal,
+): Promise<TResponse> {
+  return requestJson<TResponse>(input, {
+    method: 'POST',
+    signal,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+export function postForm<TResponse>(
+  input: RequestInfo | URL,
+  formData: FormData,
+  signal?: AbortSignal,
+): Promise<TResponse> {
+  return requestJson<TResponse>(input, { method: 'POST', signal, body: formData })
+}
+
+export async function getBlob(input: RequestInfo | URL): Promise<Blob> {
+  const requestUrl = typeof input === 'string' && input.startsWith('/')
+    ? `${getApiBaseUrl()}${input}`
+    : input
+  const response = await fetch(requestUrl, { method: 'GET', headers: { Accept: 'application/zip' } })
+  if (!response.ok) {
+    throw await parseError(response)
+  }
+  return response.blob()
+}

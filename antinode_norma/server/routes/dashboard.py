@@ -4,6 +4,7 @@ from antinode_norma.governance.approval import ApprovalStatus
 from antinode_norma.server.routes.features import _get_feature_dir
 from antinode_norma.server.routes.approvals import gate as _approval_gate
 from antinode_norma.server.routes.audit import audit_log as _audit_log
+from antinode_norma.utils.observability import metrics_registry
 
 dashboard_router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
@@ -33,5 +34,6 @@ async def get_dashboard_summary():
             "total_audit_events": audit_events_count,
             "quality_gate_pass_rate": 0.92,
             "system_status": "operational",
-        }
+        },
+        "generation_metrics": metrics_registry.get_generation_snapshot(),
     }

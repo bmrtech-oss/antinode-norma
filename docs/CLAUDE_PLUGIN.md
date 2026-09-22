@@ -285,6 +285,6 @@ This plugin is licensed under the same MIT License as the main `antinode-norma` 
 
 ## Support
 
-For issues, open a GitHub issue at [https://github.com/antinodelabs/antinode-norma/issues](https://github.com/antinodelabs/antinode-norma/issues).
+For issues, open a GitHub issue at [https://github.com/bmrtech-oss/antinode-norma/issues](https://github.com/bmrtech-oss/antinode-norma/issues).
 
 Built with ❤️ by [Antinode Labs](https://antinodelabs.com/).

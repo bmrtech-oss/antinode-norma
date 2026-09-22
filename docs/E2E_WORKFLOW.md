@@ -26,7 +26,7 @@ You can use either the CLI, the Python API, or the MCP server (e.g., via Claude 
 ## 1. Installation
 
 ```bash
-git clone https://github.com/antinodelabs/antinode-norma.git
+git clone https://github.com/bmrtech-oss/antinode-norma.git
 cd antinode-norma
 python -m venv venv
 source venv/bin/activate  # or `venv\Scripts\activate` on Windows
