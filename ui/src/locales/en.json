@@ -1,0 +1,56 @@
+{
+  "common": {
+    "app_title": "Antinode Norma BDD Platform",
+    "loading": "Loading...",
+    "error": "Error loading data",
+    "status": "Status",
+    "actions": "Actions",
+    "refresh": "Refresh",
+    "submit": "Submit",
+    "cancel": "Cancel"
+  },
+  "dashboard": {
+    "title": "Platform Analytics & Quality Metrics",
+    "pass_rate": "Pass Rate",
+    "total_executions": "Total Executions",
+    "average_latency": "Average Latency (ms)",
+    "invest_pass_rate": "INVEST Pass Rate",
+    "execution_trend": "Execution Pass/Fail Trends",
+    "recent_activity": "Recent System Activity"
+  },
+  "approval_queue": {
+    "title": "Pending Feature Approval Queue",
+    "feature_name": "Feature Name",
+    "author": "Author",
+    "requested_date": "Requested Date",
+    "approve": "Approve",
+    "reject": "Reject",
+    "comments": "Comments",
+    "no_pending": "No pending approvals in queue"
+  },
+  "audit_trail": {
+    "title": "System Security & User Action Audit Trail",
+    "timestamp": "Timestamp",
+    "actor": "Actor / User",
+    "action": "Action",
+    "resource": "Resource",
+    "result": "Result",
+    "verify_integrity": "Verify Hash Chain Integrity",
+    "integrity_valid": "Audit Trail Integrity Valid"
+  },
+  "feature_review": {
+    "title": "Gherkin Feature Specification Reviewer",
+    "scenarios": "Scenarios",
+    "quality_score": "Quality Score",
+    "invest_checks": "INVEST Checks",
+    "generate_code": "Generate Code"
+  },
+  "traceability": {
+    "title": "Requirement to Scenario Traceability Matrix",
+    "requirement_id": "Requirement ID",
+    "feature_file": "Feature File",
+    "scenario_name": "Scenario Name",
+    "tags": "Tags",
+    "unmapped_requirements": "Unmapped Requirements"
+  }
+}

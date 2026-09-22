@@ -160,6 +160,7 @@ User Story (CLI / JIRA)
 | **Docker Support** | ✅ Stable | Containerised development and deployment |
 | **Failure Storage (SQLite)** | ✅ Passive | Stores test failure data; currently read‑only |
 | **Basic Step Mapping** | ⚠️ Regex‑based | Works, but brittle (~80‑85% success rate) – this is the **top priority gap** |
+| **Post-Implementation Hardening (ADR-002)** | ✅ Completed | DR, v4→v5 migration, observability, versioned API `/v1/`, strict CLI |
 
 ---
 

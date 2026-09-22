@@ -97,3 +97,10 @@ Environment variables take precedence over configuration file settings.
 | `NORMA_OIDC_CLIENT_ID` | OIDC Client ID | - |
 | `NORMA_OIDC_CLIENT_SECRET` | OIDC Client Secret | - |
 | `NORMA_OIDC_DISCOVERY_URL` | OIDC Issuer Discovery URL | - |
+
+---
+
+## 4. Migration & Rollback Policy (ADR-002 H3-T03)
+
+1. **Rollback Requirement:** Every database migration script must have a documented and tested rollback path (`downgrade()` routine or restore procedure).
+2. **Backup-First Gate:** Destructive migrations (e.g. column drops, table restructures) require an automated pre-migration database backup gate (`VACUUM INTO` or snapshot) prior to execution, as detailed in `docs/DR.md` and `docs/MIGRATION.md`.

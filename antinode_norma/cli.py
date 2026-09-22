@@ -90,8 +90,11 @@ def cli():
 @click.option(
     "--dry-run", is_flag=True, help="Show what would be generated without writing files"
 )
+@click.option(
+    "--strict", is_flag=True, help="Fail generation if any soft gate is below threshold"
+)
 @click.option("--interactive", is_flag=True, help="Ask for help on unmapped steps")
-def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
+def generate(story_text, file, output_dir, quality_only, dry_run, strict, interactive):
     """Generate a feature file from a raw user story string or text file.
 
     \b
@@ -128,6 +131,10 @@ def generate(story_text, file, output_dir, quality_only, dry_run, interactive):
                 task = progress.add_task("[cyan]Processing...", total=None)
                 result = await run_agent_from_raw(story_text, quality_only=quality_only)
                 progress.update(task, completed=True)
+
+            if strict and result.get("soft_score", 1.0) < 0.85:
+                error_message(f"Strict mode failed: soft gate score {result.get('soft_score', 0):.2f} is below 0.85 threshold")
+                sys.exit(1)
 
             if quality_only:
                 section_header("Quality Assessment")

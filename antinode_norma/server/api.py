@@ -1,12 +1,13 @@
 """FastAPI application server foundation for Norma BDD Platform."""
 
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from antinode_norma.server.schemas import HealthResponse, ErrorResponse
+from antinode_norma.utils.observability import get_health_status, metrics_registry
 from antinode_norma.server.routes import (
     features_router,
     approvals_router,
@@ -52,7 +53,21 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Register route modules
+v1_router = APIRouter(prefix="/v1")
+v1_router.include_router(features_router)
+v1_router.include_router(approvals_router)
+v1_router.include_router(audit_router)
+v1_router.include_router(traceability_router)
+v1_router.include_router(dashboard_router)
+v1_router.include_router(auth_router)
+v1_router.include_router(admin_router)
+v1_router.include_router(comments_router)
+v1_router.include_router(notifications_router)
+v1_router.include_router(analytics_router)
+
+# Mount /v1/ versioned router and legacy unversioned aliases
+app.include_router(v1_router)
+
 app.include_router(features_router)
 app.include_router(approvals_router)
 app.include_router(audit_router)
@@ -68,7 +83,15 @@ app.include_router(analytics_router)
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
     """Health check endpoint returning API operational status."""
-    return HealthResponse(status="ok", version="0.1.0-alpha")
+    status_info = get_health_status()
+    return HealthResponse(status=status_info["status"], version=status_info["version"])
+
+
+@app.get("/metrics", tags=["Observability"])
+async def prometheus_metrics():
+    """Returns Prometheus metrics in text format."""
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(metrics_registry.get_prometheus_metrics())
 
 
 # Mount static SPA if built dist exists

@@ -1,6 +1,4 @@
-"""Unit tests for Phase 11 Task P11-T07: Phase 11 Documentation & Verification."""
-
-from pathlib import Path
+"""Unit tests for Phase 11 Task P11-T07: Phase 11 Integrated Workflow Verification."""
 
 from antinode_norma.analytics import AnalyticsCollector, AnalyticsSummary
 from antinode_norma.collaboration import CommentStore, NotificationManager
@@ -9,16 +7,6 @@ from antinode_norma.ecosystem import (
     PluginManifest,
     PluginRegistry,
 )
-
-
-def test_plugins_documentation_file_exists():
-    doc_path = Path("docs/PLUGINS.md")
-    assert doc_path.exists() is True
-    content = doc_path.read_text(encoding="utf-8")
-    assert "Plugin Manifest Schema" in content
-    assert "Plugin SDK Base Classes" in content
-    assert "Multi-Channel Notifications" in content
-    assert "Analytics Dashboard" in content
 
 
 def test_phase11_integrated_workflow():

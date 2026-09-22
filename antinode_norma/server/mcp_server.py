@@ -55,7 +55,7 @@ async def list_tools() -> List[Tool]:
         ),
         Tool(
             name="run_quality_gates",
-            description="Evaluate Gherkin feature text against Quality Gates Q0-Q10.",
+            description="Evaluate Gherkin feature text against Quality Gates Q0-Q10 (soft gates Q7/Q8/Q10 evaluated per ADR-001 v6 §10).",
             inputSchema={
                 "type": "object",
                 "properties": {

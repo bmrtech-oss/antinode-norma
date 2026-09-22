@@ -1447,7 +1447,8 @@ A task is Done when:
 
 - [ ] Discovery cited at least one file inspected, with paths
 - [ ] Tier (1/2/3) declared in the plan
-- [ ] For Tier 1/2: reuse candidate verified in `docs/COMPONENT_SOURCING.md`
+- [ ] For Tier 1/2: reuse candidate verified in `docs/COMPONENT_SOURCING.md` (which must be scaffolded before execution)
+- [ ] Monorepo package structure reconciled (`antinode_aegis/` commercial layer created or namespace mapped to `antinode_norma/`)
 - [ ] Track declared (A1 / A2 / B / C / cross-track)
 - [ ] Cross-track files flagged; no edits to another track's owned files without flag
 - [ ] Plan output before any implementation

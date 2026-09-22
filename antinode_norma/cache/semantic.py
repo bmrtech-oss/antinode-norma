@@ -39,6 +39,21 @@ class SemanticPromptCache:
         self.similarity_threshold = similarity_threshold
         self.ttl_seconds = ttl_seconds
         self._entries: list[Dict[str, Any]] = self._load()
+        self.hits_total = 0
+        self.hits_failed_soft_gates = 0
+
+    def record_soft_gate_outcome(self, hit_failed_soft_gates: bool) -> None:
+        """Record whether a cache hit failed soft quality gates."""
+        self.hits_total += 1
+        if hit_failed_soft_gates:
+            self.hits_failed_soft_gates += 1
+
+    @property
+    def cache_false_positive_rate(self) -> float:
+        """Calculates proportion of semantic cache hits that fail soft quality gates."""
+        if self.hits_total == 0:
+            return 0.0
+        return self.hits_failed_soft_gates / self.hits_total
 
     def _load(self) -> list[Dict[str, Any]]:
         if not self.cache_path.exists():
@@ -87,6 +102,10 @@ class SemanticPromptCache:
         if len(valid_entries) != len(self._entries):
             self._entries = valid_entries
             self._save()
+
+        # Disable cache hits if False Positive Rate exceeds 2% (0.02)
+        if self.cache_false_positive_rate > 0.02:
+            return None
 
         if best_match:
             return best_match.get("response", ""), best_score
