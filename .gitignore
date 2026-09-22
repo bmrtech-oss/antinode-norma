@@ -241,6 +241,7 @@ node_modules/
 /playwright/.auth/
 ui/test-results/
 ui/playwright-report/
+.runtime/
 
 # Snapshot folders created during Playwright runs (per-spec and central)
 # per-spec snapshot folders: e.g. my_test.spec.ts-snapshots/

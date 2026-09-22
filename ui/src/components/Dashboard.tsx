@@ -5,6 +5,7 @@ import { ErrorState, LoadingState } from "./ui/AsyncState";
 import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/Card";
+import { Tooltip } from "./ui/Tooltip";
 
 interface DashboardSummary {
   total_features: number;
@@ -60,12 +61,16 @@ export const Dashboard: React.FC = () => {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
             <LayoutDashboard className="h-6 w-6 text-primary" aria-hidden="true" />
-            <span>Norma BDD Platform Overview</span>
+            <Tooltip content="Workspace metrics, approval summaries, quality gates, and system health.">
+              <span>Norma BDD Platform Overview</span>
+            </Tooltip>
           </h1>
           <p className="text-sm text-muted-foreground">Current workspace metrics and governance status</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">System status:</span>
+          <Tooltip content="Overall health reported by the selected backend.">
+            <span className="text-sm font-medium text-muted-foreground">System status:</span>
+          </Tooltip>
           <Badge variant={summary?.system_status === "operational" ? "success" : "warning"}>
             <Activity className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
             {summary?.system_status || "unknown"}
@@ -84,7 +89,9 @@ export const Dashboard: React.FC = () => {
           <Card key={label}>
             <CardContent className="!p-5">
               <div className="flex items-start justify-between gap-3">
-                <span className="text-sm font-medium text-muted-foreground">{label}</span>
+                <Tooltip content={description}>
+                  <span className="text-sm font-medium text-muted-foreground">{label}</span>
+                </Tooltip>
                 <Icon className={`h-5 w-5 ${tone}`} aria-hidden="true" />
               </div>
               <div className="mt-2 text-3xl font-extrabold text-foreground">{value}</div>

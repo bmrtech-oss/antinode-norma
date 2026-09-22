@@ -3,6 +3,7 @@ import { FileText, ShieldCheck, ShieldAlert, KeyRound, User } from 'lucide-react
 import { getJson } from '../lib/api'
 import { EmptyState, ErrorState, LoadingState } from './ui/AsyncState'
 import { Button } from './ui/Button'
+import { Tooltip } from './ui/Tooltip'
 import { Badge } from './ui/Badge'
 
 interface AuditRecord {
@@ -77,7 +78,9 @@ export default function AuditTrailView() {
         <div>
           <h2 className="flex items-center space-x-2 text-lg font-bold text-foreground">
             <FileText className="h-5 w-5 text-primary" />
-            <span>Immutable Audit Trail</span>
+            <Tooltip content="Review the cryptographically chained record of governance and execution events.">
+              <span>Immutable Audit Trail</span>
+            </Tooltip>
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             Cryptographically chained SHA-256 event stream logging all governance and execution actions.
@@ -112,11 +115,11 @@ export default function AuditTrailView() {
         <>
         <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4">
           <label className="min-w-56 flex-1 text-xs font-medium text-muted-foreground">
-            Search audit events
+            <Tooltip content="Search by action, resource, or actor.">Search audit events</Tooltip>
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Action, resource, or actor" className="mt-1 block h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground" />
           </label>
           <label className="text-xs font-medium text-muted-foreground">
-            Action
+            <Tooltip content="Filter events by the recorded action.">Action</Tooltip>
             <select value={actionFilter} onChange={(event) => setActionFilter(event.target.value)} className="mt-1 block h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground">
               {actions.map((action) => <option key={action} value={action}>{action === 'all' ? 'All actions' : action}</option>)}
             </select>

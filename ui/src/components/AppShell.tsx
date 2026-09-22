@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Activity, Cpu, FileText, GitMerge, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, RefreshCw, Settings, ShieldCheck, X } from 'lucide-react'
 import { ThemeSwitcher } from './ThemeSwitcher'
+import { getApiBaseUrl, resetApiBaseUrl, setApiBaseUrl } from '../lib/api'
 import { Button } from './ui/Button'
+import { Tooltip } from './ui/Tooltip'
 
 export type AppTab = 'dashboard' | 'review' | 'approvals' | 'traceability' | 'audit'
 
@@ -14,6 +16,7 @@ interface AppShellProps {
   health: HealthStatus | null
   loading: boolean
   apiBaseUrl: string
+  onApiBaseUrlChange: (apiBaseUrl: string | null) => void
   onHealthCheck: () => Promise<void>
   onTabChange: (tab: AppTab) => void
   children: ReactNode
@@ -38,6 +41,7 @@ export function AppShell({
   health,
   loading,
   apiBaseUrl,
+  onApiBaseUrlChange,
   onHealthCheck,
   onTabChange,
   children,
@@ -48,6 +52,8 @@ export function AppShell({
   })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [apiUrlDraft, setApiUrlDraft] = useState(apiBaseUrl)
+  const [apiUrlError, setApiUrlError] = useState<string | null>(null)
   const settingsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -58,6 +64,10 @@ export function AppShell({
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarCollapsed))
   }, [sidebarCollapsed])
+
+  useEffect(() => {
+    setApiUrlDraft(apiBaseUrl)
+  }, [apiBaseUrl])
 
   useEffect(() => {
     if (!settingsOpen) return
@@ -78,6 +88,25 @@ export function AppShell({
   const selectTab = (tab: AppTab) => {
     onTabChange(tab)
     setMobileMenuOpen(false)
+  }
+
+  const saveApiUrl = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    try {
+      const normalizedUrl = setApiBaseUrl(apiUrlDraft)
+      onApiBaseUrlChange(normalizedUrl)
+      setApiUrlError(null)
+    } catch (error) {
+      setApiUrlError(error instanceof Error ? error.message : 'Enter a valid API URL.')
+    }
+  }
+
+  const resetApiUrl = () => {
+    resetApiBaseUrl()
+    const defaultUrl = getApiBaseUrl()
+    setApiUrlDraft(defaultUrl)
+    setApiUrlError(null)
+    onApiBaseUrlChange(null)
   }
 
   const navigation = (collapsed: boolean) => (
@@ -211,8 +240,30 @@ export function AppShell({
                 </Button>
                 {settingsOpen && (
                   <div className="absolute right-0 top-12 z-30 w-56 rounded-lg border border-border bg-card p-3 shadow-lg" role="menu" aria-label="Settings">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Appearance</p>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <Tooltip content="Choose the interface color theme.">Appearance</Tooltip>
+                    </p>
                     <ThemeSwitcher />
+                    <form className="mt-4 border-t border-border pt-3" onSubmit={saveApiUrl}>
+                      <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="api-base-url">
+                        <Tooltip content="Backend URL used by every UI API request.">API endpoint</Tooltip>
+                      </label>
+                      <input
+                        id="api-base-url"
+                        type="url"
+                        value={apiUrlDraft}
+                        onChange={(event) => setApiUrlDraft(event.target.value)}
+                        className="mt-2 w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                        placeholder="https://api.example.com"
+                        aria-describedby={apiUrlError ? 'api-url-error' : 'api-url-help'}
+                      />
+                      <p id="api-url-help" className="mt-1 text-[11px] text-muted-foreground">Used by all UI requests.</p>
+                      {apiUrlError && <p id="api-url-error" className="mt-1 text-[11px] text-destructive">{apiUrlError}</p>}
+                      <div className="mt-2 flex justify-end gap-2">
+                        <Button type="button" size="sm" variant="ghost" onClick={resetApiUrl}>Reset</Button>
+                        <Button type="submit" size="sm">Save</Button>
+                      </div>
+                    </form>
                   </div>
                 )}
               </div>

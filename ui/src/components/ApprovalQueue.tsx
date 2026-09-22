@@ -4,6 +4,7 @@ import { getJson, postJson } from '../lib/api'
 import { EmptyState, ErrorState, LoadingState } from './ui/AsyncState'
 import { Alert } from './ui/Alert'
 import { Button } from './ui/Button'
+import { Tooltip } from './ui/Tooltip'
 import { ConfirmationDialog } from './ui/ConfirmationDialog'
 
 interface ApprovalRequest {
@@ -92,7 +93,9 @@ export default function ApprovalQueue() {
       <div className="flex justify-between items-center">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
           <ShieldCheck className="h-5 w-5 text-primary" aria-hidden="true" />
-          <span>Governance Approval Queue</span>
+          <Tooltip content="Review, approve, or reject generated features awaiting governance sign-off.">
+            <span>Governance Approval Queue</span>
+          </Tooltip>
         </h2>
         <Button
           type="button"
@@ -121,11 +124,11 @@ export default function ApprovalQueue() {
         <>
         <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4">
           <label className="min-w-56 flex-1 text-xs font-medium text-muted-foreground">
-            Search requests
+            <Tooltip content="Search by feature, requester, or reviewer.">Search requests</Tooltip>
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Feature, requester, or reviewer" className="mt-1 block h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground" />
           </label>
           <label className="text-xs font-medium text-muted-foreground">
-            Status
+            <Tooltip content="Filter approval requests by workflow status.">Status</Tooltip>
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="mt-1 block h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground">
               {statuses.map((status) => <option key={status} value={status}>{status === 'all' ? 'All statuses' : status}</option>)}
             </select>

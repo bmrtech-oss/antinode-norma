@@ -9,8 +9,10 @@ cd ui
 npm install
 npm run build
 cd ..
-uvicorn antinode_norma.server.api:app --host 0.0.0.0 --port 8000
+bash ./scripts/backend.sh start
 curl http://localhost:8000/health
-cd ui
-npm run dev
+bash ./scripts/frontend.sh start
+bash ./scripts/frontend.sh status
+bash ./scripts/frontend.sh stop
+bash ./scripts/backend.sh stop
 ```

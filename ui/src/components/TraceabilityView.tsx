@@ -3,6 +3,7 @@ import { GitMerge, CheckCircle2, Tag, AlertTriangle } from 'lucide-react'
 import { getJson } from '../lib/api'
 import { EmptyState, ErrorState, LoadingState } from './ui/AsyncState'
 import { Button } from './ui/Button'
+import { Tooltip } from './ui/Tooltip'
 import { Badge } from './ui/Badge'
 
 interface TraceableItem {
@@ -64,7 +65,9 @@ export default function TraceabilityView() {
         <div>
           <h2 className="flex items-center space-x-2 text-lg font-bold text-foreground">
             <GitMerge className="h-5 w-5 text-primary" />
-            <span>Requirement-to-Scenario Traceability Matrix</span>
+            <Tooltip content="Map requirements to the generated scenarios that cover them.">
+              <span>Requirement-to-Scenario Traceability Matrix</span>
+            </Tooltip>
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             Map generated Gherkin test scenarios back to input requirement IDs and tags.
@@ -82,11 +85,11 @@ export default function TraceabilityView() {
         <div className="space-y-6">
           <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4">
             <label className="min-w-56 flex-1 text-xs font-medium text-muted-foreground">
-              Search mappings
+              <Tooltip content="Search by requirement, scenario, or tag.">Search mappings</Tooltip>
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Requirement, scenario, or tag" className="mt-1 block h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground" />
             </label>
             <label className="text-xs font-medium text-muted-foreground">
-              Status
+              <Tooltip content="Filter mappings by coverage status.">Status</Tooltip>
               <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="mt-1 block h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground">
                 {statuses.map((status) => <option key={status} value={status}>{status === 'all' ? 'All statuses' : status}</option>)}
               </select>
@@ -102,11 +105,11 @@ export default function TraceabilityView() {
             <table className="w-full text-left text-xs text-foreground">
               <thead className="border-b border-border bg-muted font-semibold uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3">Requirement ID</th>
-                  <th className="px-4 py-3">Requirement / Case Title</th>
-                  <th className="px-4 py-3">Covered Scenario</th>
-                  <th className="px-4 py-3">Tags</th>
-                  <th className="px-4 py-3 text-center">Status</th>
+                  <th className="px-4 py-3"><Tooltip side="bottom" content="Unique identifier for the requirement.">Requirement ID</Tooltip></th>
+                  <th className="px-4 py-3"><Tooltip side="bottom" content="Requirement or test case title.">Requirement / Case Title</Tooltip></th>
+                  <th className="px-4 py-3"><Tooltip side="bottom" content="Scenario that covers this requirement.">Covered Scenario</Tooltip></th>
+                  <th className="px-4 py-3"><Tooltip side="bottom" content="Labels associated with the requirement.">Tags</Tooltip></th>
+                  <th className="px-4 py-3 text-center"><Tooltip side="bottom" content="Current traceability coverage status.">Status</Tooltip></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

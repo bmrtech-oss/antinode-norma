@@ -5,7 +5,7 @@ import ApprovalQueue from './components/ApprovalQueue'
 import TraceabilityView from './components/TraceabilityView'
 import AuditTrailView from './components/AuditTrailView'
 import { AppShell, type AppTab } from './components/AppShell'
-import { getApiBaseUrl, getJson } from './lib/api'
+import { getApiBaseUrl, getJson, resetApiBaseUrl, setApiBaseUrl } from './lib/api'
 
 interface HealthStatus {
   status: string
@@ -17,6 +17,7 @@ export default function App() {
   const [health, setHealth] = useState<HealthStatus | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [activeTab, setActiveTab] = useState<AppTab>('dashboard')
+  const [apiBaseUrl, setApiBaseUrlState] = useState(getApiBaseUrl)
   const checkHealth = useCallback(() => {
     setLoading(true)
     return getJson<HealthStatus>('/health')
@@ -24,6 +25,13 @@ export default function App() {
       .catch(() => setHealth(null))
       .finally(() => setLoading(false))
   }, [])
+
+  const handleApiBaseUrlChange = useCallback((value: string | null) => {
+    const nextUrl = value === null ? (resetApiBaseUrl(), getApiBaseUrl()) : setApiBaseUrl(value)
+    setApiBaseUrlState(nextUrl)
+    setHealth(null)
+    void checkHealth()
+  }, [checkHealth])
 
   useEffect(() => {
     void checkHealth()
@@ -34,21 +42,24 @@ export default function App() {
       activeTab={activeTab}
       health={health}
       loading={loading}
-      apiBaseUrl={getApiBaseUrl()}
+      apiBaseUrl={apiBaseUrl}
+      onApiBaseUrlChange={handleApiBaseUrlChange}
       onHealthCheck={checkHealth}
       onTabChange={setActiveTab}
     >
-      {activeTab === 'dashboard' ? (
-        <Dashboard />
-      ) : activeTab === 'review' ? (
-        <FeatureReview />
-      ) : activeTab === 'approvals' ? (
-        <ApprovalQueue />
-      ) : activeTab === 'traceability' ? (
-        <TraceabilityView />
-      ) : (
-        <AuditTrailView />
-      )}
+      <div key={apiBaseUrl}>
+        {activeTab === 'dashboard' ? (
+          <Dashboard />
+        ) : activeTab === 'review' ? (
+          <FeatureReview />
+        ) : activeTab === 'approvals' ? (
+          <ApprovalQueue />
+        ) : activeTab === 'traceability' ? (
+          <TraceabilityView />
+        ) : (
+          <AuditTrailView />
+        )}
+      </div>
     </AppShell>
   )
 }

@@ -16,7 +16,7 @@ The frontend is a single-page React app that runs in Vite during development and
 - **App shell**: `ui/src/App.tsx` and `ui/src/components/AppShell.tsx`
 - **Theme system**: `ui/src/theme.tsx` with `system`, `light`, and `dark` modes plus persisted preference
 - **Styling**: Tailwind CSS with semantic color tokens defined in `ui/src/index.css`
-- **Data access**: `ui/src/lib/api.ts` wraps JSON fetches with normalized error handling and abort support
+- **Data access**: `ui/src/lib/api.ts` wraps JSON fetches with normalized error handling and abort support. The API endpoint defaults to `VITE_API_BASE_URL` (or local development defaults) and can be overridden from **Settings → API endpoint**; the selected HTTP(S) URL is persisted in browser local storage and used by every UI request.
 - **Navigation**: local tab state inside the app shell; there is no React Router in the current implementation. Desktop uses a collapsible sidebar; mobile uses an accessible slide-out menu.
 - **Primary views**: Dashboard, Feature Review, Approval Queue, Traceability, and Audit Trail in `ui/src/components/`
 - **Primitive layer**: app-owned UI components in `ui/src/components/ui/` instead of app-specific ad hoc markup
@@ -41,7 +41,7 @@ cd ui
 npm run dev
 ```
 
-The Vite app runs on port `3000` and proxies `/api` and `/health` to the FastAPI backend at `http://localhost:8000` via `ui/vite.config.ts`.
+The Vite app runs on port `3000` and uses `http://localhost:8000` by default during development. To connect to a different dev, QA, or UAT backend, set `VITE_API_BASE_URL` before starting Vite, or open **Settings → API endpoint** in the running UI and save the environment URL. The saved browser setting takes precedence and persists across reloads. Use **Reset** to return to the build-time/default URL.
 
 ### Quality gate commands
 

@@ -4,6 +4,7 @@ import { getJson } from '../lib/api'
 import { EmptyState, ErrorState, LoadingState } from './ui/AsyncState'
 import { Badge } from './ui/Badge'
 import { Button } from './ui/Button'
+import { Tooltip } from './ui/Tooltip'
 
 interface Feature {
   id: string
@@ -75,7 +76,9 @@ export default function FeatureReview() {
         <div>
           <h2 className="flex items-center space-x-2 text-xl font-bold text-foreground">
             <FileText className="h-5 w-5 text-primary" />
-            <span>Feature Review</span>
+            <Tooltip content="Review generated Gherkin features and their quality gate evaluations.">
+              <span>Feature Review</span>
+            </Tooltip>
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             Review generated Gherkin feature files and quality gate evaluations.
@@ -93,7 +96,9 @@ export default function FeatureReview() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4">
             <label className="min-w-56 flex-1 text-xs font-medium text-muted-foreground">
-              Search features
+              <Tooltip content="Search by feature title, ID, or status.">
+                Search features
+              </Tooltip>
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -102,7 +107,7 @@ export default function FeatureReview() {
               />
             </label>
             <label className="text-xs font-medium text-muted-foreground">
-              Status
+              <Tooltip content="Filter features by their current workflow status.">Status</Tooltip>
               <select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
@@ -116,7 +121,7 @@ export default function FeatureReview() {
               </select>
             </label>
             <label className="text-xs font-medium text-muted-foreground">
-              Sort
+              <Tooltip content="Choose the order used for the feature list.">Sort</Tooltip>
               <select
                 value={sortOrder}
                 onChange={(event) => setSortOrder(event.target.value as typeof sortOrder)}
