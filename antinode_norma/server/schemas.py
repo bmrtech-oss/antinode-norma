@@ -24,7 +24,15 @@ class FeatureSummary(BaseModel):
     filename: str
     path: str
     scenario_count: int = 0
-    modified_at: str
+    modified_at: str = ""
+    id: str = ""
+    title: str = ""
+    gherkin: str = ""
+    status: str = "READY"
+    created_at: str = ""
+    source_job_id: Optional[str] = None
+    source_result_id: Optional[str] = None
+    approval_id: Optional[str] = None
 
 
 class FeatureDetail(BaseModel):
@@ -76,9 +84,21 @@ class GenerationJobResponse(BaseModel):
     started_at: Optional[str] = None
     completed_at: Optional[str] = None
     error: Optional[str] = None
+    source_filename: Optional[str] = None
 
     progress_percent: float = 0.0
 
 
+class GenerationJobListResponse(BaseModel):
+    items: List[GenerationJobResponse] = Field(default_factory=list)
+    total: int = 0
+    offset: int = 0
+    limit: int = 20
+
+
 class GenerationJobRequest(BaseModel):
     import_id: str
+
+
+class GenerationApprovalRequest(BaseModel):
+    result_ids: List[str] = Field(default_factory=list, min_length=1)

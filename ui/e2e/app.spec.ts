@@ -99,3 +99,134 @@ test('confirms and completes an approval action', async ({ page }) => {
   await expect(dialog).toBeHidden()
   await expect(page.getByRole('alert')).toContainText('feature-login was approved.')
 })
+
+test('uploads a CSV and downloads a generated artifact', async ({ page }) => {
+  let generated = false
+  const job = {
+    id: 'generation-1',
+    import_id: 'import-1',
+    status: 'completed',
+    result: { valid: true, errors: [] },
+    created_at: '2026-09-22T10:00:00Z',
+    total_rows: 1,
+    processed_rows: 1,
+    successful_rows: 1,
+    warning_rows: 0,
+    failed_rows: 0,
+    current_item: null,
+    progress_percent: 100,
+    error: null,
+    source_filename: 'cases.csv',
+  }
+  const artifact = {
+    id: 'result-1',
+    row_number: 1,
+    case_id: 'TC-1',
+    status: 'completed',
+    artifact_name: 'TC-1.feature',
+    warnings: [],
+    error: null,
+    content: 'Feature: Login\n\n  Scenario: Login',
+  }
+
+  await page.route('**/v1/imports**', async (route) => {
+    const request = route.request()
+    if (request.method() === 'POST' && request.url().endsWith('/v1/imports')) {
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'import-1',
+          filename: 'cases.csv',
+          format: 'csv',
+          status: 'uploaded',
+          row_count: 1,
+          columns: ['ID', 'Summary', 'Action'],
+          worksheet_names: [],
+          worksheet: null,
+          mapping: {},
+          created_at: '2026-09-22T10:00:00Z',
+        }),
+      })
+      return
+    }
+    if (request.url().includes('/preview')) {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'import-1',
+          filename: 'cases.csv',
+          format: 'csv',
+          row_count: 1,
+          columns: ['ID', 'Summary', 'Action'],
+          worksheet_names: [],
+          worksheet: null,
+          mapping: {},
+          truncated: false,
+          rows: [{ source_row: 2, values: { ID: 'TC-1', Summary: 'Login', Action: 'log in' } }],
+        }),
+      })
+      return
+    }
+    if (request.url().includes('/validate')) {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ import_id: 'import-1', valid: true, row_count: 1, errors: [] }),
+      })
+      return
+    }
+    await route.continue()
+  })
+
+  await page.route('**/v1/generation-jobs**', async (route) => {
+    const request = route.request()
+    const url = request.url()
+    if (request.method() === 'POST' && url.endsWith('/v1/generation-jobs')) {
+      generated = true
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify(job) })
+      return
+    }
+    if (url.includes('/results/') && url.endsWith('/download')) {
+      await route.fulfill({
+        contentType: 'text/plain',
+        headers: { 'Content-Disposition': 'attachment; filename="TC-1.feature"' },
+        body: artifact.content,
+      })
+      return
+    }
+    if (url.endsWith('/results')) {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ job_id: job.id, results: [artifact], count: 1 }) })
+      return
+    }
+    if (url.endsWith('/generation-jobs') || url.includes('/generation-jobs?')) {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ items: generated ? [job] : [], total: generated ? 1 : 0, offset: 0, limit: 20 }) })
+      return
+    }
+    if (url.endsWith('/generation-1')) {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify(job) })
+      return
+    }
+    await route.continue()
+  })
+
+  await page.getByRole('tab', { name: 'Generation' }).click()
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'cases.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('ID,Summary,Action\nTC-1,Login,log in\n'),
+  })
+  await page.getByRole('button', { name: 'Upload and validate' }).click()
+  await expect(page.getByText('Import validation')).toBeVisible()
+  await page.getByRole('button', { name: 'Validate import' }).click()
+  await expect(page.getByText('Passed')).toBeVisible()
+  await page.getByRole('button', { name: 'Start generation' }).click()
+  await expect(page.getByRole('heading', { name: 'Generation job' })).toBeVisible()
+  await expect(page.getByText('TC-1 · row 1')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Preview' }).click()
+  await expect(page.getByText('Feature: Login')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Download' })).toHaveCount(2)
+  const downloadRequest = page.waitForRequest(/\/v1\/generation-jobs\/generation-1/)
+  await page.getByRole('button', { name: 'Download' }).nth(1).click()
+  await expect((await downloadRequest).url()).toContain('/results/result-1/download')
+})

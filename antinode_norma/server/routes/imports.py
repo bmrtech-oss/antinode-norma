@@ -10,21 +10,24 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi.responses import PlainTextResponse, StreamingResponse
 
 from antinode_norma.ingest_structured.csv import CSVIngester
 from antinode_norma.ingest_structured.xlsx import XLSXIngester
 from antinode_norma.core.normalize import normalize_header
 from antinode_norma.server.import_storage import (
     get_generation, get_import, save_generation, save_import, update_import, get_generation_results,
+    get_generation_result,
+    list_generations,
     save_generation_result,
 )
 from antinode_norma.server.schemas import (
-    GenerationJobResponse, ImportResponse, ImportValidationResponse,
-    GenerationJobRequest, ImportMappingRequest,
+    GenerationJobResponse, GenerationJobListResponse, ImportResponse, ImportValidationResponse,
+    GenerationJobRequest, GenerationApprovalRequest, ImportMappingRequest,
 )
-from antinode_norma.server.generation_worker import enqueue, cancel, retry, wait_for
+from antinode_norma.server.generation_worker import enqueue, cancel, retry, retry_result, wait_for
+from antinode_norma.server.routes.approvals import gate
 
 router = APIRouter(prefix="/imports", tags=["Imports"])
 generation_router = APIRouter(prefix="/generation-jobs", tags=["Generation jobs"])
@@ -238,6 +241,24 @@ async def create_generation_job(request: GenerationJobRequest) -> GenerationJobR
     return GenerationJobResponse(**job)
 
 
+@generation_router.get("", response_model=GenerationJobListResponse)
+async def list_generation_jobs(
+    status: str | None = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=20, ge=1, le=100),
+) -> GenerationJobListResponse:
+    jobs, total = list_generations(status=status, offset=offset, limit=limit)
+    items = []
+    for job in jobs:
+        total_rows = job.get("total_rows", 0)
+        job["progress_percent"] = (
+            round(job.get("processed_rows", 0) * 100 / total_rows, 1)
+            if total_rows else 0
+        )
+        items.append(GenerationJobResponse(**job))
+    return GenerationJobListResponse(items=items, total=total, offset=offset, limit=limit)
+
+
 @generation_router.post("/{job_id}/cancel", response_model=GenerationJobResponse)
 async def cancel_generation_job(job_id: str) -> GenerationJobResponse:
     job = get_generation(job_id)
@@ -265,7 +286,93 @@ async def generation_results(job_id: str) -> dict[str, Any]:
     if get_generation(job_id) is None:
         raise HTTPException(status_code=404, detail="Generation job not found")
     results = get_generation_results(job_id)
+    approvals = {
+        request.source_result_id: request
+        for request in gate.requests.values()
+        if request.source_job_id == job_id and request.source_result_id
+    }
+    for result in results:
+        approval = approvals.get(result["id"])
+        result["approval_id"] = approval.id if approval else None
+        result["approval_status"] = approval.status.value if approval else None
     return {"job_id": job_id, "results": results, "count": len(results)}
+
+
+@generation_router.post("/{job_id}/results/{result_id}/retry", response_model=GenerationJobResponse)
+async def retry_generation_result(job_id: str, result_id: str) -> GenerationJobResponse:
+    job = get_generation(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Generation job not found")
+    result = get_generation_result(job_id, result_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Generation result not found")
+    if result["status"] != "failed":
+        raise HTTPException(status_code=409, detail="Only failed results can be retried")
+    if not retry_result(job_id, result_id):
+        raise HTTPException(status_code=409, detail="Generation result could not be retried")
+    return await get_generation_job(job_id)
+
+
+@generation_router.post("/{job_id}/results/{result_id}/submit-approval")
+async def submit_generation_result_for_approval(job_id: str, result_id: str) -> dict[str, Any]:
+    if get_generation(job_id) is None:
+        raise HTTPException(status_code=404, detail="Generation job not found")
+    result = get_generation_result(job_id, result_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Generation result not found")
+    if result["status"] != "completed" or not result.get("content"):
+        raise HTTPException(status_code=409, detail="Only successful results can be submitted for approval")
+    approval = gate.submit_request(
+        feature_id=result["case_id"],
+        gherkin_text=result["content"],
+        requested_by="generation-workflow",
+        source_job_id=job_id,
+        source_result_id=result_id,
+    )
+    return approval.model_dump()
+
+
+@generation_router.post("/{job_id}/results/submit-approval")
+async def submit_generation_results_for_approval(
+    job_id: str,
+    request: GenerationApprovalRequest,
+) -> dict[str, Any]:
+    if get_generation(job_id) is None:
+        raise HTTPException(status_code=404, detail="Generation job not found")
+    submitted: list[dict[str, Any]] = []
+    rejected: list[dict[str, str]] = []
+    for result_id in request.result_ids:
+        result = get_generation_result(job_id, result_id)
+        if result is None:
+            rejected.append({"result_id": result_id, "reason": "Generation result not found"})
+            continue
+        if result["status"] != "completed" or not result.get("content"):
+            rejected.append({"result_id": result_id, "reason": "Only successful results can be submitted for approval"})
+            continue
+        approval = gate.submit_request(
+            feature_id=result["case_id"],
+            gherkin_text=result["content"],
+            requested_by="generation-workflow",
+            source_job_id=job_id,
+            source_result_id=result_id,
+        )
+        submitted.append(approval.model_dump())
+    return {"job_id": job_id, "submitted": submitted, "rejected": rejected}
+
+
+@generation_router.get("/{job_id}/results/{result_id}/download")
+async def download_generation_result(job_id: str, result_id: str):
+    if get_generation(job_id) is None:
+        raise HTTPException(status_code=404, detail="Generation job not found")
+    result = get_generation_result(job_id, result_id)
+    if result is None or not result.get("content"):
+        raise HTTPException(status_code=404, detail="Generated artifact not found")
+    filename = result.get("artifact_name") or f"row-{result['row_number']}.feature"
+    return PlainTextResponse(
+        result["content"],
+        media_type="text/plain",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @generation_router.get("/{job_id}/download")

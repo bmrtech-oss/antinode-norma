@@ -9,7 +9,8 @@ from pathlib import Path
 
 from antinode_norma.ingest_structured.story import story_to_case
 from antinode_norma.server.import_storage import (
-    get_generation, get_import, save_generation_result, update_generation, reset_generation_results,
+    get_generation, get_import, get_generation_results, save_generation_result,
+    update_generation, reset_generation_results, reset_generation_result,
 )
 
 _executor = ThreadPoolExecutor(max_workers=int(os.getenv("NORMA_GENERATION_WORKERS", "2")))
@@ -45,8 +46,15 @@ def _run(job_id: str) -> None:
     event = _cancel_events[job_id]
     rows = imported["rows"]
     update_generation(job_id, status="running", started_at=_now())
-    processed = successful = warnings = failed = 0
+    existing = get_generation_results(job_id)
+    completed_ids = {item["row_number"] for item in existing if item["status"] == "completed"}
+    failed = sum(1 for item in existing if item["status"] == "failed")
+    successful = len(completed_ids)
+    warnings = sum(len(item.get("warnings", [])) > 0 for item in existing if item["status"] == "completed")
+    processed = successful + failed
     for row_number, row in enumerate(rows, 1):
+        if row_number in completed_ids:
+            continue
         if event.is_set():
             update_generation(job_id, status="cancelled", completed_at=_now(), current_item=None)
             return
@@ -105,6 +113,19 @@ def retry(job_id: str) -> None:
                       completed_at=None, error=None)
     # Results are replaced by row number on retry.
     _executor.submit(_run, job_id)
+
+
+def retry_result(job_id: str, result_id: str) -> bool:
+    with _lock:
+        _cancel_events[job_id] = threading.Event()
+    if not reset_generation_result(job_id, result_id):
+        return False
+    job = get_generation(job_id)
+    if not job:
+        return False
+    update_generation(job_id, status="queued", current_item=None, completed_at=None, error=None)
+    _executor.submit(_run, job_id)
+    return True
 
 
 def wait_for(job_id: str, timeout: float = 10) -> dict:

@@ -142,3 +142,133 @@ def test_generation_sanitizes_artifact_names_and_supports_download(tmp_path, mon
     assert "/" not in result["artifact_name"]
     assert "\\" not in result["artifact_name"]
     assert client.get(f"/v1/generation-jobs/{job['id']}/download").status_code == 200
+    artifact = client.get(
+        f"/v1/generation-jobs/{job['id']}/results/{result['id']}/download"
+    )
+    assert artifact.status_code == 200
+    assert "Feature: Login" in artifact.text
+
+
+def test_generation_job_history_supports_status_filter_and_pagination(tmp_path, monkeypatch):
+    monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
+    monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
+    client = TestClient(app)
+    imported = client.post(
+        "/v1/imports",
+        files={"file": ("history.csv", io.BytesIO(b"ID,Summary,Action\nTC-1,Login,log in\n"), "text/csv")},
+    ).json()
+    job = client.post("/v1/generation-jobs", json={"import_id": imported["id"]}).json()
+    for _ in range(100):
+        if client.get(f"/v1/generation-jobs/{job['id']}").json()["status"] == "completed":
+            break
+        time.sleep(0.01)
+
+    response = client.get("/v1/generation-jobs?status=completed&offset=0&limit=1")
+    assert response.status_code == 200
+    history = response.json()
+    assert history["total"] == 1
+    assert len(history["items"]) == 1
+    assert history["items"][0]["id"] == job["id"]
+    assert history["items"][0]["source_filename"] == "history.csv"
+
+
+def test_successful_generation_result_can_be_submitted_for_approval(tmp_path, monkeypatch):
+    monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
+    monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
+    client = TestClient(app)
+    imported = client.post(
+        "/v1/imports",
+        files={"file": ("approval.csv", io.BytesIO(b"ID,Summary,Action\nTC-1,Login,log in\n"), "text/csv")},
+    ).json()
+    job = client.post("/v1/generation-jobs", json={"import_id": imported["id"]}).json()
+    for _ in range(100):
+        if client.get(f"/v1/generation-jobs/{job['id']}").json()["status"] == "completed":
+            break
+        time.sleep(0.01)
+
+    result = client.get(f"/v1/generation-jobs/{job['id']}/results").json()["results"][0]
+    response = client.post(
+        f"/v1/generation-jobs/{job['id']}/results/{result['id']}/submit-approval"
+    )
+    assert response.status_code == 200
+    assert response.json()["feature_id"] == "TC-1"
+    assert response.json()["status"] == "PENDING"
+    assert response.json()["source_job_id"] == job["id"]
+    assert response.json()["source_result_id"] == result["id"]
+
+
+def test_failed_generation_result_cannot_be_submitted_for_approval(tmp_path, monkeypatch):
+    monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
+    monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
+    client = TestClient(app)
+    imported = client.post(
+        "/v1/imports",
+        files={"file": ("approval.csv", io.BytesIO(b"ID,Summary,Action\nTC-1,,\n"), "text/csv")},
+    ).json()
+    job = client.post("/v1/generation-jobs", json={"import_id": imported["id"]}).json()
+    result = client.get(f"/v1/generation-jobs/{job['id']}/results").json()["results"][0]
+    response = client.post(
+        f"/v1/generation-jobs/{job['id']}/results/{result['id']}/submit-approval"
+    )
+    assert response.status_code == 409
+
+
+def test_submitted_generation_result_appears_in_feature_review_with_traceability(tmp_path, monkeypatch):
+    monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
+    monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
+    client = TestClient(app)
+    imported = client.post(
+        "/v1/imports",
+        files={"file": ("review.csv", io.BytesIO(b"ID,Summary,Action\nTC-9,Review me,review the result\n"), "text/csv")},
+    ).json()
+    job = client.post("/v1/generation-jobs", json={"import_id": imported["id"]}).json()
+    for _ in range(100):
+        if client.get(f"/v1/generation-jobs/{job['id']}").json()["status"] == "completed":
+            break
+        time.sleep(0.01)
+    result = client.get(f"/v1/generation-jobs/{job['id']}/results").json()["results"][0]
+    client.post(f"/v1/generation-jobs/{job['id']}/results/{result['id']}/submit-approval")
+
+    response = client.get("/api/features", headers={"X-User-ID": "feature-reviewer"})
+    assert response.status_code == 200
+    generated = next(item for item in response.json() if item["source_result_id"] == result["id"])
+    assert generated["id"] == "TC-9"
+    assert generated["status"] == "PENDING"
+    assert generated["approval_id"]
+    assert "Feature: Review me" in generated["gherkin"]
+
+    approved = client.post(
+        f"/api/approvals/{generated['approval_id']}/approve",
+        json={"reviewer": "qa-reviewer", "reason": "Reviewed"},
+        headers={"X-User-ID": "admin_user"},
+    )
+    assert approved.status_code == 200
+    refreshed = client.get("/api/features", headers={"X-User-ID": "feature-reviewer"}).json()
+    updated = next(item for item in refreshed if item["source_result_id"] == result["id"])
+    assert updated["status"] == "APPROVED"
+
+
+def test_selected_generation_results_can_be_submitted_in_bulk(tmp_path, monkeypatch):
+    monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
+    monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
+    client = TestClient(app)
+    imported = client.post(
+        "/v1/imports",
+        files={"file": ("bulk.csv", io.BytesIO(
+            b"ID,Summary,Action\nTC-1,Login,log in\nTC-2,Logout,log out\n"
+        ), "text/csv")},
+    ).json()
+    job = client.post("/v1/generation-jobs", json={"import_id": imported["id"]}).json()
+    for _ in range(100):
+        if client.get(f"/v1/generation-jobs/{job['id']}").json()["status"] == "completed":
+            break
+        time.sleep(0.01)
+    results = client.get(f"/v1/generation-jobs/{job['id']}/results").json()["results"]
+    response = client.post(
+        f"/v1/generation-jobs/{job['id']}/results/submit-approval",
+        json={"result_ids": [item["id"] for item in results]},
+    )
+    assert response.status_code == 200
+    assert len(response.json()["submitted"]) == 2
+    refreshed = client.get(f"/v1/generation-jobs/{job['id']}/results").json()["results"]
+    assert {item["approval_status"] for item in refreshed} == {"PENDING"}

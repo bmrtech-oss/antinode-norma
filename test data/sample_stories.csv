@@ -1,0 +1,6 @@
+ID,Summary,Role,Action,Benefit,Acceptance Criteria,Tags
+ST-001,Sign in with valid credentials,registered user,sign in with a valid email and password,access the protected dashboard,"Valid credentials open the dashboard;Invalid credentials show an error",authentication;smoke
+ST-002,Reset a forgotten password,account owner,request a password reset link,regain access to the account,"A registered email receives a reset link;An unknown email does not reveal account existence",authentication;security
+ST-003,Search the feature catalog,product analyst,search features by title,find the relevant test coverage quickly,"Matching features are shown;No-match searches show an empty state",search;catalog
+ST-004,Approve a generated feature,reviewer,approve a feature after reviewing its Gherkin content,allow the feature to enter the delivery workflow,"Pending features can be approved;Approved features show reviewer and timestamp",governance;approval
+ST-005,Download generation results,release manager,download successful generated artifacts as a ZIP,share the feature files with the delivery team,"The ZIP contains each successful feature;Failed rows are excluded",generation;export

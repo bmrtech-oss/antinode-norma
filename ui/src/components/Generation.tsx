@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Download, FileSpreadsheet, Loader2, UploadCloud } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Download, Eye, FileSpreadsheet, Loader2, RotateCcw, UploadCloud } from 'lucide-react'
 import { getBlob, getJson, postForm, postJson } from '../lib/api'
 import { Alert } from './ui/Alert'
 import { Button } from './ui/Button'
@@ -51,6 +51,14 @@ interface GenerationJobResponse {
   current_item?: string | null
   progress_percent: number
   error?: string | null
+  source_filename?: string
+}
+
+interface GenerationJobListResponse {
+  items: GenerationJobResponse[]
+  total: number
+  offset: number
+  limit: number
 }
 
 interface GenerationResult {
@@ -61,7 +69,12 @@ interface GenerationResult {
   artifact_name?: string | null
   warnings: string[]
   error?: string | null
+  content?: string | null
+  approval_id?: string | null
+  approval_status?: string | null
 }
+
+const ACTIVE_GENERATION_JOB_KEY = 'norma-ui-active-generation-job'
 
 export default function Generation() {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -75,6 +88,12 @@ export default function Generation() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [results, setResults] = useState<GenerationResult[]>([])
+  const [history, setHistory] = useState<GenerationJobListResponse | null>(null)
+  const [historyStatus, setHistoryStatus] = useState('')
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [selectedResult, setSelectedResult] = useState<GenerationResult | null>(null)
+  const [submittedResults, setSubmittedResults] = useState<Set<string>>(new Set())
+  const [selectedResults, setSelectedResults] = useState<Set<string>>(new Set())
 
   const selectFile = (selectedFile: File | undefined) => {
     setError(null)
@@ -85,6 +104,7 @@ export default function Generation() {
       setError('Choose a CSV or XLSX file.')
       return
     }
+
     setFile(selectedFile)
     setImportJob(null)
     setValidation(null)
@@ -92,6 +112,31 @@ export default function Generation() {
     setMapping({})
     setGenerationJob(null)
     setResults([])
+  }
+
+  const loadHistory = useCallback(async (status = historyStatus) => {
+    setHistoryLoading(true)
+    try {
+      const query = new URLSearchParams({ offset: '0', limit: '20' })
+      if (status) query.set('status', status)
+      setHistory(await getJson<GenerationJobListResponse>(`/v1/generation-jobs?${query}`))
+    } catch (historyError) {
+      setError(historyError instanceof Error ? historyError.message : 'Unable to load generation history.')
+    } finally {
+      setHistoryLoading(false)
+    }
+  }, [historyStatus])
+
+  const selectHistoryJob = async (job: GenerationJobResponse) => {
+    setGenerationJob(job)
+    window.localStorage.setItem(ACTIVE_GENERATION_JOB_KEY, job.id)
+    try {
+      const response = await getJson<{ results: GenerationResult[] }>(`/v1/generation-jobs/${job.id}/results`)
+      setResults(response.results)
+      setSubmittedResults(new Set(response.results.filter((result) => result.approval_status).map((result) => result.id)))
+    } catch (historyError) {
+      setError(historyError instanceof Error ? historyError.message : 'Unable to load generation results.')
+    }
   }
 
   const uploadFile = async () => {
@@ -166,7 +211,9 @@ export default function Generation() {
     setLoading(true)
     setError(null)
     try {
-      setGenerationJob(await postJson<GenerationJobResponse, { import_id: string }>('/v1/generation-jobs', { import_id: importJob.id }))
+      const job = await postJson<GenerationJobResponse, { import_id: string }>('/v1/generation-jobs', { import_id: importJob.id })
+      setGenerationJob(job)
+      window.localStorage.setItem(ACTIVE_GENERATION_JOB_KEY, job.id)
     } catch (generationError) {
       setError(generationError instanceof Error ? generationError.message : 'Generation could not be started.')
     } finally {
@@ -174,6 +221,15 @@ export default function Generation() {
     }
 
   }
+
+  useEffect(() => {
+    void loadHistory()
+    const activeJobId = window.localStorage.getItem(ACTIVE_GENERATION_JOB_KEY)
+    if (!activeJobId) return
+    void getJson<GenerationJobResponse>(`/v1/generation-jobs/${activeJobId}`)
+      .then(setGenerationJob)
+      .catch(() => window.localStorage.removeItem(ACTIVE_GENERATION_JOB_KEY))
+  }, [loadHistory])
 
   useEffect(() => {
     if (!generationJob || !['queued', 'running'].includes(generationJob.status)) return
@@ -185,10 +241,21 @@ export default function Generation() {
     return () => window.clearInterval(timer)
   }, [generationJob])
 
+  const generationStatus = generationJob?.status
+
+  useEffect(() => {
+    if (generationStatus && !['queued', 'running'].includes(generationStatus)) {
+      void loadHistory()
+    }
+  }, [generationStatus, loadHistory])
+
   useEffect(() => {
     if (!generationJob || !['completed', 'completed_with_errors', 'failed', 'cancelled'].includes(generationJob.status)) return
     void getJson<{ results: GenerationResult[] }>(`/v1/generation-jobs/${generationJob.id}/results`)
-      .then((response) => setResults(response.results))
+      .then((response) => {
+        setResults(response.results)
+        setSubmittedResults(new Set(response.results.filter((result) => result.approval_status).map((result) => result.id)))
+      })
       .catch((resultsError) => setError(resultsError instanceof Error ? resultsError.message : 'Unable to read generation results.'))
   }, [generationJob])
 
@@ -206,6 +273,71 @@ export default function Generation() {
     } finally {
       setLoading(false)
     }
+
+  }
+
+  const retryResult = async (result: GenerationResult) => {
+    if (!generationJob) return
+    setLoading(true)
+    try {
+      const response = await postJson<GenerationJobResponse, Record<string, never>>(
+        `/v1/generation-jobs/${generationJob.id}/results/${result.id}/retry`,
+        {},
+      )
+      setGenerationJob(response)
+    } catch (retryError) {
+      setError(retryError instanceof Error ? retryError.message : 'Unable to retry this result.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const downloadResult = async (result: GenerationResult) => {
+    if (!generationJob) return
+    try {
+      const blob = await getBlob(`/v1/generation-jobs/${generationJob.id}/results/${result.id}/download`)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = result.artifact_name ?? `row-${result.row_number}.feature`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : 'Unable to download this artifact.')
+    }
+
+    const submitForApproval = async (result: GenerationResult) => {
+      if (!generationJob) return
+      setLoading(true)
+      try {
+        await postJson(`/v1/generation-jobs/${generationJob.id}/results/${result.id}/submit-approval`, {})
+        setSubmittedResults((current) => new Set(current).add(result.id))
+      } catch (approvalError) {
+        setError(approvalError instanceof Error ? approvalError.message : 'Unable to submit this result for approval.')
+      } finally {
+        setLoading(false)
+      }
+
+      const submitSelectedForApproval = async () => {
+        if (!generationJob || selectedResults.size === 0) return
+        setLoading(true)
+        try {
+          await postJson(`/v1/generation-jobs/${generationJob.id}/results/submit-approval`, {
+            result_ids: Array.from(selectedResults),
+          })
+          setSelectedResults(new Set())
+          const response = await getJson<{ results: GenerationResult[] }>(`/v1/generation-jobs/${generationJob.id}/results`)
+          setResults(response.results)
+          setSubmittedResults(new Set(response.results.filter((result) => result.approval_status).map((result) => result.id)))
+        } catch (approvalError) {
+          setError(approvalError instanceof Error ? approvalError.message : 'Unable to submit selected results for approval.')
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
   }
 
   const downloadResults = async () => {
@@ -216,7 +348,9 @@ export default function Generation() {
       const link = document.createElement('a')
       link.href = url
       link.download = `${generationJob.id}.zip`
+      document.body.appendChild(link)
       link.click()
+      link.remove()
       URL.revokeObjectURL(url)
     } catch (downloadError) {
       setError(downloadError instanceof Error ? downloadError.message : 'Unable to download generated features.')
@@ -382,6 +516,74 @@ export default function Generation() {
         </Card>
       )}
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Job history</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              Status
+              <select
+                className="ml-2 h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+                value={historyStatus}
+                onChange={(event) => {
+                  setHistoryStatus(event.target.value)
+                  void loadHistory(event.target.value)
+                }}
+              >
+                <option value="">All jobs</option>
+                <option value="queued">Queued</option>
+                <option value="running">Running</option>
+                <option value="completed">Completed</option>
+                <option value="completed_with_errors">Completed with errors</option>
+                <option value="failed">Failed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </label>
+            <Button variant="outline" size="sm" onClick={() => void loadHistory()} disabled={historyLoading}>
+              {historyLoading ? 'Refreshing...' : 'Refresh history'}
+            </Button>
+          </div>
+          {history?.items.length ? (
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full min-w-[42rem] text-left text-xs">
+                <thead className="bg-muted text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2 font-semibold">Source</th>
+                    <th className="px-3 py-2 font-semibold">Status</th>
+                    <th className="px-3 py-2 font-semibold">Rows</th>
+                    <th className="px-3 py-2 font-semibold">Results</th>
+                    <th className="px-3 py-2 font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {history.items.map((job) => (
+                    <tr key={job.id}>
+                      <td className="px-3 py-2 text-foreground">{job.source_filename ?? job.import_id}</td>
+                      <td className="px-3 py-2 text-foreground">{job.status}</td>
+                      <td className="px-3 py-2 text-foreground">{job.processed_rows} / {job.total_rows}</td>
+                      <td className="px-3 py-2 text-foreground">
+                        {job.successful_rows} successful, {job.failed_rows} failed
+                      </td>
+                      <td className="px-3 py-2">
+                        <Button variant="outline" size="sm" onClick={() => void selectHistoryJob(job)}>
+                          Open
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {historyLoading ? 'Loading generation history...' : 'No generation jobs found.'}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {generationJob && (
         <Card>
           <CardHeader><CardTitle>Generation job</CardTitle></CardHeader>
@@ -414,13 +616,77 @@ export default function Generation() {
             {generationJob.status === 'running' && <Loader2 className="h-4 w-4 animate-spin text-primary" aria-label="Generation is running" />}
             {results.length > 0 && (
               <div className="space-y-2 border-t border-border pt-4">
-                <p className="font-medium">Results ({results.length})</p>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-medium">Results ({results.length})</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void submitSelectedForApproval()}
+                    disabled={loading || selectedResults.size === 0}
+                  >
+                    Submit selected ({selectedResults.size})
+                  </Button>
+                </div>
                 {results.map((result) => (
-                  <div key={result.id} className="flex flex-wrap justify-between gap-2 rounded-md border border-border p-2 text-xs">
-                    <span>{result.case_id} · row {result.row_number}</span>
-                    <span className={result.status === 'completed' ? 'text-success' : 'text-destructive'}>{result.status}</span>
+                  <div key={result.id} className="space-y-2 rounded-md border border-border p-2 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedResults.has(result.id)}
+                          onChange={(event) => setSelectedResults((current) => {
+                            const next = new Set(current)
+                            if (event.target.checked) next.add(result.id)
+                            else next.delete(result.id)
+                            return next
+                          })}
+                          disabled={result.status !== 'completed' || Boolean(result.approval_status)}
+                        />
+                        <span>{result.case_id} · row {result.row_number}</span>
+                      </label>
+                      <span className={result.status === 'completed' ? 'text-success' : 'text-destructive'}>{result.status}</span>
+                    </div>
+                    {result.approval_status && <p className="text-muted-foreground">Approval: {result.approval_status}</p>}
+                    <div className="flex flex-wrap gap-2">
+                      {result.content && (
+                        <Button variant="outline" size="sm" onClick={() => setSelectedResult(result)}>
+                          <Eye className="h-3.5 w-3.5" /> Preview
+                        </Button>
+                      )}
+                      {result.content && (
+                        <Button variant="outline" size="sm" onClick={() => void downloadResult(result)}>
+                          <Download className="h-3.5 w-3.5" /> Download
+                        </Button>
+                      )}
+                      {result.content && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => void submitForApproval(result)}
+                          disabled={loading || submittedResults.has(result.id)}
+                        >
+                          {result.approval_status || (submittedResults.has(result.id) ? 'PENDING' : 'Submit for approval')}
+                        </Button>
+                      )}
+                      {result.status === 'failed' && (
+                        <Button variant="outline" size="sm" onClick={() => void retryResult(result)} disabled={loading}>
+                          <RotateCcw className="h-3.5 w-3.5" /> Retry
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
+              </div>
+            )}
+            {selectedResult?.content && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="font-medium">Preview: {selectedResult.artifact_name ?? selectedResult.case_id}</p>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedResult(null)}>Close</Button>
+                </div>
+                <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-background p-3 text-xs text-foreground">
+                  {selectedResult.content}
+                </pre>
               </div>
             )}
           </CardContent>

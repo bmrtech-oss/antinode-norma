@@ -38,17 +38,16 @@ The workflow must support large files, long-running LLM operations, partial succ
 
 ### Current limitations
 
-- Generation jobs are not yet durable background workers.
-- Generation currently validates imported rows but does not execute the full per-row feature-generation pipeline.
-- Progress is not persisted per row.
-- There is no cancellation or retry operation.
-- There are no generated artifact records or downloads.
-- XLSX worksheet selection is not exposed in the UI.
-- Column mapping is implicit and does not support arbitrary source headers interactively.
-- Validation results are not yet shown at row level.
-- Job history and active-job views are not implemented.
-- The existing Feature Review contract needs alignment with the feature API response shape.
-- The current CLI contains fallback behavior that writes synthetic feature content after generation errors; the UI workflow must expose failures explicitly instead.
+- The local worker is implemented, but production worker recovery and provider-backed
+  quality gates remain Phase 4 work.
+- The UI now supports import preview, worksheet selection, mapping, validation issues,
+  progress polling, cancellation, retry, job history, and artifact downloads.
+- Feature Review integration now includes submitted generated results, approval
+  state, generation job/result traceability, and direct approve/reject actions.
+- SSE updates, authorization, rate limits, retention, metrics, and complete audit
+  coverage remain Phase 4 work.
+- The current CLI contains fallback behavior that writes synthetic feature content
+  after generation errors; the UI workflow must expose failures explicitly instead.
 
 ## 3. Product Workflow
 
@@ -539,6 +538,17 @@ Update the feature API contract and UI model so generated results consistently e
 
 Allow users to submit selected successful generated results for approval. Preserve the generation job and source row references in the approval record.
 
+The generation-specific submission contract is:
+
+```text
+POST /v1/generation-jobs/{job_id}/results/{result_id}/submit-approval
+```
+
+Only a completed result with generated content may be submitted. The response is
+the existing approval request shape plus `source_job_id` and `source_result_id`
+for traceability. Duplicate submissions are not silently merged; the approval
+queue remains the source of truth for the resulting request IDs and statuses.
+
 ### Traceability
 
 Store the source requirement/test-case ID and generation result ID so each generated scenario can be traced back to its input row.
@@ -559,66 +569,179 @@ Record:
 
 ## 13. Implementation Phases
 
+The delivery model follows the structure used by the repository ADRs. Each phase has a
+bounded goal, implementation tasks, observable deliverables, and an exit gate. A phase
+may be developed incrementally, but its exit gate must pass before the next phase is
+treated as complete.
+
 ### Phase 1 — Contracts and persistence
 
-- Define import, row, job, result, and artifact schemas.
-- Complete upload, detail, preview, mapping, and validation endpoints.
-- Persist import metadata and normalized rows.
-- Add upload limits.
-- Add backend unit tests.
+**Goal:** Establish a durable, versioned import and generation data model before adding
+long-running execution or complex UI behavior.
 
-### Phase 2 — Worker and artifacts
+**Scope and tasks**
 
-- Extract shared generation logic from the CLI.
-- Add queued and running states.
-- Add local background worker.
-- Persist per-row progress.
-- Persist generated feature artifacts.
-- Add quality-gate execution per result.
-- Add cancellation and retry.
-- Add worker tests.
+| Task | Implementation | Deliverable | Evidence | Progress |
+|---|---|---|---|---|
+| GEN-1-T01 | Define import, source-row, mapping, validation, job, result, and artifact contracts | Typed request/response schemas under `/v1/` | Schema review and API contract tests | Complete |
+| GEN-1-T02 | Add CSV/XLSX upload handling with extension, size, and parse validation | `POST /v1/imports` and import detail endpoint | Valid, invalid, oversized, and malformed upload tests | Complete |
+| GEN-1-T03 | Persist original upload metadata, normalized rows, source columns, worksheets, and mappings | SQLite persistence with configurable runtime paths | Restart/read-back test | Complete |
+| GEN-1-T04 | Add bounded preview and worksheet metadata | Import preview response with source row numbers | Preview contract test | Complete |
+| GEN-1-T05 | Add canonical-to-source column mapping | Mapping endpoint with unknown-field rejection | Mapping acceptance and failure tests | Complete |
+| GEN-1-T06 | Add row-level validation and validation retrieval | Validation summary and issue records | Required-field, duplicate-ID, and malformed-row tests | Complete |
+
+**Dependencies:** Existing CSV/XLSX ingesters, FastAPI routing, and the configured
+runtime storage directory.
+
+**Exit criteria**
+
+- An uploaded file can be reopened after a process restart.
+- Preview exposes source values without losing source row numbers.
+- Worksheet and column mapping choices are persisted.
+- Validation returns explicit row-level errors and warnings.
+- No invalid row is converted into synthetic content.
+- Focused backend tests pass under the supported project environment.
+
+**Status:** Implemented in the initial import vertical slice; additional validation
+rules remain part of Phase 5.
+
+### Phase 2 — Worker, progress, and artifacts
+
+**Goal:** Execute validated imports asynchronously with durable progress, cancellation,
+retry, and artifact results.
+
+**Scope and tasks**
+
+| Task | Implementation | Deliverable | Evidence | Progress |
+|---|---|---|---|---|
+| GEN-2-T01 | Reuse the existing story-to-case conversion path and isolate rendering from request handling | Worker-safe generation function | Unit test with deterministic output | Complete |
+| GEN-2-T02 | Add queued, running, completed, completed-with-errors, failed, cancelling, and cancelled states | Durable job state transitions | State-transition tests | Complete |
+| GEN-2-T03 | Add a bounded local worker executor | Background generation without blocking the API request | Async creation and polling test | Complete |
+| GEN-2-T04 | Persist row-level pending, completed, and failed results | Result records with source row and case identifiers | Progress and partial-success tests | Complete |
+| GEN-2-T05 | Persist generated feature content and artifact metadata | Per-job artifact directory and ZIP download | Artifact existence and download test | Complete |
+| GEN-2-T06 | Add cancellation and retry operations | `/cancel` and `/retry` endpoints with legal-state checks | Cancellation and retry tests | Complete |
+| GEN-2-T07 | Sanitize artifact names and isolate artifact paths | Safe, deterministic artifact names | Path traversal regression test | Complete |
+| GEN-2-T08 | Add quality-gate execution hooks without hiding generation failures | Result-level quality status contract | Provider/quality-gate failure test | Planned |
+
+**Dependencies:** Phase 1 persistence and validation contracts.
+
+**Exit criteria**
+
+- Job creation returns immediately with a durable job ID.
+- Progress survives API process restarts or browser refreshes.
+- Cancellation and retry are idempotent within their supported states.
+- Partial success is represented without hiding failed rows.
+- Artifact paths cannot escape the configured artifact directory.
+- Worker exceptions transition jobs to `failed` rather than leaving them running.
+
+**Status:** Core local worker, progress, cancellation, retry, results, downloads, and
+artifact-name hardening are implemented. Quality-gate integration and stronger worker
+lifecycle recovery remain open.
 
 ### Phase 3 — UI workflow
 
-- Complete New Import.
-- Add XLSX worksheet selection.
-- Add column mapping.
-- Add preview and validation issue table.
-- Add active job progress.
-- Add job history.
-- Add results and downloads.
-- Add approval submission.
+**Goal:** Provide a complete user workflow from source-file selection through reviewable
+generation results without requiring CLI access.
 
-### Phase 4 — Live updates and hardening
+**Scope and tasks**
 
-- Add SSE progress events.
-- Add authentication and authorization checks.
-- Add rate limits and concurrency limits.
-- Add abandoned-job recovery.
-- Add retention cleanup.
-- Add operational metrics and alerts.
-- Add audit coverage.
+| Task | Implementation | Deliverable | Evidence | Progress |
+|---|---|---|---|---|
+| GEN-3-T01 | Add Generation navigation and page shell | Discoverable Generation surface | Navigation and render test | Complete |
+| GEN-3-T02 | Add file selection and upload feedback | CSV/XLSX upload control | Invalid-extension and upload-state tests | Complete |
+| GEN-3-T03 | Add bounded preview and XLSX worksheet selection | Source-aware preview table | Preview and worksheet interaction test | Complete |
+| GEN-3-T04 | Add canonical field mapping controls | Mapping selectors and save action | Mapping request/response test | Complete |
+| GEN-3-T05 | Add validation summary and issue table | Row, field, severity/message presentation | Validation issue rendering test | Complete |
+| GEN-3-T06 | Add active-job progress polling | Percentage, counts, current item, and connection errors | Polling and error-state test | Complete |
+| GEN-3-T07 | Add cancellation, retry, results, and ZIP download actions | Job controls and result summary | End-to-end workflow test | Complete |
+| GEN-3-T08 | Add generation job history and reopen behavior | Searchable/filterable history with active-job recovery | Browser-refresh and history tests | Complete |
+| GEN-3-T09 | Add artifact preview and per-row actions | Feature content preview and individual download/retry | Result interaction test | Complete |
+| GEN-3-T10 | Add approval submission for successful results | Selected-result submission to Feature Review/approval | Approval integration test | Complete |
 
-### Phase 5 — Full validation
+**Dependencies:** Phase 1 contracts and Phase 2 job/result endpoints.
 
-Add automated coverage for:
+**Exit criteria**
 
-- CSV upload.
-- XLSX upload and worksheet selection.
-- Invalid file type.
-- Oversized file.
-- Malformed file.
-- Column mapping.
-- Duplicate IDs.
-- Missing required fields.
-- Partial generation success.
-- Provider failure.
-- Progress polling/SSE.
-- Cancellation.
-- Retry.
-- Browser refresh during active job.
-- Artifact downloads.
-- Approval submission.
+- A user can complete upload, mapping, validation, generation, and result download
+  from the UI.
+- Active jobs remain discoverable after browser refresh.
+- Validation failures identify the affected rows and fields.
+- Partial generation success is visible and actionable.
+- All loading, empty, error, retry, and success states are explicit and accessible.
+- UI typecheck, lint, unit tests, and production build pass.
+
+**Status:** Upload, preview, worksheet selection, mapping, validation issue display,
+progress polling, cancellation, retry, results, and bulk download are implemented.
+Artifact preview, per-row download/retry actions, the upload-to-download browser
+workflow, approval submission, and Feature Review workflow integration are
+implemented. Phase 3 is complete for the current local workflow; production
+hardening remains.
+
+### Phase 4 — Live updates and operational hardening
+
+**Goal:** Move from a reliable local workflow to a production-safe service with secure
+access, observable execution, and recoverable failures.
+
+**Scope and tasks**
+
+| Task | Implementation | Deliverable | Evidence | Progress |
+|---|---|---|---|---|
+| GEN-4-T01 | Add SSE progress events with polling fallback | Near-real-time job updates | SSE contract and reconnect tests | Planned |
+| GEN-4-T02 | Add authentication and authorization to imports, jobs, results, and artifacts | User/tenant ownership checks | Unauthorized and cross-user access tests | Planned |
+| GEN-4-T03 | Add upload rate limits and worker concurrency limits | Abuse and resource controls | Load and limit tests | Planned |
+| GEN-4-T04 | Add abandoned-job detection and recovery | Jobs cannot remain running indefinitely | Recovery test after worker interruption | Planned |
+| GEN-4-T05 | Add artifact and import retention policies | Configurable cleanup process | Retention and protected-active-job tests | Planned |
+| GEN-4-T06 | Add structured metrics and operational alerts | Queue depth, duration, failure, and provider metrics | Metrics assertions and alert runbook | Planned |
+| GEN-4-T07 | Add lifecycle audit events | Auditable upload, validation, generation, cancellation, retry, download, and approval events | Audit completeness test | Planned |
+| GEN-4-T08 | Add provider timeout, retry, and circuit-breaker behavior | Explicit provider failure handling | Provider failure and retry tests | Planned |
+
+**Dependencies:** Phase 2 durable state and Phase 3 user-visible lifecycle actions;
+repository authentication, audit, and operational conventions.
+
+**Exit criteria**
+
+- Every job has an owner and an auditable lifecycle.
+- A worker or browser interruption does not create an unrecoverable job.
+- Resource limits prevent unbounded upload, queue, and artifact growth.
+- Live updates degrade safely to polling.
+- Operational dashboards can identify queue backlog and failure causes.
+
+### Phase 5 — Full validation and release readiness
+
+**Goal:** Demonstrate that the complete workflow is correct across happy paths,
+failure paths, security boundaries, and supported browser/runtime environments.
+
+**Scope and test matrix**
+
+| Area | Required coverage | Release evidence |
+|---|---|---|
+| Import | CSV, XLSX, worksheet selection, malformed, unsupported, oversized files | Backend contract and integration tests |
+| Mapping and validation | Arbitrary headers, missing fields, duplicate IDs, warnings, rejected rows | Row-level fixture suite |
+| Generation | Queueing, polling/SSE, partial success, provider failure, quality gates | Worker and API integration tests |
+| Lifecycle | Cancellation, retry, abandoned-job recovery, browser refresh | State-transition and browser tests |
+| Results | Preview, individual artifacts, bulk ZIP, traceability, approval submission | End-to-end result workflow |
+| Security | Path traversal, authorization, rate limits, retention, secret/log hygiene | Security regression suite and review |
+| UI quality | Keyboard access, screen-reader labels, responsive layouts, loading/error states | Accessibility, visual, and responsive evidence |
+| Operations | Metrics, audit events, cleanup, failure alerts, runbooks | Operational checklist and recovery drill |
+
+**Dependencies:** Completion of the Phase 1–4 exit criteria.
+
+**Exit criteria**
+
+- The acceptance criteria in Section 14 are demonstrably satisfied.
+- Backend and UI quality gates pass in CI.
+- A clean-environment end-to-end run completes from upload through approval/download.
+- Failure and recovery procedures are documented and exercised.
+- No unresolved critical or high-severity security findings remain.
+
+### Phase sequencing and change control
+
+Phase 1 and Phase 2 establish the backend walking skeleton. Phase 3 can proceed in
+parallel once the contracts are stable, but UI work must not introduce undocumented
+API shapes. Phase 4 hardening should begin before production exposure, even if Phase 3
+features are still being completed. Phase 5 is a release gate rather than a feature
+phase and must be rerun after changes to contracts, worker state transitions, storage,
+authentication, or artifact handling.
 
 ## 14. Acceptance Criteria
 
@@ -644,11 +767,8 @@ The workflow is complete when:
 
 ## 15. Recommended Next Task
 
-Implement Phase 2 as the next vertical slice:
+Begin Phase 4 with live progress updates:
 
-1. Extract shared per-test-case generation logic from the CLI.
-2. Add a local background worker.
-3. Add persisted row-level progress and result records.
-4. Add `/cancel`, `/retry`, `/results`, and `/download` endpoints.
-5. Update the Generation UI to poll the active job.
-6. Add an end-to-end test from CSV upload through generated artifact download.
+1. Add SSE progress events for queued and running generation jobs.
+2. Keep polling as a reconnect and compatibility fallback.
+3. Add focused SSE contract and reconnect tests.

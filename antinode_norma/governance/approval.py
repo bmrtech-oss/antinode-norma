@@ -18,6 +18,8 @@ class ApprovalRequest(BaseModel):
     gherkin_text: str = ""
     status: ApprovalStatus = ApprovalStatus.PENDING
     requested_by: str = "system"
+    source_job_id: Optional[str] = None
+    source_result_id: Optional[str] = None
     reviewer: Optional[str] = None
     reason: Optional[str] = None
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -29,12 +31,21 @@ class ApprovalGate:
         self.audit_log = audit_log or AuditLog()
         self.requests: Dict[str, ApprovalRequest] = {}
 
-    def submit_request(self, feature_id: str, gherkin_text: str, requested_by: str = "system") -> ApprovalRequest:
+    def submit_request(
+        self,
+        feature_id: str,
+        gherkin_text: str,
+        requested_by: str = "system",
+        source_job_id: Optional[str] = None,
+        source_result_id: Optional[str] = None,
+    ) -> ApprovalRequest:
         req = ApprovalRequest(
             feature_id=feature_id,
             gherkin_text=gherkin_text,
             status=ApprovalStatus.PENDING,
             requested_by=requested_by,
+            source_job_id=source_job_id,
+            source_result_id=source_result_id,
         )
         self.requests[req.id] = req
         self.audit_log.record_event(

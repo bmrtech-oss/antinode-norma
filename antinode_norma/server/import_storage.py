@@ -133,6 +133,35 @@ def get_generation(job_id: str) -> Optional[dict[str, Any]]:
     return result
 
 
+def list_generations(*, status: Optional[str] = None, offset: int = 0,
+                     limit: int = 20) -> tuple[list[dict[str, Any]], int]:
+    clauses: list[str] = []
+    parameters: list[Any] = []
+    if status:
+        clauses.append("generation_jobs.status = ?")
+        parameters.append(status)
+    where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+    with connect() as db:
+        total = db.execute(
+            f"SELECT COUNT(*) AS count FROM generation_jobs{where}", parameters
+        ).fetchone()["count"]
+        rows = db.execute(
+            f"""SELECT generation_jobs.*, import_jobs.filename AS source_filename
+                FROM generation_jobs
+                JOIN import_jobs ON import_jobs.id = generation_jobs.import_id
+                {where}
+                ORDER BY generation_jobs.created_at DESC
+                LIMIT ? OFFSET ?""",
+            (*parameters, limit, offset),
+        ).fetchall()
+    results = []
+    for row in rows:
+        item = dict(row)
+        item["result"] = json.loads(item.pop("result_json") or "{}")
+        results.append(item)
+    return results, total
+
+
 def update_generation(job_id: str, **fields: Any) -> None:
     if not fields:
         return
@@ -171,6 +200,31 @@ def get_generation_results(job_id: str) -> list[dict[str, Any]]:
         item["warnings"] = json.loads(item.pop("warnings_json") or "[]")
         result.append(item)
     return result
+
+
+def get_generation_result(job_id: str, result_id: str) -> Optional[dict[str, Any]]:
+    with connect() as db:
+        row = db.execute(
+            "SELECT * FROM generation_results WHERE job_id = ? AND id = ?",
+            (job_id, result_id),
+        ).fetchone()
+    if row is None:
+        return None
+    item = dict(row)
+    item["warnings"] = json.loads(item.pop("warnings_json") or "[]")
+    return item
+
+
+def reset_generation_result(job_id: str, result_id: str) -> bool:
+    with connect() as db:
+        cursor = db.execute(
+            """UPDATE generation_results SET status = 'pending',
+               artifact_path = NULL, artifact_name = NULL, content = NULL,
+               warnings_json = '[]', error = NULL
+               WHERE job_id = ? AND id = ?""",
+            (job_id, result_id),
+        )
+        return cursor.rowcount == 1
 
 
 def reset_generation_results(job_id: str) -> None:
