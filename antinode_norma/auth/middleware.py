@@ -96,5 +96,8 @@ def log_user_action(
         result=result,
         ip=client_ip,
         user_agent=user_agent,
-        payload=payload,
+        payload={
+            **(payload or {}),
+            "tenant_id": user.tenant_id if user else "default",
+        },
     )

@@ -2,11 +2,11 @@
 
 import os
 import pytest
-from dotenv import load_dotenv
 from antinode_norma.core.schemas import UserStory
 
-# Load environment variables once for integration tests
-load_dotenv()
+# Tests must not implicitly load developer credentials from ``.env``.  Live
+# provider tests opt in through the process environment and are skipped in a
+# clean environment; all other provider use is mocked at the test boundary.
 
 # ------------------------------
 # Sample stories as fixtures

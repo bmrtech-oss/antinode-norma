@@ -5,6 +5,7 @@ import { EmptyState, ErrorState, LoadingState } from './ui/AsyncState'
 import { Badge } from './ui/Badge'
 import { Button } from './ui/Button'
 import { Tooltip } from './ui/Tooltip'
+import { Alert } from './ui/Alert'
 
 interface Feature {
   id: string
@@ -63,8 +64,8 @@ export default function FeatureReview() {
         if (sortOrder === 'name') {
           return (left.title || left.id).localeCompare(right.title || right.id)
         }
-        const leftDate = new Date(left.created_at).getTime()
-        const rightDate = new Date(right.created_at).getTime()
+        const leftDate = new Date(left.created_at || 0).getTime()
+        const rightDate = new Date(right.created_at || 0).getTime()
         return sortOrder === 'newest' ? rightDate - leftDate : leftDate - rightDate
       })
   }, [features, query, sortOrder, statusFilter])

@@ -7,6 +7,7 @@ from antinode_norma.governance.approval import ApprovalGate, ApprovalStatus
 from antinode_norma.governance.audit import AuditLog
 from antinode_norma.execution.history import ExecutionHistoryStore
 from antinode_norma.evaluate.cost import CostTracker
+from antinode_norma.utils.observability import metrics_registry
 
 
 class AnalyticsSummary(BaseModel):
@@ -26,6 +27,7 @@ class AnalyticsSummary(BaseModel):
     total_cost_usd: float = 0.0
     avg_cost_per_run: float = 0.0
     trends: Dict[str, List[Any]] = Field(default_factory=dict)
+    generation_operational: Dict[str, Any] = Field(default_factory=dict)
 
 
 class AnalyticsCollector:
@@ -94,6 +96,7 @@ class AnalyticsCollector:
             flake_rate=flake_rate,
             total_cost_usd=total_cost,
             avg_cost_per_run=avg_cost,
+            generation_operational=metrics_registry.get_generation_snapshot(),
             trends={
                 "daily_generations": [5, 8, 12, 10, 15, 18, 20],
                 "quality_scores": [0.85, 0.88, 0.91, 0.90, 0.93, 0.95, 0.94],

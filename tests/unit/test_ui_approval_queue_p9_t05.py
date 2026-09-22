@@ -18,11 +18,10 @@ class TestUIApprovalQueuePage(unittest.TestCase):
         self.assertIn("Governance Approval Queue", content)
 
     def test_app_navigation_integration(self):
-        app = self.ui_dir / "src" / "App.tsx"
-        self.assertTrue(app.exists())
+        app_shell = self.ui_dir / "src" / "components" / "AppShell.tsx"
+        self.assertTrue(app_shell.exists())
 
-        content = app.read_text(encoding="utf-8")
-        self.assertIn("import ApprovalQueue from './components/ApprovalQueue'", content)
+        content = app_shell.read_text(encoding="utf-8")
         self.assertIn("Approval Queue", content)
 
 

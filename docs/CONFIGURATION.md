@@ -51,6 +51,12 @@ execution:
   max_workers: 4
   retries: 2
   retry_delay: 1.0
+  provider_timeout_seconds: 30
+  provider_retry_max: 2
+  provider_retry_base_seconds: 0.5
+  provider_retry_max_seconds: 8
+  provider_circuit_failure_threshold: 3
+  provider_circuit_reset_seconds: 30
   capture_artifacts: true
   reporter: junit
   cloud_provider: null       # browserstack, saucelabs, lambdatest
@@ -100,6 +106,13 @@ Environment variables take precedence over configuration file settings.
 | `NORMA_RETENTION_CLEANUP_ENABLED` | Run the safe, idempotent artifact/import cleanup sweep at startup | `false` |
 | `NORMA_ARTIFACT_RETENTION_DAYS` | Age threshold for generated artifact files from terminal jobs | `30` |
 | `NORMA_IMPORT_RETENTION_DAYS` | Age threshold for unreferenced uploaded import files | `30` |
+| `NORMA_GENERATION_PROVIDER` | Optional provider used for generation execution; unset uses local rendering | unset |
+| `NORMA_GENERATION_PROVIDER_TIMEOUT_SECONDS` | Per-attempt provider deadline | `30` |
+| `NORMA_GENERATION_PROVIDER_MAX_RETRIES` | Maximum retries after the initial provider attempt | `2` |
+| `NORMA_GENERATION_PROVIDER_RETRY_BASE_SECONDS` | Initial exponential retry delay | `0.5` |
+| `NORMA_GENERATION_PROVIDER_RETRY_MAX_SECONDS` | Maximum retry delay | `8` |
+| `NORMA_GENERATION_CIRCUIT_FAILURE_THRESHOLD` | Consecutive provider failures before opening the circuit | `3` |
+| `NORMA_GENERATION_CIRCUIT_RESET_SECONDS` | Open-circuit cooldown before a recovery probe | `30` |
 
 ---
 

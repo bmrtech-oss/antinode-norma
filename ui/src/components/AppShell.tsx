@@ -240,7 +240,7 @@ export function AppShell({
                   <Settings className="h-4 w-4" />
                 </Button>
                 {settingsOpen && (
-                  <div className="absolute right-0 top-12 z-30 w-56 rounded-lg border border-border bg-card p-3 shadow-lg" role="menu" aria-label="Settings">
+                  <div className="absolute right-0 top-12 z-30 w-56 rounded-lg border border-border bg-card p-3 shadow-lg" role="region" aria-label="Settings">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       <Tooltip content="Choose the interface color theme.">Appearance</Tooltip>
                     </p>

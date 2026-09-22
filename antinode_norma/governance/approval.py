@@ -58,7 +58,8 @@ class ApprovalGate:
             action="approval_submitted",
             resource=feature_id,
             actor=requested_by,
-            payload={"request_id": req.id, "status": req.status.value},
+            payload={"request_id": req.id, "status": req.status.value,
+                     "owner_id": owner_id, "tenant_id": tenant_id},
         )
         return req
 
@@ -79,7 +80,8 @@ class ApprovalGate:
             action="approval_approved",
             resource=req.feature_id,
             actor=reviewer,
-            payload={"request_id": req.id, "reason": reason, "status": req.status.value},
+            payload={"request_id": req.id, "status": req.status.value,
+                     "owner_id": req.owner_id, "tenant_id": req.tenant_id},
         )
         return req
 
@@ -100,7 +102,8 @@ class ApprovalGate:
             action="approval_rejected",
             resource=req.feature_id,
             actor=reviewer,
-            payload={"request_id": req.id, "reason": reason, "status": req.status.value},
+            payload={"request_id": req.id, "status": req.status.value,
+                     "owner_id": req.owner_id, "tenant_id": req.tenant_id},
         )
         return req
 

@@ -436,6 +436,7 @@ export default function Generation() {
             ref={inputRef}
             className="sr-only"
             type="file"
+            aria-label="Choose a CSV or XLSX file"
             accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={(event) => selectFile(event.target.files?.[0])}
           />
@@ -644,7 +645,14 @@ export default function Generation() {
                 )}
               </div>
             </div>
-            <div className="h-3 overflow-hidden rounded-full bg-muted" aria-label={`Generation progress ${generationJob.progress_percent}%`}>
+            <div
+              className="h-3 overflow-hidden rounded-full bg-muted"
+              role="progressbar"
+              aria-label={`Generation progress: ${generationJob.progress_percent}%`}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={generationJob.progress_percent}
+            >
               <div className="h-full bg-primary transition-all" style={{ width: `${generationJob.progress_percent}%` }} />
             </div>
             <div className="grid gap-3 sm:grid-cols-4">

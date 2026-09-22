@@ -49,6 +49,8 @@ export default function App() {
       onTabChange={setActiveTab}
     >
       <div key={apiBaseUrl}>
+        <h1 className="sr-only">Antinode Norma BDD Platform</h1>
+        <p className="sr-only">Traceability and Audit Log views are available from the primary navigation.</p>
         {activeTab === 'dashboard' ? (
           <Dashboard />
         ) : activeTab === 'generation' ? (

@@ -2,6 +2,7 @@
 
 import json
 import os
+from antinode_norma.utils.observability import metrics_registry
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -434,8 +435,10 @@ def cleanup_retention(*, now: datetime | None = None) -> dict[str, int]:
                 except OSError:
                     continue
 
-    return {
+    report = {
         "deleted_artifacts": deleted_artifacts,
         "deleted_imports": deleted_imports,
         "skipped_protected": skipped_protected,
     }
+    metrics_registry.record_retention_cleanup(report)
+    return report

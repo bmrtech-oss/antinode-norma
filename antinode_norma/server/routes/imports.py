@@ -34,9 +34,11 @@ from antinode_norma.server.generation_worker import (
 )
 from antinode_norma.server.rate_limits import allow, user_key
 from antinode_norma.server.routes.approvals import gate
+from antinode_norma.utils.observability import metrics_registry
 from antinode_norma.auth.middleware import ensure_resource_owner, requires_permission
 from antinode_norma.auth.models import Role, User
 from antinode_norma.auth.roles import FEATURE_READ, FEATURE_WRITE
+from antinode_norma.server.routes.audit import audit_log
 
 router = APIRouter(prefix="/imports", tags=["Imports"])
 generation_router = APIRouter(prefix="/generation-jobs", tags=["Generation jobs"])
@@ -46,6 +48,28 @@ MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _audit(action: str, resource: str, user: User | None = None,
+           *, result: str = "success", **metadata: Any) -> None:
+    """Record lifecycle metadata only; never include source or generated content."""
+    safe_keys = {
+        "import_id", "job_id", "result_id", "format", "file_size", "row_count",
+        "error_count", "artifact_count", "row_number", "status", "previous_status",
+        "error_type", "queue_rejected",
+    }
+    payload = {
+        key: value for key, value in metadata.items()
+        if key in safe_keys and value is not None
+    }
+    payload.update({
+        "result": result,
+        "owner_id": user.id if user else metadata.get("owner_id"),
+        "tenant_id": (user.tenant_id or "default") if user else metadata.get("tenant_id"),
+    })
+    audit_log.record_event(action=action, resource=resource,
+                           actor=user.id if user else str(payload.get("owner_id") or "system"),
+                           payload=payload)
 
 
 def _parse_file(path: Path, extension: str) -> list[dict[str, Any]]:
@@ -100,13 +124,20 @@ def _apply_mapping(source_rows: list[dict[str, Any]], mapping: dict[str, str]) -
 
 async def _create_import(file: UploadFile, user: User) -> ImportResponse:
     if not allow("upload", user_key(user), "NORMA_UPLOAD_RATE_LIMIT", 30):
+        metrics_registry.record_rate_limit_rejection("upload")
+        _audit("generation.upload_failed", "import-upload", user, result="failure",
+               error_type="rate_limit")
         raise HTTPException(status_code=429, detail="Upload rate limit exceeded")
     filename = Path(file.filename or "").name
     extension = Path(filename).suffix.lower().lstrip(".")
     if extension not in {"csv", "xlsx"}:
+        _audit("generation.upload_failed", "import-upload", user, result="failure",
+               error_type="unsupported_format")
         raise HTTPException(status_code=415, detail="Only CSV and XLSX files are supported")
     content = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(content) > MAX_UPLOAD_BYTES:
+        _audit("generation.upload_failed", "import-upload", user, result="failure",
+               error_type="file_too_large", file_size=len(content))
         raise HTTPException(status_code=413, detail="Uploaded file exceeds the 25 MB limit")
     import_id = str(uuid.uuid4())
     directory = Path(os.getenv("NORMA_IMPORT_DIR", ".runtime/imports"))
@@ -118,6 +149,8 @@ async def _create_import(file: UploadFile, user: User) -> ImportResponse:
         rows = _parse_file(path, extension)
     except Exception as exc:
         path.unlink(missing_ok=True)
+        _audit("generation.upload_failed", import_id, user, result="failure",
+               format=extension, error_type=type(exc).__name__)
         raise HTTPException(status_code=422, detail=f"Unable to parse {extension.upper()} file: {exc}") from exc
     record = {
         "id": import_id, "filename": filename, "format": extension,
@@ -128,6 +161,8 @@ async def _create_import(file: UploadFile, user: User) -> ImportResponse:
         "owner_id": user.id, "tenant_id": user.tenant_id or "default",
     }
     save_import(record)
+    _audit("generation.uploaded", import_id, user, format=extension,
+           row_count=len(rows), file_size=len(content))
     return ImportResponse(**{k: record.get(k) for k in (
         "id", "filename", "format", "status", "row_count", "created_at",
         "worksheet_names", "columns", "worksheet", "mapping")})
@@ -209,7 +244,12 @@ async def validate_import(import_id: str, user: User = Depends(requires_permissi
         for field in ("title", "action"):
             if not str(row.get(field, "")).strip():
                 errors.append({"row": index, "field": field, "message": "Required value is missing"})
-    return ImportValidationResponse(import_id=import_id, valid=not errors, errors=errors, row_count=record["row_count"])
+    response = ImportValidationResponse(import_id=import_id, valid=not errors, errors=errors, row_count=record["row_count"])
+    _audit("generation.validation", import_id, user,
+           result="success" if response.valid else "failure",
+           status="valid" if response.valid else "invalid",
+           row_count=response.row_count, error_count=len(errors))
+    return response
 
 
 @router.get("/{import_id}/validation", response_model=ImportValidationResponse)
@@ -241,6 +281,7 @@ async def create_generation_job(request: GenerationJobRequest, user: User = Depe
     if validation.valid and not allow(
         "generation", user_key(user), "NORMA_GENERATION_RATE_LIMIT", 10
     ):
+        metrics_registry.record_rate_limit_rejection("generation")
         raise HTTPException(status_code=429, detail="Generation rate limit exceeded")
     job_id = str(uuid.uuid4())
     result = {"import_id": import_id, "row_count": record["row_count"], "valid": validation.valid,
@@ -251,6 +292,11 @@ async def create_generation_job(request: GenerationJobRequest, user: User = Depe
            "error": None if validation.valid else "Validation failed",
            "owner_id": user.id, "tenant_id": user.tenant_id or "default"}
     save_generation(job)
+    _audit("generation.queued" if validation.valid else "generation.failed",
+           job_id, user, status=job["status"], import_id=import_id,
+           row_count=record["row_count"], error_count=len(validation.errors),
+           result="success" if validation.valid else "failure",
+           error_type=None if validation.valid else "validation")
     # Create durable row work items before handing the job to the worker.
     for row_number, row in enumerate(record["rows"], 1):
         save_generation_result({
@@ -263,9 +309,12 @@ async def create_generation_job(request: GenerationJobRequest, user: User = Depe
         try:
             enqueue(job_id)
         except GenerationQueueFull as exc:
+            metrics_registry.record_generation_queue_rejection()
             # Do not leave a durable job advertising queued work that was
             # rejected by the bounded executor.
             update_generation(job_id, status="failed", error=str(exc), completed_at=_now())
+            _audit("generation.failed", job_id, user, status="failed",
+                   error_type=type(exc).__name__, queue_rejected=True, result="failure")
             raise HTTPException(status_code=503, detail="Generation queue is full; try again later") from exc
     return GenerationJobResponse(**job)
 
@@ -301,6 +350,7 @@ async def cancel_generation_job(job_id: str, user: User = Depends(requires_permi
     if job["status"] in {"completed", "completed_with_errors", "failed", "cancelled", "abandoned"}:
         raise HTTPException(status_code=409, detail="Generation job is not cancellable")
     cancel(job_id)
+    _audit("generation.cancelled", job_id, user, status="cancelling")
     return await get_generation_job(job_id, user)
 
 
@@ -315,7 +365,9 @@ async def retry_generation_job(job_id: str, user: User = Depends(requires_permis
     try:
         retry(job_id)
     except GenerationQueueFull as exc:
+        metrics_registry.record_generation_queue_rejection()
         raise HTTPException(status_code=503, detail="Generation queue is full; try again later") from exc
+    _audit("generation.retry", job_id, user, previous_status=job["status"], status="queued")
     return await get_generation_job(job_id, user)
 
 
@@ -352,9 +404,11 @@ async def retry_generation_result(job_id: str, result_id: str, user: User = Depe
     try:
         retried = retry_result(job_id, result_id)
     except GenerationQueueFull as exc:
+        metrics_registry.record_generation_queue_rejection()
         raise HTTPException(status_code=503, detail="Generation queue is full; try again later") from exc
     if not retried:
         raise HTTPException(status_code=409, detail="Generation result could not be retried")
+    _audit("generation.retry", result_id, user, job_id=job_id, previous_status="failed", status="queued")
     return await get_generation_job(job_id, user)
 
 
@@ -368,6 +422,8 @@ async def submit_generation_result_for_approval(job_id: str, result_id: str, use
     if result is None:
         raise HTTPException(status_code=404, detail="Generation result not found")
     if result["status"] != "completed" or not result.get("content"):
+        _audit("approval_submission_failed", result_id, user, result="failure",
+               job_id=job_id, error_type="result_not_completed")
         raise HTTPException(status_code=409, detail="Only successful results can be submitted for approval")
     approval = gate.submit_request(
         feature_id=result["case_id"],
@@ -377,6 +433,7 @@ async def submit_generation_result_for_approval(job_id: str, result_id: str, use
         source_result_id=result_id,
         owner_id=user.id, tenant_id=user.tenant_id or "default",
     )
+    _audit("approval_submitted", result_id, user, job_id=job_id, status="PENDING")
     return approval.model_dump()
 
 
@@ -395,9 +452,13 @@ async def submit_generation_results_for_approval(
     for result_id in request.result_ids:
         result = get_generation_result(job_id, result_id)
         if result is None:
+            _audit("approval_submission_failed", result_id, user, result="failure",
+                   job_id=job_id, error_type="result_not_found")
             rejected.append({"result_id": result_id, "reason": "Generation result not found"})
             continue
         if result["status"] != "completed" or not result.get("content"):
+            _audit("approval_submission_failed", result_id, user, result="failure",
+                   job_id=job_id, error_type="result_not_completed")
             rejected.append({"result_id": result_id, "reason": "Only successful results can be submitted for approval"})
             continue
         approval = gate.submit_request(
@@ -409,6 +470,7 @@ async def submit_generation_results_for_approval(
             owner_id=user.id, tenant_id=user.tenant_id or "default",
         )
         submitted.append(approval.model_dump())
+        _audit("approval_submitted", result_id, user, job_id=job_id, status="PENDING")
     return {"job_id": job_id, "submitted": submitted, "rejected": rejected}
 
 
@@ -422,6 +484,8 @@ async def download_generation_result(job_id: str, result_id: str, user: User = D
     if result is None or not result.get("content"):
         raise HTTPException(status_code=404, detail="Generated artifact not found")
     filename = result.get("artifact_name") or f"row-{result['row_number']}.feature"
+    _audit("generation.artifact_downloaded", result_id, user, job_id=job_id,
+           row_number=result["row_number"], status=result["status"])
     return PlainTextResponse(
         result["content"],
         media_type="text/plain",
@@ -438,6 +502,8 @@ async def download_generation(job_id: str, user: User = Depends(requires_permiss
     results = [item for item in get_generation_results(job_id) if item.get("content")]
     if not results:
         raise HTTPException(status_code=404, detail="No generated artifacts available")
+    _audit("generation.artifacts_downloaded", job_id, user, artifact_count=len(results),
+           status=job["status"])
     archive = io.BytesIO()
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
         for item in results:

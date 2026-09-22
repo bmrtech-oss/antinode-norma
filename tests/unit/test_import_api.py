@@ -63,6 +63,29 @@ def test_import_rejects_unsupported_files(tmp_path, monkeypatch):
     assert response.status_code == 415
 
 
+def test_import_rejects_malformed_csv(tmp_path, monkeypatch):
+    monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
+    monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
+    response = TestClient(app, headers=AUTH_HEADERS).post(
+        "/v1/imports",
+        files={"file": ("broken.csv", io.BytesIO(b"\xff\xfe\x00"), "text/csv")},
+    )
+    assert response.status_code == 422
+    assert "Unable to parse CSV" in response.json()["detail"]
+
+
+def test_import_rejects_oversized_upload(tmp_path, monkeypatch):
+    monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
+    monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
+    oversized = b"ID,Summary,Action\n" + (b"TC-1,Login,log in\n" * ((25 * 1024 * 1024 // 17) + 1))
+    response = TestClient(app, headers=AUTH_HEADERS).post(
+        "/v1/imports",
+        files={"file": ("large.csv", io.BytesIO(oversized), "text/csv")},
+    )
+    assert response.status_code == 413
+    assert "25 MB limit" in response.json()["detail"]
+
+
 def test_xlsx_preview_exposes_worksheets_and_mapping_drives_validation(tmp_path, monkeypatch):
     monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
     monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
@@ -230,6 +253,43 @@ def test_successful_generation_result_can_be_submitted_for_approval(tmp_path, mo
     assert response.json()["status"] == "PENDING"
     assert response.json()["source_job_id"] == job["id"]
     assert response.json()["source_result_id"] == result["id"]
+
+
+def test_clean_result_workflow_approves_and_downloads_artifact(tmp_path, monkeypatch):
+    monkeypatch.setenv("NORMA_IMPORT_DB", str(tmp_path / "jobs.sqlite3"))
+    monkeypatch.setenv("NORMA_IMPORT_DIR", str(tmp_path / "uploads"))
+    monkeypatch.setenv("NORMA_ARTIFACT_DIR", str(tmp_path / "artifacts"))
+    client = TestClient(app, headers=AUTH_HEADERS)
+    imported = client.post(
+        "/v1/imports",
+        files={"file": ("clean.csv", io.BytesIO(b"ID,Summary,Action\nTC-7,Checkout,complete checkout\n"), "text/csv")},
+    ).json()
+    validation = client.post(f"/v1/imports/{imported['id']}/validate")
+    assert validation.status_code == 200
+    job = client.post("/v1/generation-jobs", json={"import_id": imported["id"]}).json()
+    for _ in range(100):
+        if client.get(f"/v1/generation-jobs/{job['id']}").json()["status"] == "completed":
+            break
+        time.sleep(0.01)
+    result = client.get(f"/v1/generation-jobs/{job['id']}/results").json()["results"][0]
+
+    submitted = client.post(
+        f"/v1/generation-jobs/{job['id']}/results/{result['id']}/submit-approval"
+    )
+    assert submitted.status_code == 200
+    approval_id = submitted.json()["id"]
+    approved = client.post(
+        f"/api/approvals/{approval_id}/approve",
+        json={"reviewer": "release-reviewer", "reason": "Release readiness workflow"},
+    )
+    assert approved.status_code == 200
+    assert approved.json()["status"] == "APPROVED"
+
+    artifact = client.get(
+        f"/v1/generation-jobs/{job['id']}/results/{result['id']}/download"
+    )
+    assert artifact.status_code == 200
+    assert "Feature: Checkout" in artifact.text
 
 
 def test_failed_generation_result_cannot_be_submitted_for_approval(tmp_path, monkeypatch):
