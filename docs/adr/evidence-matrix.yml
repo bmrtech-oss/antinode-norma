@@ -11,6 +11,8 @@ schema:
     - test_paths
     - command
     - expected_result
+    - artifact_path
+    - surfaces
     - status
     - last_verified
   statuses:
@@ -22,6 +24,287 @@ schema:
     - not_applicable
 
 requirements:
+  - requirement_id: AEGIS-0-FOUNDATION
+    release_profile: aegis-foundation
+    phase: P0
+    task_id: AEGIS-0-T01
+    owner: platform-governance
+    code_paths:
+      - antinode_aegis/__init__.py
+      - antinode_aegis/evidence.py
+    test_paths:
+      - tests/unit/test_aegis_evidence.py
+    surfaces:
+      ui:
+        status: not_applicable
+        route_or_component: Evidence-matrix validation is not a UI capability
+        test_paths: []
+      api:
+        status: not_applicable
+        endpoint_or_schema: Evidence-matrix validation is not an API capability
+        test_paths: []
+      cli:
+        status: supported
+        command: python -m antinode_aegis.evidence
+        test_paths:
+          - tests/unit/test_aegis_evidence.py
+      mcp:
+        status: not_applicable
+        tool_or_resource: Evidence-matrix validation is not an MCP capability
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_evidence.py --no-cov -q
+    expected_result: Evidence matrix schema, paths, statuses, and surface records validate successfully
+    artifact_path: docs/adr/evidence/AEGIS-0-validation.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P1-CONTRACTS
+    release_profile: aegis-foundation
+    phase: P1
+    task_id: P1-T02
+    owner: platform-governance
+    code_paths:
+      - antinode_aegis/contracts.py
+      - antinode_aegis/config.py
+    test_paths:
+      - tests/unit/test_aegis_contracts.py
+      - tests/unit/test_aegis_api_contract.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Aegis contract status is surfaced by the future profile UI
+        test_paths: []
+      api:
+        status: supported
+        endpoint_or_schema: FastAPI OpenAPI schema
+        test_paths:
+          - tests/unit/test_aegis_api_contract.py
+      cli:
+        status: planned
+        command: norma aegis validate-contracts
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: get_contract_metadata
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_contracts.py tests/unit/test_aegis_api_contract.py --no-cov -q
+    expected_result: Shared IR round-trips with Norma and versioned API methods and typed response schemas remain compatible
+    artifact_path: docs/adr/evidence/AEGIS-P1-contracts.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P1-BASELINE
+    release_profile: aegis-foundation
+    phase: P1
+    task_id: P1-T01
+    owner: platform-governance
+    code_paths:
+      - antinode_aegis/baseline.py
+    test_paths:
+      - tests/unit/test_aegis_baseline.py
+    surfaces:
+      ui:
+        status: not_applicable
+        route_or_component: Baseline capture is a repository governance operation
+        test_paths: []
+      api:
+        status: not_applicable
+        endpoint_or_schema: Baseline capture is a repository governance operation
+        test_paths: []
+      cli:
+        status: supported
+        command: python -m antinode_aegis.baseline
+        test_paths:
+          - tests/unit/test_aegis_baseline.py
+      mcp:
+        status: not_applicable
+        tool_or_resource: Baseline capture is not exposed as an agent mutation
+        test_paths: []
+    command: python -m antinode_aegis.baseline --output docs/adr/evidence/AEGIS-P1-baseline.json
+    expected_result: Repository SHA, Python version, and collected pytest count are recorded
+    artifact_path: docs/adr/evidence/AEGIS-P1-baseline.json
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P1-DOMAIN-LOADER
+    release_profile: aegis-foundation
+    phase: P1
+    task_id: P1-T04
+    owner: platform-governance
+    code_paths:
+      - antinode_aegis/domain.py
+      - antinode_norma/core/model_loader.py
+    test_paths:
+      - tests/unit/test_aegis_domain.py
+    surfaces:
+      ui:
+        status: not_applicable
+        route_or_component: Domain loading is an internal contract operation
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Domain contract API is not enabled in the foundation profile
+        test_paths: []
+      cli:
+        status: planned
+        command: norma aegis load-domain
+        test_paths: []
+      mcp:
+        status: not_applicable
+        tool_or_resource: Domain loading is not exposed as a direct MCP mutation
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_domain.py --no-cov -q
+    expected_result: Existing Norma domain model behavior is preserved through the Aegis adapter
+    artifact_path: docs/adr/evidence/AEGIS-P1-domain-loader.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P1-SHARED-IR
+    release_profile: aegis-foundation
+    phase: P1
+    task_id: P1-T03
+    owner: platform-governance
+    code_paths:
+      - antinode_aegis/shared_ir.py
+      - antinode_aegis/contracts.py
+      - antinode_norma/core/normalize.py
+    test_paths:
+      - tests/unit/test_aegis_shared_ir.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Shared IR is consumed by future profile UI workflows
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Shared IR API contract is not enabled in the foundation profile
+        test_paths: []
+      cli:
+        status: planned
+        command: norma aegis normalize
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: normalize_requirements
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_shared_ir.py --no-cov -q
+    expected_result: Structured and story inputs produce equivalent versioned IR with provenance
+    artifact_path: docs/adr/evidence/AEGIS-P1-shared-ir.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P1-CONFIG
+    release_profile: aegis-foundation
+    phase: P1
+    task_id: P1-T05
+    owner: platform-governance
+    code_paths:
+      - antinode_norma/core/config.py
+      - antinode_aegis/config.py
+    test_paths:
+      - tests/unit/test_config.py
+      - tests/unit/test_aegis_config.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Aegis configuration status is surfaced by the future profile UI
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Aegis configuration API is not enabled in the foundation profile
+        test_paths: []
+      cli:
+        status: planned
+        command: norma aegis config validate
+        test_paths: []
+      mcp:
+        status: not_applicable
+        tool_or_resource: Configuration loading is not exposed as a direct MCP mutation
+        test_paths: []
+    command: python -m pytest tests/unit/test_config.py tests/unit/test_aegis_config.py --no-cov -q
+    expected_result: Norma loads additive Aegis configuration with safe defaults and bounded settings
+    artifact_path: docs/adr/evidence/AEGIS-P1-config.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P1-HEADERS
+    release_profile: aegis-foundation
+    phase: P1
+    task_id: P1-T06
+    owner: platform-governance
+    code_paths:
+      - antinode_aegis/headers.py
+      - antinode_norma/core/normalize.py
+    test_paths:
+      - tests/unit/test_aegis_headers.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Header mapping status is surfaced by future import UI workflows
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Header normalization API is not enabled in the foundation profile
+        test_paths: []
+      cli:
+        status: planned
+        command: norma aegis normalize --headers
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: normalize_headers
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_headers.py --no-cov -q
+    expected_result: Common aliases and unknown headers normalize to stable canonical names
+    artifact_path: docs/adr/evidence/AEGIS-P1-headers.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P1-CHECKPOINT
+    release_profile: aegis-foundation
+    phase: P1
+    task_id: P1-T07
+    owner: platform-governance
+    code_paths:
+      - antinode_aegis/evidence.py
+      - antinode_aegis/contracts.py
+      - antinode_aegis/shared_ir.py
+      - antinode_aegis/domain.py
+      - antinode_aegis/config.py
+      - antinode_aegis/headers.py
+    test_paths:
+      - tests/unit/test_aegis_baseline.py
+      - tests/unit/test_aegis_contracts.py
+      - tests/unit/test_aegis_api_contract.py
+      - tests/unit/test_aegis_shared_ir.py
+      - tests/unit/test_aegis_domain.py
+      - tests/unit/test_aegis_config.py
+      - tests/unit/test_aegis_headers.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Phase checkpoint status is tracked in ADR evidence
+        test_paths: []
+      api:
+        status: supported
+        endpoint_or_schema: Existing versioned OpenAPI paths are checkpoint-tested
+        test_paths:
+          - tests/unit/test_aegis_api_contract.py
+      cli:
+        status: supported
+        command: python -m antinode_aegis.evidence docs/adr/evidence-matrix.yml
+        test_paths:
+          - tests/unit/test_aegis_evidence.py
+      mcp:
+        status: not_applicable
+        tool_or_resource: Phase checkpoint is repository governance
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_baseline.py tests/unit/test_aegis_contracts.py tests/unit/test_aegis_api_contract.py tests/unit/test_aegis_shared_ir.py tests/unit/test_aegis_domain.py tests/unit/test_aegis_config.py tests/unit/test_aegis_headers.py --no-cov -q
+    expected_result: All seven P1 tasks pass together with complete exit evidence
+    artifact_path: docs/adr/evidence/AEGIS-P1-checkpoint.md
+    status: implemented
+    last_verified: "2026-09-23"
+
   - requirement_id: NORMA-WF-01
     release_profile: norma-workflow
     phase: current
@@ -34,12 +317,12 @@ requirements:
       - tests/unit/test_import_api.py
     surfaces:
       ui:
-        status: implemented
+        status: supported
         route_or_component: ui/src/components/Generation.tsx
         test_paths:
           - ui/e2e/app.spec.ts
       api:
-        status: implemented
+        status: supported
         endpoint_or_schema: POST /v1/imports
         test_paths:
           - tests/unit/test_import_api.py
@@ -53,6 +336,7 @@ requirements:
         test_paths: []
     command: pytest -q tests/unit/test_import_api.py
     expected_result: CSV and XLSX upload, preview, mapping, and validation pass
+    artifact_path: docs/adr/evidence/NORMA-WF-01-import-validation.md
     status: implemented
     last_verified: "2026-09-22"
 
@@ -69,12 +353,12 @@ requirements:
       - tests/unit/test_generation_provider_resilience_gen4_t08.py
     surfaces:
       ui:
-        status: implemented
+        status: supported
         route_or_component: ui/src/components/Generation.tsx
         test_paths:
           - ui/e2e/app.spec.ts
       api:
-        status: implemented
+        status: supported
         endpoint_or_schema: POST /v1/generation-jobs
         test_paths:
           - tests/unit/test_import_api.py
@@ -88,6 +372,7 @@ requirements:
         test_paths: []
     command: pytest -q tests/unit/test_import_api.py tests/unit/test_generation_provider_resilience_gen4_t08.py
     expected_result: Generation, progress, retry, cancellation, and provider resilience pass
+    artifact_path: docs/adr/evidence/NORMA-WF-02-generation-resilience.md
     status: implemented
     last_verified: "2026-09-22"
 
@@ -103,12 +388,12 @@ requirements:
       - tests/unit/test_generation_audit_gen4_t07.py
     surfaces:
       ui:
-        status: implemented
+        status: supported
         route_or_component: ui/src/components/AuditTrailView.tsx
         test_paths:
           - ui/e2e/app.spec.ts
       api:
-        status: implemented
+        status: supported
         endpoint_or_schema: GET /v1/audit-events
         test_paths:
           - tests/unit/test_generation_audit_gen4_t07.py
@@ -122,6 +407,7 @@ requirements:
         test_paths: []
     command: pytest -q tests/unit/test_generation_audit_gen4_t07.py
     expected_result: Lifecycle audit events preserve context and exclude sensitive content
+    artifact_path: docs/adr/evidence/NORMA-WF-03-audit-integrity.md
     status: implemented
     last_verified: "2026-09-22"
 
@@ -134,6 +420,7 @@ requirements:
     test_paths: []
     command: null
     expected_result: KG consistency and coverage gates pass their validation thresholds
+    artifact_path: null
     status: planned
     last_verified: null
     surfaces:
@@ -163,6 +450,7 @@ requirements:
     test_paths: []
     command: null
     expected_result: ECE, MCE, and Brier reports meet the declared profile thresholds
+    artifact_path: null
     status: planned
     last_verified: null
     surfaces:

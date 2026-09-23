@@ -1720,11 +1720,42 @@ A task is Done when:
 
 ## 18. Status Tracking
 
+### 18.1 Progress ledger
+
+The frozen phase table below is the delivery plan. The machine-readable
+requirement status and evidence are authoritative in
+`docs/adr/evidence-matrix.yml`; this ledger is the human-readable progress
+view for agents and reviewers.
+
+**Last updated:** 2026-09-23
+**Current baseline:** Norma workflow release candidate
+**Current Aegis workstream:** P1 — Baseline + IR
+**Next task:** P2-T01 — CSV ingester
+**Release profile:** `aegis-foundation`
+**Overall Aegis status:** In progress; not release-approved
+
+| Requirement / task | Status | Evidence | Notes |
+|---|---|---|---|
+| AEGIS-0 foundation and matrix validation | Implemented | `docs/adr/evidence/AEGIS-0-validation.md` | Package boundary, validator, focused tests, and CI validation are present |
+| P1-T01 — Establish baseline | Implemented | `docs/adr/evidence/AEGIS-P1-baseline.json` | SHA, Python version, and collected test count recorded |
+| P1-T02 — Public API contract tests | Implemented | `docs/adr/evidence/AEGIS-P1-contracts.md` | Canonical paths, methods, typed response schemas, and legacy aliases are covered |
+| P1-T03 — Shared IR | Implemented | `docs/adr/evidence/AEGIS-P1-shared-ir.md` | CSV and story inputs produce versioned IR with provenance |
+| P1-T04 — Domain model loader | Implemented | `docs/adr/evidence/AEGIS-P1-domain-loader.md` | Aegis adapter preserves Norma loader behavior and provenance |
+| P1-T05 — Extend configuration schema | Implemented | `docs/adr/evidence/AEGIS-P1-config.md` | Additive `aegis` configuration loads with safe defaults |
+| P1-T06 — Header normalization module | Implemented | `docs/adr/evidence/AEGIS-P1-headers.md` | Canonical alias and row normalization adapter added |
+| P1-T07 — Phase 1 checkpoint | Implemented | `docs/adr/evidence/AEGIS-P1-checkpoint.md` | All P1 slices pass together and P1 exit evidence is complete |
+
+Agents must update this ledger and the evidence matrix in the same change when
+the next task changes status. A task may be marked **Implemented** only when
+its focused tests, acceptance command, and referenced evidence artifact exist.
+Use **Partial** for an incomplete slice, **Blocked** for an unmet dependency,
+and **Planned** when no implementation has started.
+
 | Phase | Track | Status | Tasks Done | Blocked By |
 |---|---|---|---|---|
-| P0 — Foundations | — | Not started | 0/8 | — |
-| P1 — Baseline + IR | — | Not started | 0/7 | P0 |
-| P2 — Structured ingest | — | Not started | 0/6 | P1 |
+| P0 — Foundations | — | In progress | 1/8* | — |
+| P1 — Baseline + IR | — | Complete | 7/7* | P0 |
+| P2 — Structured ingest | — | In progress | 0/6 | P1 |
 | P3a — Hard gates | — | Not started | 0/5 | P2 |
 | P4 — Walking skeleton | — | Not started | 0/8 | P3a |
 | P5 — Eval + cache | A1 | Not started | 0/7 | P4 |
@@ -1740,6 +1771,11 @@ A task is Done when:
 | P14 — Analytics + release | — | Not started | 0/4 | P13 |
 
 **Total tasks:** 101. **Total phases:** 16.
+
+\* The phase counts include only tasks with complete evidence. The P0 count
+includes the AEGIS-0 foundation record as the first executable foundation
+slice; P1 counts all seven P1 tasks after the public API contract tests and
+checkpoint passed. The frozen ADR task index remains unchanged.
 
 ---
 
