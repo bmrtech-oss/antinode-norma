@@ -24,6 +24,286 @@ schema:
     - not_applicable
 
 requirements:
+  - requirement_id: AEGIS-P0-SECRETS
+    release_profile: aegis-foundation
+    phase: P0
+    task_id: P0-T01
+    owner: security-lead
+    code_paths:
+      - docs/SECRETS.md
+      - .env.example
+      - .gitignore
+      - .github/workflows/ci.yml
+    test_paths:
+      - tests/unit/test_aegis_p0_secrets.py
+    surfaces:
+      ui:
+        status: not_applicable
+        route_or_component: Secret handling is an infrastructure and CI control
+        test_paths: []
+      api:
+        status: not_applicable
+        endpoint_or_schema: Secret handling is not exposed as an API operation
+        test_paths: []
+      cli:
+        status: supported
+        command: Provider-specific CLI operations fail explicitly when required keys are missing
+        test_paths: []
+      mcp:
+        status: not_applicable
+        tool_or_resource: Secrets are not exposed to MCP tools
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_p0_secrets.py --no-cov -q
+    expected_result: Secret templates, Git exclusion, CI scanning, and fail-fast provider handling are documented and verified
+    artifact_path: docs/adr/evidence/AEGIS-P0-secrets.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P0-COST
+    release_profile: aegis-foundation
+    phase: P0
+    task_id: P0-T02
+    owner: finance-and-platform
+    code_paths:
+      - docs/COST.md
+      - antinode_norma/evaluate/cost.py
+    test_paths:
+      - tests/unit/test_aegis_p0_cost.py
+      - tests/unit/test_cost_tracker_p5_t05.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Cost reporting is planned for the future Aegis operations UI
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Cost reporting API is not enabled in the foundation profile
+        test_paths: []
+      cli:
+        status: planned
+        command: norma cost report
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: get_cost_report
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_p0_cost.py tests/unit/test_cost_tracker_p5_t05.py --no-cov -q
+    expected_result: Documented token assumptions, cache effects, logging, and cost gate match the implementation
+    artifact_path: docs/adr/evidence/AEGIS-P0-cost.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P0-GIT-WORKFLOW
+    release_profile: aegis-foundation
+    phase: P0
+    task_id: P0-T03
+    owner: engineering-lead
+    code_paths:
+      - docs/GIT_WORKFLOW.md
+      - .github/workflows/ci.yml
+    test_paths:
+      - tests/unit/test_aegis_p0_git_workflow.py
+    surfaces:
+      ui:
+        status: not_applicable
+        route_or_component: Git workflow is a repository governance control
+        test_paths: []
+      api:
+        status: not_applicable
+        endpoint_or_schema: Git workflow is not exposed as an API operation
+        test_paths: []
+      cli:
+        status: supported
+        command: git status and pull-request CI checks
+        test_paths:
+          - tests/unit/test_aegis_p0_git_workflow.py
+      mcp:
+        status: not_applicable
+        tool_or_resource: Git workflow policy is not an MCP mutation
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_p0_git_workflow.py --no-cov -q
+    expected_result: Branch, commit, pull-request, CI, and release workflow requirements are documented and traceable
+    artifact_path: docs/adr/evidence/AEGIS-P0-git-workflow.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P0-ROLLBACK-FLAGS
+    release_profile: aegis-foundation
+    phase: P0
+    task_id: P0-T04
+    owner: engineering-lead
+    code_paths:
+      - docs/ROLLBACK.md
+      - antinode_norma/core/features.py
+    test_paths:
+      - tests/unit/test_aegis_p0_rollback_flags.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Feature flag administration is planned for the future operations UI
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Feature flag administration API is not enabled in the foundation profile
+        test_paths: []
+      cli:
+        status: supported
+        command: NORMA_FEATURE_<NAME> environment override and CLI override
+        test_paths:
+          - tests/unit/test_aegis_p0_rollback_flags.py
+      mcp:
+        status: not_applicable
+        tool_or_resource: Rollback is not exposed as an MCP mutation
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_p0_rollback_flags.py --no-cov -q
+    expected_result: Feature flags fail closed by default and documented rollback paths are verified
+    artifact_path: docs/adr/evidence/AEGIS-P0-rollback-flags.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P0-ESCALATION
+    release_profile: aegis-foundation
+    phase: P0
+    task_id: P0-T05
+    owner: platform-governance
+    code_paths:
+      - docs/ESCALATION.md
+      - .github/ISSUE_TEMPLATE/blocked_task.md
+    test_paths:
+      - tests/unit/test_aegis_p0_escalation.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Escalation queue UI is planned for the future operations surface
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Escalation summary API is not enabled in the foundation profile
+        test_paths: []
+      cli:
+        status: supported
+        command: Escalation summaries use build/escalation.json and blocked-task issue workflow
+        test_paths:
+          - tests/unit/test_aegis_p0_escalation.py
+      mcp:
+        status: not_applicable
+        tool_or_resource: Escalation is not exposed as an MCP mutation
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_p0_escalation.py --no-cov -q
+    expected_result: ADR escalation triggers, stop rules, and blocked-task artifacts are documented and verified
+    artifact_path: docs/adr/evidence/AEGIS-P0-escalation.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P0-UI-SPIKE
+    release_profile: aegis-foundation
+    phase: P0
+    task_id: P0-T06
+    owner: ux-lead
+    code_paths:
+      - spike/ui/index.html
+      - spike/ui/README.md
+      - ui/src/components/AppShell.tsx
+      - ui/src/components/ui
+    test_paths:
+      - tests/unit/test_aegis_p0_ui_spike.py
+    surfaces:
+      ui:
+        status: supported
+        route_or_component: spike/ui/index.html
+        test_paths:
+          - tests/unit/test_aegis_p0_ui_spike.py
+      api:
+        status: planned
+        endpoint_or_schema: Aegis evidence and escalation APIs require later versioned contracts
+        test_paths: []
+      cli:
+        status: supported
+        command: CLI-only release is the documented fallback
+        test_paths:
+          - tests/unit/test_aegis_p0_ui_spike.py
+      mcp:
+        status: planned
+        tool_or_resource: Aegis UI surfaces are not exposed through MCP in the foundation profile
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_p0_ui_spike.py --no-cov -q
+    expected_result: Non-production UI spike demonstrates foundation surfaces and records a go/no-go recommendation
+    artifact_path: docs/adr/evidence/AEGIS-P0-ui-spike.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P0-REUSE
+    release_profile: aegis-foundation
+    phase: P0
+    task_id: P0-T07
+    owner: engineering-lead
+    code_paths:
+      - docs/COMPONENT_SOURCING.md
+      - pyproject.toml
+      - ui/package.json
+    test_paths:
+      - tests/unit/test_aegis_p0_reuse.py
+    surfaces:
+      ui:
+        status: supported
+        route_or_component: Existing React and Playwright components are catalogued for reuse
+        test_paths:
+          - tests/unit/test_aegis_p0_reuse.py
+      api:
+        status: supported
+        endpoint_or_schema: Existing FastAPI and Pydantic contracts are catalogued for reuse
+        test_paths:
+          - tests/unit/test_aegis_p0_reuse.py
+      cli:
+        status: not_applicable
+        command: Component sourcing is a governance register, not a CLI operation
+        test_paths: []
+      mcp:
+        status: not_applicable
+        tool_or_resource: Component sourcing is not an MCP capability
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_p0_reuse.py --no-cov -q
+    expected_result: Current reuse candidates are evidenced and future candidates remain explicitly unverified
+    artifact_path: docs/adr/evidence/AEGIS-P0-reuse.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P0-AI-GOVERNANCE
+    release_profile: aegis-foundation
+    phase: P0
+    task_id: P0-T08
+    owner: platform-governance
+    code_paths:
+      - docs/AI_GOVERNANCE.md
+      - docs/ESCALATION.md
+      - docs/SECRETS.md
+      - docs/ROLLBACK.md
+    test_paths:
+      - tests/unit/test_aegis_p0_governance.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Governance status and human-review surfaces require later UI contracts
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Governance evidence and review APIs are not enabled in the foundation profile
+        test_paths: []
+      cli:
+        status: supported
+        command: Governance status is represented by the evidence matrix and release artifacts
+        test_paths:
+          - tests/unit/test_aegis_p0_governance.py
+      mcp:
+        status: planned
+        tool_or_resource: Governance evidence access requires a future versioned MCP contract
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_p0_governance.py --no-cov -q
+    expected_result: AI governance themes, accountability, legal scope, and current-versus-target boundaries are documented
+    artifact_path: docs/adr/evidence/AEGIS-P0-ai-governance.md
+    status: implemented
+    last_verified: "2026-09-23"
+
   - requirement_id: AEGIS-0-FOUNDATION
     release_profile: aegis-foundation
     phase: P0
@@ -302,6 +582,228 @@ requirements:
     command: python -m pytest tests/unit/test_aegis_baseline.py tests/unit/test_aegis_contracts.py tests/unit/test_aegis_api_contract.py tests/unit/test_aegis_shared_ir.py tests/unit/test_aegis_domain.py tests/unit/test_aegis_config.py tests/unit/test_aegis_headers.py --no-cov -q
     expected_result: All seven P1 tasks pass together with complete exit evidence
     artifact_path: docs/adr/evidence/AEGIS-P1-checkpoint.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P2-CSV
+    release_profile: aegis-foundation
+    phase: P2
+    task_id: P2-T01
+    owner: platform-governance
+    code_paths:
+      - antinode_aegis/csv.py
+      - antinode_norma/ingest_structured/csv.py
+    test_paths:
+      - tests/unit/test_aegis_csv.py
+      - tests/unit/test_ingest.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: CSV ingestion is consumed by future Aegis import UI workflows
+        test_paths: []
+      api:
+        status: supported
+        endpoint_or_schema: POST /v1/imports
+        test_paths:
+          - tests/unit/test_import_api.py
+      cli:
+        status: supported
+        command: norma import
+        test_paths:
+          - tests/unit/test_ingest.py
+      mcp:
+        status: supported
+        tool_or_resource: import_requirements
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_csv.py tests/unit/test_ingest.py --no-cov -q
+    expected_result: CSV rows normalize to versioned Aegis IR while preserving existing Norma behavior
+    artifact_path: docs/adr/evidence/AEGIS-P2-csv.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P2-XLSX
+    release_profile: aegis-foundation
+    phase: P2
+    task_id: P2-T02
+    owner: platform-governance
+    code_paths:
+      - antinode_aegis/xlsx.py
+      - antinode_norma/ingest_structured/xlsx.py
+    test_paths:
+      - tests/unit/test_aegis_xlsx.py
+      - tests/unit/test_ingest.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: XLSX ingestion is consumed by future Aegis import UI workflows
+        test_paths: []
+      api:
+        status: supported
+        endpoint_or_schema: POST /v1/imports
+        test_paths:
+          - tests/unit/test_import_api.py
+      cli:
+        status: supported
+        command: norma import
+        test_paths:
+          - tests/unit/test_ingest.py
+      mcp:
+        status: supported
+        tool_or_resource: import_requirements
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_xlsx.py tests/unit/test_ingest.py --no-cov -q
+    expected_result: XLSX worksheet rows normalize to versioned Aegis IR with worksheet provenance
+    artifact_path: docs/adr/evidence/AEGIS-P2-xlsx.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P2-STORY
+    release_profile: aegis-foundation
+    phase: P2
+    task_id: P2-T03
+    owner: platform-governance
+    code_paths:
+      - antinode_aegis/story.py
+      - antinode_norma/ingest_structured/story.py
+    test_paths:
+      - tests/unit/test_aegis_story.py
+      - tests/unit/test_ingest.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Story ingestion is consumed by future Aegis import UI workflows
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Story adapter API is not enabled in the foundation profile
+        test_paths: []
+      cli:
+        status: planned
+        command: norma aegis normalize --kind story
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: normalize_requirements
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_story.py tests/unit/test_ingest.py --no-cov -q
+    expected_result: Story dictionaries normalize to versioned Aegis IR with explicit invalid-input errors
+    artifact_path: docs/adr/evidence/AEGIS-P2-story.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P2-NORMALIZE
+    release_profile: aegis-foundation
+    phase: P2
+    task_id: P2-T04
+    owner: platform-governance
+    code_paths:
+      - antinode_aegis/shared_ir.py
+      - antinode_aegis/csv.py
+      - antinode_aegis/xlsx.py
+      - antinode_aegis/story.py
+    test_paths:
+      - tests/unit/test_aegis_shared_ir.py
+      - tests/unit/test_aegis_csv.py
+      - tests/unit/test_aegis_xlsx.py
+      - tests/unit/test_aegis_story.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Unified normalization is consumed by future Aegis import UI workflows
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Unified Aegis normalization API is not enabled in the foundation profile
+        test_paths: []
+      cli:
+        status: planned
+        command: norma aegis normalize
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: normalize_requirements
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_shared_ir.py tests/unit/test_aegis_csv.py tests/unit/test_aegis_xlsx.py tests/unit/test_aegis_story.py --no-cov -q
+    expected_result: Supported inputs dispatch to one versioned RequirementIR contract and unsupported kinds fail explicitly
+    artifact_path: docs/adr/evidence/AEGIS-P2-normalize.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P2-CLI
+    release_profile: aegis-foundation
+    phase: P2
+    task_id: P2-T05
+    owner: platform-governance
+    code_paths:
+      - antinode_norma/cli.py
+      - antinode_aegis/shared_ir.py
+    test_paths:
+      - tests/unit/test_aegis_cli.py
+    surfaces:
+      ui:
+        status: not_applicable
+        route_or_component: CLI normalization is not a UI capability
+        test_paths: []
+      api:
+        status: not_applicable
+        endpoint_or_schema: CLI normalization is not an API capability
+        test_paths: []
+      cli:
+        status: supported
+        command: anorm aegis normalize
+        test_paths:
+          - tests/unit/test_aegis_cli.py
+      mcp:
+        status: planned
+        tool_or_resource: normalize_requirements
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_cli.py --no-cov -q
+    expected_result: CLI normalizes supported inputs to JSON versioned RequirementIR and reports invalid input explicitly
+    artifact_path: docs/adr/evidence/AEGIS-P2-cli.md
+    status: implemented
+    last_verified: "2026-09-23"
+
+  - requirement_id: AEGIS-P2-CHECKPOINT
+    release_profile: aegis-foundation
+    phase: P2
+    task_id: P2-T06
+    owner: platform-governance
+    code_paths:
+      - antinode_aegis/shared_ir.py
+      - antinode_aegis/csv.py
+      - antinode_aegis/xlsx.py
+      - antinode_aegis/story.py
+      - antinode_norma/cli.py
+      - antinode_aegis/evidence.py
+    test_paths:
+      - tests/integration/test_aegis_phase2.py
+      - tests/unit/test_aegis_csv.py
+      - tests/unit/test_aegis_xlsx.py
+      - tests/unit/test_aegis_story.py
+      - tests/unit/test_aegis_shared_ir.py
+      - tests/unit/test_aegis_cli.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Phase integration is covered by backend and CLI adapters
+        test_paths: []
+      api:
+        status: supported
+        endpoint_or_schema: Existing import API remains the structured-ingest API surface
+        test_paths:
+          - tests/unit/test_import_api.py
+      cli:
+        status: supported
+        command: anorm aegis normalize
+        test_paths:
+          - tests/integration/test_aegis_phase2.py
+      mcp:
+        status: planned
+        tool_or_resource: normalize_requirements
+        test_paths: []
+    command: python -m pytest tests/integration/test_aegis_phase2.py tests/unit/test_aegis_csv.py tests/unit/test_aegis_xlsx.py tests/unit/test_aegis_story.py tests/unit/test_aegis_shared_ir.py tests/unit/test_aegis_cli.py --no-cov -q
+    expected_result: All P2 adapters and CLI output produce compatible versioned RequirementIR with valid evidence
+    artifact_path: docs/adr/evidence/AEGIS-P2-checkpoint.md
     status: implemented
     last_verified: "2026-09-23"
 

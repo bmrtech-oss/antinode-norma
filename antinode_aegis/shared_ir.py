@@ -6,7 +6,9 @@ from pathlib import Path
 from typing import Any
 
 from antinode_aegis.contracts import RequirementIR
-from antinode_norma.ingest_structured.normalize import normalize
+from antinode_aegis.csv import ingest_csv
+from antinode_aegis.story import ingest_stories
+from antinode_aegis.xlsx import ingest_xlsx
 
 
 def normalize_requirements(
@@ -19,17 +21,22 @@ def normalize_requirements(
 ) -> list[RequirementIR]:
     """Normalize CSV, XLSX, or story input into the shared Aegis IR."""
 
-    cases = normalize(source, kind, sheet_name=sheet_name)
-    reference = source_reference
-    if reference is None and isinstance(source, (str, Path)):
-        reference = str(source)
-
-    return [
-        RequirementIR.from_test_case(
-            case,
-            source_kind=kind.lower().strip(),
-            source_reference=reference,
+    kind_clean = kind.lower().strip()
+    if kind_clean == "csv":
+        return ingest_csv(
+            source,
             release_profile=release_profile,
         )
-        for case in cases
-    ]
+    if kind_clean in {"xlsx", "excel"}:
+        return ingest_xlsx(
+            source,
+            sheet_name=sheet_name,
+            release_profile=release_profile,
+        )
+    if kind_clean in {"story", "dict"}:
+        return ingest_stories(
+            source,
+            source_reference=source_reference,
+            release_profile=release_profile,
+        )
+    raise ValueError(f"Unsupported ingest kind: '{kind}'")

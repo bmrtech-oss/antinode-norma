@@ -44,6 +44,11 @@ jobs:
         run: |
           python -m antinode_aegis.evidence docs/adr/evidence-matrix.yml
 
+      - name: Scan repository for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Check unused imports with Ruff
         run: |
           python -m ruff check . --select F401

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aegis UI Spike</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: system-ui, sans-serif;
+        background: #111827;
+        color: #f9fafb;
+      }
+      body { margin: 0; }
+      main { max-width: 72rem; margin: 0 auto; padding: 2rem; }
+      .eyebrow { color: #a5b4fc; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
+      .notice { border: 1px solid #f59e0b; border-radius: .5rem; padding: 1rem; color: #fde68a; }
+      .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+      article { background: #1f2937; border: 1px solid #374151; border-radius: .5rem; padding: 1rem; }
+      dt { color: #9ca3af; font-size: .85rem; }
+      dd { margin: .35rem 0 0; font-size: 1.4rem; font-weight: 700; }
+      .status { color: #86efac; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Aegis foundation UI spike</p>
+      <h1>Evidence and governance workspace</h1>
+      <p class="notice" role="status">
+        Non-production proof of concept. Values are static placeholders; no Aegis API is implied.
+      </p>
+      <section aria-labelledby="surfaces-heading">
+        <h2 id="surfaces-heading">Release profile surfaces</h2>
+        <div class="grid">
+          <article>
+            <h3>Evidence</h3>
+            <dl><dt>Matrix status</dt><dd class="status">Validated</dd></dl>
+          </article>
+          <article>
+            <h3>Escalations</h3>
+            <dl><dt>Human decisions</dt><dd>0 pending</dd></dl>
+          </article>
+          <article>
+            <h3>Feature flags</h3>
+            <dl><dt>High-risk defaults</dt><dd>Off</dd></dl>
+          </article>
+          <article>
+            <h3>Release gate</h3>
+            <dl><dt>Foundation profile</dt><dd>Not approved</dd></dl>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -78,6 +78,50 @@ def cli():
     pass
 
 
+@cli.group()
+def aegis():
+    """Aegis contract and normalization operations."""
+
+
+@aegis.command("normalize")
+@click.argument("source")
+@click.option(
+    "--kind",
+    type=click.Choice(["csv", "xlsx", "story"], case_sensitive=False),
+    required=True,
+    help="Input format to normalize.",
+)
+@click.option("--sheet-name", default=None, help="Worksheet name for XLSX input.")
+@click.option("--source-reference", default=None, help="External provenance reference for story input.")
+def aegis_normalize(source, kind, sheet_name, source_reference):
+    """Normalize an input into the versioned Aegis RequirementIR contract."""
+    from antinode_aegis.shared_ir import normalize_requirements
+
+    try:
+        normalized_source = source
+        if kind.lower() == "story":
+            story_path = Path(source)
+            if story_path.exists():
+                normalized_source = json.loads(story_path.read_text(encoding="utf-8"))
+            else:
+                normalized_source = json.loads(source)
+        requirements = normalize_requirements(
+            normalized_source,
+            kind,
+            source_reference=source_reference,
+            sheet_name=sheet_name,
+        )
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise click.ClickException(f"Unable to normalize {kind} input: {exc}") from exc
+
+    click.echo(
+        json.dumps(
+            [requirement.model_dump(mode="json") for requirement in requirements],
+            indent=2,
+        )
+    )
+
+
 @cli.command()
 @click.argument("story_text", required=False)
 @click.option("--file", "-f", type=click.Path(exists=True), help="Read story text from file (.txt)")

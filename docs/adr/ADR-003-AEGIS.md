@@ -1729,8 +1729,8 @@ view for agents and reviewers.
 
 **Last updated:** 2026-09-23
 **Current baseline:** Norma workflow release candidate
-**Current Aegis workstream:** P1 — Baseline + IR
-**Next task:** P2-T01 — CSV ingester
+**Current Aegis workstream:** P0 — Foundations
+**Next task:** P3a-T01 — Gate types, aggregator, and Q0 validator
 **Release profile:** `aegis-foundation`
 **Overall Aegis status:** In progress; not release-approved
 
@@ -1753,10 +1753,10 @@ and **Planned** when no implementation has started.
 
 | Phase | Track | Status | Tasks Done | Blocked By |
 |---|---|---|---|---|
-| P0 — Foundations | — | In progress | 1/8* | — |
+| P0 — Foundations | — | Complete | 9/9* | — |
 | P1 — Baseline + IR | — | Complete | 7/7* | P0 |
-| P2 — Structured ingest | — | In progress | 0/6 | P1 |
-| P3a — Hard gates | — | Not started | 0/5 | P2 |
+| P2 — Structured ingest | — | Complete | 6/6 | P1 |
+| P3a — Hard gates | — | Not started | 0/5 | P0, P2 |
 | P4 — Walking skeleton | — | Not started | 0/8 | P3a |
 | P5 — Eval + cache | A1 | Not started | 0/7 | P4 |
 | P6 — MCP tools | A1 | Not started | 0/3 | P5 |
@@ -1773,9 +1773,14 @@ and **Planned** when no implementation has started.
 **Total tasks:** 101. **Total phases:** 16.
 
 \* The phase counts include only tasks with complete evidence. The P0 count
-includes the AEGIS-0 foundation record as the first executable foundation
-slice; P1 counts all seven P1 tasks after the public API contract tests and
-checkpoint passed. The frozen ADR task index remains unchanged.
+includes the AEGIS-0 foundation record and the completed P0-T01 secrets
+strategy, P0-T02 cost model, P0-T03 Git workflow, P0-T04 rollback/feature
+flags, P0-T05 escalation policy, P0-T06 UI spike, and P0-T07 reuse candidate
+verification, and P0-T08 AI governance documentation. The denominator includes
+the AEGIS-0 foundation record plus the eight frozen P0 tasks; P1 counts all seven P1
+tasks after the public API contract tests and checkpoint passed. P2
+implementation is complete. P3a is now unblocked by P0 and P2; the frozen ADR
+task index remains unchanged.
 
 ---
 
