@@ -1,0 +1,184 @@
+version: 1
+document: ADR-003-AEGIS
+schema:
+  required:
+    - requirement_id
+    - release_profile
+    - phase
+    - task_id
+    - owner
+    - code_paths
+    - test_paths
+    - command
+    - expected_result
+    - status
+    - last_verified
+  statuses:
+    - implemented
+    - partial
+    - planned
+    - deferred
+    - waived
+    - not_applicable
+
+requirements:
+  - requirement_id: NORMA-WF-01
+    release_profile: norma-workflow
+    phase: current
+    task_id: GEN-1-T01
+    owner: generation-team
+    code_paths:
+      - antinode_norma/server/routes/imports.py
+      - antinode_norma/server/import_storage.py
+    test_paths:
+      - tests/unit/test_import_api.py
+    surfaces:
+      ui:
+        status: implemented
+        route_or_component: ui/src/components/Generation.tsx
+        test_paths:
+          - ui/e2e/app.spec.ts
+      api:
+        status: implemented
+        endpoint_or_schema: POST /v1/imports
+        test_paths:
+          - tests/unit/test_import_api.py
+      cli:
+        status: planned
+        command: norma import
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: import_requirements
+        test_paths: []
+    command: pytest -q tests/unit/test_import_api.py
+    expected_result: CSV and XLSX upload, preview, mapping, and validation pass
+    status: implemented
+    last_verified: "2026-09-22"
+
+  - requirement_id: NORMA-WF-02
+    release_profile: norma-workflow
+    phase: current
+    task_id: GEN-2-T01
+    owner: generation-team
+    code_paths:
+      - antinode_norma/server/generation_worker.py
+      - antinode_norma/server/routes/imports.py
+    test_paths:
+      - tests/unit/test_import_api.py
+      - tests/unit/test_generation_provider_resilience_gen4_t08.py
+    surfaces:
+      ui:
+        status: implemented
+        route_or_component: ui/src/components/Generation.tsx
+        test_paths:
+          - ui/e2e/app.spec.ts
+      api:
+        status: implemented
+        endpoint_or_schema: POST /v1/generation-jobs
+        test_paths:
+          - tests/unit/test_import_api.py
+      cli:
+        status: planned
+        command: norma generate
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: generate_scenarios
+        test_paths: []
+    command: pytest -q tests/unit/test_import_api.py tests/unit/test_generation_provider_resilience_gen4_t08.py
+    expected_result: Generation, progress, retry, cancellation, and provider resilience pass
+    status: implemented
+    last_verified: "2026-09-22"
+
+  - requirement_id: NORMA-WF-03
+    release_profile: norma-workflow
+    phase: current
+    task_id: GEN-4-T07
+    owner: generation-team
+    code_paths:
+      - antinode_norma/server/routes/imports.py
+      - antinode_norma/server/import_storage.py
+    test_paths:
+      - tests/unit/test_generation_audit_gen4_t07.py
+    surfaces:
+      ui:
+        status: implemented
+        route_or_component: ui/src/components/AuditTrailView.tsx
+        test_paths:
+          - ui/e2e/app.spec.ts
+      api:
+        status: implemented
+        endpoint_or_schema: GET /v1/audit-events
+        test_paths:
+          - tests/unit/test_generation_audit_gen4_t07.py
+      cli:
+        status: planned
+        command: norma evidence audit
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: get_evidence
+        test_paths: []
+    command: pytest -q tests/unit/test_generation_audit_gen4_t07.py
+    expected_result: Lifecycle audit events preserve context and exclude sensitive content
+    status: implemented
+    last_verified: "2026-09-22"
+
+  - requirement_id: AEGIS-Q11-Q12
+    release_profile: aegis-2.0.0
+    phase: P12.a
+    task_id: P12.a-T02
+    owner: governance-and-kg
+    code_paths: []
+    test_paths: []
+    command: null
+    expected_result: KG consistency and coverage gates pass their validation thresholds
+    status: planned
+    last_verified: null
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: ui/src/components/KnowledgeGraphView.tsx
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: POST /v1/knowledge-graph/validate
+        test_paths: []
+      cli:
+        status: planned
+        command: norma graph validate
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: query_knowledge_graph
+        test_paths: []
+
+  - requirement_id: AEGIS-CALIBRATION
+    release_profile: aegis-1.5.0
+    phase: P12.b
+    task_id: P12.b-T01
+    owner: quality-core
+    code_paths: []
+    test_paths: []
+    command: null
+    expected_result: ECE, MCE, and Brier reports meet the declared profile thresholds
+    status: planned
+    last_verified: null
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: ui/src/components/CalibrationDashboard.tsx
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: GET /v1/calibration/reports
+        test_paths: []
+      cli:
+        status: planned
+        command: norma calibration evaluate
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: get_calibration_report
+        test_paths: []
