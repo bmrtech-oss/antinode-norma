@@ -1,6 +1,6 @@
 # ADR-003: NORMA-BDD / Aegis — Platform Extension and Market Positioning
 
-**Single-file architecture decision record. Version 15.1 (FROZEN). Renamed from ADR-001 for the ADR index.**
+**Single-file architecture decision record. Version 15.2 (FROZEN). Renamed from ADR-001 for the ADR index.**
 
 ---
 
@@ -19,6 +19,191 @@
 | **Total tasks** | 101 |
 | **Total phases** | 16 |
 | **Release profiles** | **1.5.0** (BDD-only) or **2.0.0** (with KG) |
+
+---
+
+## Current Implementation Boundary
+
+ADR-003 is the approved target-state architecture and market direction for
+Aegis. It is not a claim that every Aegis component is present in the current
+repository. The active implementation is the Norma BDD generation and
+governance foundation described in
+`docs/GENERATION_WORKFLOW_PLAN.md`.
+
+The current release candidate is **Norma BDD generation workflow**, not Aegis
+1.5.0 or Aegis 2.0.0. The Aegis release profiles remain future milestones and
+must not be used in release or marketing material until their acceptance
+criteria are independently evidenced.
+
+### Current repository status
+
+| Capability | Current evidence | Status |
+|---|---|---|
+| CSV/XLSX ingestion and worksheet selection | `antinode_norma/server/routes/imports.py`, import API tests | Implemented |
+| Header mapping and row validation | Import routes/storage, validation tests | Implemented |
+| Async generation, progress, SSE, retry, cancellation, recovery | `antinode_norma/server/generation_worker.py`, generation tests | Implemented |
+| Artifacts, ZIP download, approval, and source traceability | Import routes, approval model, UI/browser tests | Implemented |
+| Authentication, tenant isolation, rate limits, retention, audit, metrics | Auth middleware, storage, observability, Phase 4 tests | Implemented for the current workflow |
+| Provider timeout, retry, circuit breaker, and redaction | `llm_factory.py`, generation resilience tests | Implemented for the current workflow |
+| Responsive UI, accessibility, functional browser coverage | `ui/`, Playwright quality suite | Implemented for supported local flows |
+| `antinode_aegis` commercial package | No package currently present | Not started |
+| Formal Q0–Q10 Aegis gate orchestration | Current Norma quality/gate components only; no complete Aegis runner | Partial |
+| Q11 graph consistency and Q12 graph coverage | No KG implementation or graph gates currently present | Not started |
+| KG backends and curation workflow | No `antinode_aegis/knowledge_graph` implementation currently present | Not started |
+| Confidence calibration, ECE reporting, and SME routing | No production calibration/SME queue implementation currently present | Not started |
+| Presidio ingest redaction and formal PII scan | Not evidenced in the current workflow release | Not started |
+| Formal compliance certification | Architecture and control mapping only | Not a certification claim |
+
+The status terms above are release-scoped. “Implemented” means implemented and
+covered for the current Norma workflow; it does not imply that the complete
+Aegis profile acceptance criteria are satisfied.
+
+### Recommended implementation stack
+
+The following stack is the default recommendation for future Aegis work. A
+different component may be selected only when its license, maintenance,
+security, operational, and adapter-test evidence is recorded in
+`docs/COMPONENT_SOURCING.md`.
+
+| Concern | Recommended technology | Alternatives | Selection rule |
+|---|---|---|---|
+| API and contracts | FastAPI, Pydantic v2, OpenAPI | Litestar | Preserve typed contracts and generated client/test schemas |
+| Durable relational state | PostgreSQL, SQLAlchemy 2, Alembic | SQLite for single-node development | PostgreSQL is required for multi-process production |
+| Background execution | Redis + Dramatiq or Celery | Temporal for long-running workflows | Use a durable queue; keep worker state in PostgreSQL |
+| Authentication | Authlib OIDC Authorization Code + PKCE | Keycloak, Auth0, cloud IdP | Tokens remain server-side or in memory; no localStorage tokens |
+| Authorization | Casbin or typed application policy layer | Oso | Enforce tenant, role, resource, and action checks in API and service layers |
+| Frontend | React 18, TypeScript, Vite, Tailwind | Next.js | Keep the current SPA contract unless SSR is justified |
+| UI data and state | TanStack Query, Zod | Redux Toolkit | Validate API payloads at the boundary and cache server state |
+| Browser verification | Playwright | Cypress | Playwright remains the required functional/accessibility runner |
+| Gherkin | `gherkin-official`, `gherkin-lint` | `gherklin` | Use parser/linter contract tests before custom gates |
+| Evaluation | Promptfoo for matrix execution; custom evaluator adapters | DeepEval, Ragas | Store prompts, model IDs, datasets, scores, and hashes as evidence |
+| Calibration | scikit-learn calibration, NumPy, pandas | MAPIE for intervals | Version datasets and calibration models; report ECE, MCE, and Brier |
+| Knowledge graph | Kuzu for development; FalkorDB for production | Apache Jena for RDF domains | Access only through the repository adapter and MCP/query contract |
+| MCP | Official MCP Python SDK | HTTP tool gateway | Version tool schemas and run MCP contract tests |
+| Audit and telemetry | OpenTelemetry, Prometheus, Grafana | Vendor OTEL backend | Do not place prompts, generated content, secrets, or raw PII in telemetry |
+| Secrets and dependency security | gitleaks, pip-audit, npm audit, Bandit, Ruff | Trivy for images | Required CI checks with reviewed findings |
+| PII detection | Microsoft Presidio with custom recognizers | Cloud DLP service | Audit mode first; redaction policy must be domain-reviewed |
+| Delivery | OCI containers, nginx, Kubernetes only when required | systemd/Docker Compose for small deployments | Document topology, backup, restore, RPO/RTO, and rollback |
+
+These are recommendations, not current implementation claims. Versions must be
+pinned in lockfiles and reverified during dependency review.
+
+### Product-surface architecture
+
+Every customer-visible capability must be implemented once in a domain service
+and exposed through the surfaces that apply to its audience:
+
+```text
+Domain service and policy layer
+        |
+        +-- REST/OpenAPI + SSE API
+        +-- CLI commands
+        +-- MCP tools/resources
+        +-- React/TypeScript UI
+```
+
+The API is the canonical application contract. UI, CLI, and MCP adapters must
+consume the same domain operations, authorization checks, validation rules, and
+error categories; they must not reimplement business policy independently.
+For example, one `validate_requirement()` operation may have an API endpoint,
+CLI command, MCP tool, and UI workflow, but all four return the same gate
+decision and evidence identifiers.
+
+#### Surface parity contract
+
+The evidence matrix must record surface coverage for each applicable
+requirement. Each surface is classified as `required`, `supported`,
+`not_applicable`, `planned`, or `blocked`.
+
+```yaml
+surfaces:
+  ui:
+    status: required
+    route_or_component: ui/src/components/Generation.tsx
+    test_paths:
+      - ui/e2e/app.spec.ts
+  api:
+    status: required
+    endpoint_or_schema: POST /v1/generation-jobs
+    test_paths:
+      - tests/unit/test_import_api.py
+  cli:
+    status: planned
+    command: norma generate --profile norma-workflow
+    test_paths: []
+  mcp:
+    status: planned
+    tool_or_resource: generate_scenarios
+    test_paths: []
+```
+
+CI must reject a release-profile requirement when a required surface has no
+contract, implementation reference, and test evidence. A capability may be
+`not_applicable` only with an owner-approved rationale. Future capabilities
+must render an explicit unavailable/disabled state in the UI and return a
+stable `capability_unavailable` error through API, CLI, and MCP rather than
+silently falling back.
+
+#### Surface responsibilities
+
+| Surface | Primary audience | Required behavior |
+|---|---|---|
+| UI | Reviewers, SMEs, release managers, operators | Guided workflows, progress, traceability, confidence, evidence, approvals, and accessible unavailable/error states |
+| API | Integrations and the UI | Typed OpenAPI schemas, async job resources, SSE/polling, stable error codes, idempotency, tenant/role enforcement |
+| CLI | CI/CD and batch operators | Non-interactive commands, stable exit codes, JSON/table output, `--profile`, `--dry-run`, `--wait`, timeout, and machine-readable errors |
+| MCP | Governed agents | Narrow tools/resources, read-only default, explicit mutation approval, size limits, tenant/role context, redaction, and invocation audit |
+
+At minimum, each release profile must expose the following capability families
+consistently: import/preview, validation gates, generation and job status,
+traceability, approval, evidence retrieval, and release readiness. Calibration,
+SME routing, and knowledge-graph capabilities become required only when the
+declared profile includes them.
+
+### Release-profile acceptance matrix
+
+| Profile | Included scope | Required evidence | Current status |
+|---|---|---|---|
+| Norma workflow candidate | Structured import, validation, async generation, progress, recovery, artifacts, approval, traceability, auth, audit, retention, resilience, UI | `docs/GENERATION_WORKFLOW_PLAN.md`, backend suite, UI quality suite | Current release candidate |
+| Aegis 1.5.0 BDD-only | Norma scope plus Q0–Q10, repair loop, cost/determinism/eval gates, MCP, OIDC/RBAC, calibration/ECE, SME routing, compliance evidence | Aegis integration suite, evaluation reports, calibration report, security/compliance evidence | Future; not release-approved |
+| Aegis 2.0.0 with KG | Aegis 1.5.0 plus Q11/Q12, KG curation, provenance, supersession, and graph fail behavior | KG integration suite, provenance fixtures, Q11/Q12 reports, release-manager declaration | Future; validation-gated |
+
+No profile may be declared from prose alone. The Release Manager must link the
+profile to passing CI artifacts and record waivers, owners, expiry dates, and
+remediation plans.
+
+### ADR-to-code evidence contract
+
+Every task and acceptance criterion must have a machine-readable traceability
+record with these fields:
+
+```text
+requirement_id, release_profile, phase, task_id, owner,
+code_paths, test_paths, fixture_or_dataset, command,
+expected_result, artifact_path, surfaces, status, last_verified
+```
+
+The canonical record should live in `docs/adr/evidence-matrix.yml` and be
+validated in CI. CI must fail when a required P0 requirement has no test,
+command, owner, or evidence artifact. The matrix must classify each item as
+`implemented`, `partial`, `planned`, `deferred`, `waived`, or `not_applicable`.
+For each applicable surface, `surfaces.<name>` must include a status and an
+implementation reference (`route_or_component`, `endpoint_or_schema`,
+`command`, or `tool_or_resource`) plus test evidence.
+
+### Objective evidence requirements
+
+Thresholds in this ADR are not satisfied until a reproducible command and
+versioned artifact exist. At minimum, evidence must cover:
+
+- Coverage by module and overall target.
+- API read/write p95 latency under a documented load profile.
+- Cost per run, evaluation pass rate, determinism, and semantic score.
+- ECE, MCE, Brier score, calibration dataset size, and model version.
+- Gherkin lint, gitleaks, dependency audit, Bandit, and PII audit results.
+- Backup/restore, retention, right-to-erasure, queue recovery, and rollback.
+
+Reports must include commit SHA, dependency lockfile hash, configuration
+profile, dataset/fixture version, timestamp, and pass/fail status.
 
 ---
 
@@ -597,7 +782,9 @@ The savings table is marked as a hypothesis, not a commitment. It will be re-bas
 | Secrets detection | `gitleaks` | Specialized for API keys, tokens, credentials |
 | PII detection & redaction | `presidio` | ML-based NER for names, emails, phones, SSN, credit cards, IBAN |
 
-Presidio is integrated at the ingest layer. Custom recognizers added for domain-specific PII (e.g., account numbers).
+The target Aegis ingest layer will use Presidio with custom recognizers for
+domain-specific PII (e.g., account numbers). This is not a current Norma
+workflow capability until its implementation and audit evidence are complete.
 
 **Right-to-erasure path:**
 - Data subject request → admin initiates purge.
@@ -630,10 +817,15 @@ Presidio is integrated at the ingest layer. Custom recognizers added for domain-
 - Documented in `docs/DATA_RESIDENCY.md` (created in P0-T05).
 
 **Enforcement:**
-- Retention job runs nightly; expires data past window.
-- Redaction at ingest (Presidio).
-- Secret scan in CI (gitleaks).
-- PII scan in CI (Presidio in audit mode on generated features).
+- The target deployment runs a nightly retention job and expires data past the
+  configured window.
+- The target Aegis ingest layer performs redaction with Presidio.
+- CI must run secret scanning with gitleaks.
+- CI must run Presidio in audit mode on generated features.
+
+These are target controls. They are not certification evidence until the
+corresponding implementation, test, and report are linked in the evidence
+matrix.
 
 ---
 
@@ -769,6 +961,26 @@ antinode-norma/
 
 **Task count:** `8+7+6+5+8+7+3+5+6+6+7+8+6+8+7+4 = 101` ✓
 **Phase count:** 16 ✓
+
+### Cross-surface phased delivery
+
+The 16 phases remain the frozen implementation plan. The following gates are
+cross-cutting obligations within those phases, not additional tasks and not a
+claim that all surfaces exist today.
+
+| Delivery stage | ADR phases | UI | API | CLI | MCP | Exit evidence |
+|---|---|---|---|---|---|---|
+| Contract foundation | P0–P1 | Capability/status model and route contracts | OpenAPI schemas, stable errors, idempotency rules | Command names, exit-code and JSON schemas | Tool/resource names, annotations, limits | Contract fixtures and surface entries in `evidence-matrix.yml` |
+| Norma workflow parity | P2–P4 | Import, validation, generation, progress, results, approvals | Import/job/result/SSE/traceability endpoints | Import, validate, generate, watch, export, review | Import, validate, generate, status, traceability, review tools | Same fixture produces equivalent decisions and evidence IDs across surfaces |
+| Evaluation and governance | P5–P8 | Gate findings, repair history, cost/eval, audit and evidence views | Gate/eval/cost/audit/evidence resources | `evaluate`, `evidence build`, `release check` | Read-only evaluation/evidence tools and approved mutations | Contract tests, evaluation reports, audit events, and denied-action tests |
+| Identity and operational controls | P8–P11 | Tenant/role-aware navigation, queues, alerts, release readiness | OIDC/RBAC, policy enforcement, health/metrics/admin APIs | Non-interactive CI operation and diagnostics | Tenant/role context, approval annotations, invocation audit | Cross-surface authorization matrix, recovery and rollback drill |
+| Calibration and SME routing | P12.b–P13 | Confidence explanation, ECE/MCE/Brier, SME queue, assignment and decisions | Calibration reports, thresholds, queue and decision APIs | `calibration evaluate`, `review list/assign/decide` | Read calibration/routing tools; explicit approval for decisions | Versioned calibration report, routing evidence, feedback audit |
+| Knowledge graph and release | P12.a–P14 | Provenance, impact, supersession, Q11/Q12, profile status | Graph query/provenance/curation/release APIs | `graph validate`, `release check --profile` | Bounded graph query and evidence tools | P12.a gate, graph fail-closed test, profile-specific signed release evidence |
+
+For every stage, the UI is developed alongside the domain/API contract rather
+than deferred until the end. An incomplete surface must be visibly marked as
+planned or unavailable and must not imply that the underlying release profile
+is enabled.
 
 ### P4 composition
 
@@ -1303,6 +1515,22 @@ The **Release Manager** declares the profile at week 10 and records it in `docs/
 
 ### 15.1 Functional acceptance
 
+#### Cross-surface acceptance
+
+For every required capability in the declared profile:
+
+| Surface | Minimum acceptance |
+|---|---|
+| UI | Guided workflow, accessible success/loading/error states, traceability/evidence display, and explicit unavailable state for disabled profile features |
+| API | Typed OpenAPI contract, stable error code, authorization check, idempotency behavior where mutations are retried, and automated endpoint test |
+| CLI | Non-interactive command, stable exit code, JSON output, timeout/wait behavior, and automated command test |
+| MCP | Versioned tool/resource schema, bounded inputs/outputs, tenant/role enforcement, mutation approval where applicable, redaction, invocation audit, and contract test |
+
+The same versioned fixture must be exercised through every required surface.
+The resulting gate decision, resource identity, evidence identifiers, and
+authorization outcome must be equivalent. Surface-specific presentation may
+differ, but policy and domain results may not.
+
 #### P0 — required for both profiles
 
 | Criterion | Verification |
@@ -1320,6 +1548,7 @@ The **Release Manager** declares the profile at week 10 and records it in `docs/
 | Audit: every write action logged | Audit test |
 | **Calibration (ECE ≤ 0.10)** | **Eval CI (waiver path §15.4)** |
 | **SME queue routes low-confidence** | **Integration test** |
+| Required UI/API/CLI/MCP surface contracts are present | Cross-surface contract suite |
 
 #### P0 — required only for 2.0.0-with-KG
 
@@ -1438,6 +1667,26 @@ If ECE > 0.15: calibration is disabled entirely and deferred to next minor.
 | Track A2 understaffed | High | High | Escalate at weekly sync; merge A1/A2 if needed (14–15 weeks) |
 | KG thin slice fails | Medium | High | P4-T07 is go/no-go; P12.a re-scoped if failed |
 | Validation plan produces weak signal | Medium | High | P12.a gated on §22.10 threshold |
+
+---
+
+## 16.1 Phase entry and exit gates
+
+Every phase requires a recorded go/no-go decision. The phase owner supplies
+the evidence; the Release Manager or delegated reviewer approves the exit.
+
+| Gate | Entry criteria | Required exit evidence |
+|---|---|---|
+| Phase entry | Dependencies complete, scope and owner recorded, risks reviewed, rollback identified | Approved task plan and linked evidence IDs |
+| Implementation | Contract and migration plan reviewed, reuse candidate verified, feature flag defined where needed | Code, unit/contract tests, docs, and migration rollback test |
+| Security | Threat model updated for changed boundaries | Authz, secret, dependency, PII, and abuse-case results |
+| Operations | Deployment topology and resource assumptions documented | Health checks, metrics, alerts, backup/restore, recovery, and rollback evidence |
+| Release profile | All required profile criteria mapped in `evidence-matrix.yml` | Passing CI artifacts, signed waivers, and declared profile |
+
+P12.a has an additional validation gate: the Release Manager must record the
+sample size, dataset version, three threshold results, reviewer, and decision
+before enabling Q11/Q12 or marketing the 2.0.0 profile. If the gate fails,
+P12.a remains deferred and the BDD-only profile is used.
 
 ---
 
@@ -2091,7 +2340,7 @@ flowchart TD
 
 The prompt to start execution lives at `docs/adr/AGENT_PROMPT.md`. It instructs the agent to:
 
-1. Read this ADR at `docs/adr/ADR-003-aegis-platform.md`.
+1. Read this ADR at `docs/adr/ADR-003-AEGIS.md`.
 2. Begin at Phase P0, Task P0-T01.
 3. Follow the Discovery → Plan → Wait → Implement → Verify → Report cycle.
 4. Never implement without explicit APPROVE.
@@ -2123,6 +2372,7 @@ The prompt to start execution lives at `docs/adr/AGENT_PROMPT.md`. It instructs 
 | v15 | 2026-09-15 | SME role contradiction fixed; conditional propagation rule; conditional dependency audit |
 | v15.1 | 2026-09-15 | Errata: phase row merge; propagation checklist; resolved risk removed; track load reconciled; ECE waiver owner; `KNOWLEDGE_GRAPH.md` assigned. FROZEN. |
 | **v15.1 (ADR-003)** | **2026-09-21** | **Renamed from ADR-001 to ADR-003. All "unchanged from" sections replaced with actual content. Full self-contained version for the ADR index.** |
+| **v15.2 (ADR-003)** | **2026-09-23** | **Added the current implementation boundary, release-profile declaration, repository capability status matrix, product-surface parity contract, and cross-surface phased delivery gates. Corrected the agent prompt path.** |
 
 **Amendments applied in v15.1 (carried into ADR-003):**
 1. §8 phase table: P12.a/P12.b merged into one P12 row (16 phases).
@@ -2146,4 +2396,27 @@ The prompt to start execution lives at `docs/adr/AGENT_PROMPT.md`. It instructs 
 **KG: gated on validation. Calibration + SME: unconditional.**
 **Compliance: GDPR, SOC 2, HIPAA, ISO 42001, EU AI Act.**
 
-**Execution begins at P0-T01.**
+**Aegis execution begins at P0-T01 after the current Norma workflow release
+candidate is accepted or a separate Aegis workstream is approved.**
+
+## 27. Post-Norma implementation roadmap
+
+The frozen 101-task plan above is the Aegis target plan. The following delivery
+gates make the evidence, technology, and operational recommendations executable
+without changing the frozen task count:
+
+| Workstream | Scope | Exit gate | Profile |
+|---|---|---|---|
+| AEGIS-0 | Package boundary, component sourcing, evidence matrix, owners, and requirement/task traceability | Matrix schema and CI validator pass; all required tasks have evidence fields | All |
+| AEGIS-1 | Q0–Q10, repair loop, deterministic cache, cost/evaluation reports, MCP contracts | Gate/repair contract tests and objective eval artifacts pass | 1.5.0 |
+| AEGIS-2 | PostgreSQL/Alembic, durable queue, OIDC/RBAC, audit, backup/restore, telemetry, deployment and rollback | Security, migration, recovery, RPO/RTO, and observability drills pass | 1.5.0 |
+| AEGIS-3 | Confidence calibration, ECE/MCE/Brier reporting, SME routing and feedback | Versioned calibration dataset/model/report meets threshold and routing is audited | 1.5.0 |
+| AEGIS-4 | Kuzu/FalkorDB adapter, provenance, supersession, Q11/Q12, curation | P12.a validation dataset and graph fail-closed production drill pass | 2.0.0 |
+| AEGIS-5 | Presidio, gitleaks, dependency/security scans, latency/coverage/load evidence, residency and erasure controls | Required scans and non-functional thresholds pass; release decision is signed | All |
+
+The detailed execution sequence, stack mapping, evidence artifact convention,
+and CI expectations are maintained in
+`docs/GENERATION_WORKFLOW_PLAN.md` under **Aegis Implementation Roadmap**.
+These workstreams are release gates, not completion claims. Aegis 1.5.0 or
+2.0.0 remains unavailable until its profile-specific evidence is linked from
+`docs/adr/evidence-matrix.yml`.

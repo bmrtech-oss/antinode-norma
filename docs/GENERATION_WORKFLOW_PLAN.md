@@ -1055,3 +1055,59 @@ specialized supporting evidence.
   implementation details.
 - CI publishes pass/fail evidence grouped by AC ID and blocks release when a
   required criterion has no test or a test fails.
+
+## 18. Aegis Implementation Roadmap
+
+This roadmap operationalizes the target-state controls in
+`docs/adr/ADR-003-AEGIS.md` after the current Norma workflow release candidate.
+It is intentionally separate from the completed five-phase Norma workflow and
+does not claim that Aegis 1.5.0 or 2.0.0 is release-ready.
+
+### Aegis workstreams
+
+| Workstream | Scope | Primary stack | Exit evidence | Status |
+|---|---|---|---|---|
+| AEGIS-0 Foundation and traceability | Create `antinode_aegis` boundary, `COMPONENT_SOURCING.md`, `evidence-matrix.yml` validation, owners, task IDs, and release-profile records | Python package boundaries, YAML schema validation, pytest | Matrix lint passes; every P0 task has owner, code/test paths, command, and status | Planned |
+| AEGIS-1 Quality gates and evaluation | Implement Q0–Q10 adapters, gate aggregation, repair loop, deterministic cache, cost/eval reports, and MCP contracts | `gherkin-official`, gherkin linting, Promptfoo/DeepEval adapters, MCP Python SDK | Gate contract suite, repair convergence report, cost/determinism/eval artifacts | Planned |
+| AEGIS-2 Governance, identity, and operations | OIDC/RBAC, PostgreSQL/Alembic migrations, durable queue, audit ledger, retention, backup/restore, deployment topology, and rollback | Authlib, PostgreSQL, SQLAlchemy, Alembic, Redis + Dramatiq/Celery, OpenTelemetry, Prometheus | Auth/security suite, migration rollback, backup/restore, RPO/RTO, alerts, and deployment drill | Planned |
+| AEGIS-3 Calibration and SME routing | Confidence scores, calibration datasets, ECE/MCE/Brier reporting, threshold policy, SME queue, decisions, and feedback loop | NumPy, pandas, scikit-learn calibration, FastAPI/React workflow | Versioned calibration report, ECE threshold, SME routing integration, escalation audit evidence | Planned |
+| AEGIS-4 Knowledge graph validation | Adapter interface, Kuzu development backend, optional FalkorDB production path, provenance, supersession, Q11, Q12, and curation workflow | Kuzu, FalkorDB, adapter contract tests, MCP query tools | P12.a validation dataset, Q11/Q12 reports, provenance/supersession tests, fail-closed production drill | Planned |
+| AEGIS-5 Security, compliance, and release | PII redaction/audit, secret/dependency scans, latency/coverage/load reports, data residency, right-to-erasure, release profile and waiver process | Presidio, gitleaks, pip-audit, npm audit, Bandit, Ruff, Playwright, k6/Locust | Zero unaddressed scan findings, objective threshold reports, signed release checklist, rollback evidence | Planned |
+
+### Delivery sequence and gates
+
+1. **AEGIS-0:** Freeze the traceability schema and populate the complete
+   requirement/task matrix before adding Aegis code.
+2. **AEGIS-1:** Implement Q0–Q10 behind stable interfaces. Do not enable
+   release gates until contract, determinism, cost, and repair reports pass.
+3. **AEGIS-2:** Move multi-process production state from SQLite to PostgreSQL,
+   introduce the durable queue, and complete identity, migration, backup,
+   observability, and rollback evidence.
+4. **AEGIS-3:** Add calibration and SME routing as unconditional 1.5.0 scope.
+   A calibration dataset, minimum sample size, model/version hash, and ECE
+   report are mandatory.
+5. **AEGIS-4:** Run the P12.a validation gate. Q11/Q12 and the 2.0.0 profile
+   remain disabled if the declared thresholds or independence requirements fail.
+6. **AEGIS-5:** Complete security/compliance evidence and declare either the
+   BDD-only or KG-enabled release profile. No profile is released from prose
+   status alone.
+
+### Required evidence artifact convention
+
+Every workstream writes reports under a commit- and profile-scoped directory:
+
+```text
+build/evidence/<release-profile>/<commit-sha>/
+  coverage.xml
+  contract-results.xml
+  security-scan.json
+  pii-audit.json
+  performance.json
+  calibration.json
+  backup-restore.md
+  release-decision.yml
+```
+
+The evidence matrix must reference these files and include the exact command,
+configuration, dataset/fixture version, timestamp, and reviewer. CI blocks a
+profile when a required artifact is missing, stale, or marked failed.
