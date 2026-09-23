@@ -1056,7 +1056,26 @@ specialized supporting evidence.
 - CI publishes pass/fail evidence grouped by AC ID and blocks release when a
   required criterion has no test or a test fails.
 
-## 18. Aegis Implementation Roadmap
+## 18. Future Aegis Implementation Roadmap
+
+> **Agent implementation boundary:** The completed/current Norma workflow ends
+> at Section 17. Do not restart or redesign Sections 1–17 unless a regression
+> is identified. For new Aegis work, begin at **AEGIS-0** below, read the
+> corresponding requirements in
+> `docs/adr/ADR-003-AEGIS.md`, and select the first workstream whose status is
+> `Planned`. Before editing code, update the relevant entry in
+> `docs/adr/evidence-matrix.yml` with the owner, release profile, surface
+> coverage, planned code/test paths, and acceptance command. Implement only
+> that workstream's exit gate, run its tests, then mark it `Implemented` only
+> when the referenced evidence artifact exists. If a dependency is missing,
+> record it as `Blocked` and stop rather than silently implementing a later
+> phase.
+
+This section is **future target-state work** and is not part of the completed
+Norma workflow. The current implementation and its acceptance criteria are
+Sections 1–17. The authoritative Aegis task index and release decisions remain
+in `docs/adr/ADR-003-AEGIS.md`; this section is the execution hand-off for
+agents and contributors.
 
 This roadmap operationalizes the target-state controls in
 `docs/adr/ADR-003-AEGIS.md` after the current Norma workflow release candidate.
@@ -1067,7 +1086,7 @@ does not claim that Aegis 1.5.0 or 2.0.0 is release-ready.
 
 | Workstream | Scope | Primary stack | Exit evidence | Status |
 |---|---|---|---|---|
-| AEGIS-0 Foundation and traceability | Create `antinode_aegis` boundary, `COMPONENT_SOURCING.md`, `evidence-matrix.yml` validation, owners, task IDs, and release-profile records | Python package boundaries, YAML schema validation, pytest | Matrix lint passes; every P0 task has owner, code/test paths, command, and status | Planned |
+| AEGIS-0 Foundation and traceability | Create `antinode_aegis` boundary, `COMPONENT_SOURCING.md`, `evidence-matrix.yml` validation, owners, task IDs, and release-profile records | Python package boundaries, YAML schema validation, pytest | Matrix lint passes; every P0 task has owner, code/test paths, command, and status | **Planned — start here** |
 | AEGIS-1 Quality gates and evaluation | Implement Q0–Q10 adapters, gate aggregation, repair loop, deterministic cache, cost/eval reports, and MCP contracts | `gherkin-official`, gherkin linting, Promptfoo/DeepEval adapters, MCP Python SDK | Gate contract suite, repair convergence report, cost/determinism/eval artifacts | Planned |
 | AEGIS-2 Governance, identity, and operations | OIDC/RBAC, PostgreSQL/Alembic migrations, durable queue, audit ledger, retention, backup/restore, deployment topology, and rollback | Authlib, PostgreSQL, SQLAlchemy, Alembic, Redis + Dramatiq/Celery, OpenTelemetry, Prometheus | Auth/security suite, migration rollback, backup/restore, RPO/RTO, alerts, and deployment drill | Planned |
 | AEGIS-3 Calibration and SME routing | Confidence scores, calibration datasets, ECE/MCE/Brier reporting, threshold policy, SME queue, decisions, and feedback loop | NumPy, pandas, scikit-learn calibration, FastAPI/React workflow | Versioned calibration report, ECE threshold, SME routing integration, escalation audit evidence | Planned |
