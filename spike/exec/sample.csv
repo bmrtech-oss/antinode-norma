@@ -1,0 +1,5 @@
+id,title,message
+TC-EXEC-001,Login smoke,Login page is available
+TC-EXEC-002,Password reset smoke,Password reset page is available
+TC-EXEC-003,Checkout smoke,Checkout page is available
+TC-EXEC-004,Profile smoke,Profile page is available

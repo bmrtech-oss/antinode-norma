@@ -1,7 +1,21 @@
+from pathlib import Path
+
+import yaml
+
 from antinode_norma.gates.types import GateContext
 from antinode_norma.gates.semantic import Q10SemanticJudgeGate
 from antinode_norma.gates.runner import GateRunner
 from antinode_norma.core.types import TestCase, DomainModel, DomainEntity
+
+
+def test_q10_promptfoo_config_is_well_formed():
+    config = yaml.safe_load(Path("promptfooconfig.yaml").read_text(encoding="utf-8"))
+
+    assert config["providers"] == ["openai:gpt-4o-mini"]
+    assert config["tests"]
+    prompt_path = Path(config["prompts"][0].removeprefix("file://"))
+    assert prompt_path.exists()
+    assert "{{gherkin}}" in prompt_path.read_text(encoding="utf-8")
 
 
 def test_q10_empty_context():

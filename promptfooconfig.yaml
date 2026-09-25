@@ -1,0 +1,17 @@
+description: Norma Q10 semantic-judge evaluation matrix
+
+prompts:
+  - file://docs/adr/evidence/prompts/q10-semantic-judge.txt
+
+providers:
+  - openai:gpt-4o-mini
+
+tests:
+  - vars:
+      gherkin: "Feature: Account\n  Scenario: View balance\n    Given the user has an account\n    When the user opens balance settings\n    Then the account balance is displayed"
+      requirements: "As an account holder I want to view my balance"
+    assert:
+      - type: javascript
+        value: |
+          const score = Number(output.trim());
+          return Number.isFinite(score) && score >= 0 && score <= 1;

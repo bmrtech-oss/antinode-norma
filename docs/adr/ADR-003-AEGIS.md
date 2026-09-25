@@ -36,7 +36,7 @@ plan and must not be interpreted as Aegis profile completion.
 | Structured CSV ingestion and Gherkin generation | Implemented | `antinode_norma/ingest_structured/`, CSV and generation tests | 2026-09-25 |
 | Provider resilience, redaction, and compatibility fixes | Implemented for current workflow | Provider, server, and compatibility regression tests | 2026-09-25 |
 | Full Norma regression suite | Passing | `pytest -q`: 484 passed, 2 skipped | 2026-09-25 |
-| Next Aegis implementation task | Planned | P4-T01 — prompt builders | 2026-09-25 |
+| Next Aegis implementation task | Planned | P10-T01 — API foundation | 2026-09-25 |
 
 ---
 
@@ -1747,8 +1747,8 @@ view for agents and reviewers.
 
 **Last updated:** 2026-09-23
 **Current baseline:** Norma workflow release candidate
-**Current Aegis workstream:** P4 — Walking skeleton
-**Next task:** P4-T01 — prompt builders
+**Current Aegis workstream:** P10 — Web UI
+**Next task:** P10-T01 — API foundation
 **Release profile:** `aegis-foundation`
 **Overall Aegis status:** In progress; not release-approved
 
@@ -1775,13 +1775,13 @@ and **Planned** when no implementation has started.
 | P1 — Baseline + IR | — | Complete | 7/7* | P0 |
 | P2 — Structured ingest | — | Complete | 6/6 | P1 |
 | P3a — Hard gates | — | Complete | 5/5 | P0, P2 |
-| P4 — Walking skeleton | — | Not started | 0/8 | P3a |
-| P5 — Eval + cache | A1 | Not started | 0/7 | P4 |
-| P6 — MCP tools | A1 | Not started | 0/3 | P5 |
-| P3b — Soft gates | A1 | Not started | 0/5 | P6 |
+| P4 — Walking skeleton | — | Complete | 8/8 | P3a |
+| P5 — Eval + cache | A1 | Complete | 7/7 | P4 |
+| P6 — MCP tools | A1 | Complete | 3/3 | P5 |
+| P3b — Soft gates | A1 | Complete | 5/5 | P6 |
 | P7 — Quality Integration | A1 | Not started | 0/6 | P3b |
-| P8 — Governance + delivery | A2 | Not started | 0/6 | P4 |
-| P9 — Execution | B | Not started | 0/7 | P4 |
+| P8 — Governance + delivery | A2 | Complete | 6/6 | P4 |
+| P9 — Execution | B | Complete | 7/7 | P4 |
 | P10 — Web UI | C | Not started | 0/8 | P6 |
 | P11 — SSO + RBAC | C | Not started | 0/6 | P10 |
 | P12 — KG + Calibration | A2 | Not started | 0/8 | P4-T07, P8, P11 (a); P3b, P7 (b) |

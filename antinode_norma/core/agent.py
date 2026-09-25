@@ -8,6 +8,8 @@ from antinode_norma.cache.exact import ExactPromptCache
 from antinode_norma.cache.semantic import SemanticPromptCache
 from antinode_norma.governance.audit import AuditLog
 from antinode_norma.governance.approval import ApprovalGate
+from antinode_aegis.audit import AuditLedger
+from antinode_aegis.approval import ApprovalWorkflow
 
 
 class NormaAgent:
@@ -26,6 +28,8 @@ class NormaAgent:
         cache: Optional[Union[ExactPromptCache, SemanticPromptCache]] = None,
         audit_log: Optional[AuditLog] = None,
         approval_gate: Optional[ApprovalGate] = None,
+        aegis_audit: Optional[AuditLedger] = None,
+        aegis_approval: Optional[ApprovalWorkflow] = None,
     ):
         self.llm_callable = llm_callable
         self.domain_model = domain_model
@@ -33,6 +37,8 @@ class NormaAgent:
         self.cache = cache
         self.audit_log = audit_log or AuditLog()
         self.approval_gate = approval_gate or ApprovalGate(audit_log=self.audit_log)
+        self.aegis_audit = aegis_audit
+        self.aegis_approval = aegis_approval
 
     def generate_feature(
         self,
@@ -62,6 +68,7 @@ class NormaAgent:
         use_semantic = resolver.is_enabled("cache_semantic")
         use_audit = resolver.is_enabled("governance_audit")
         use_approval = resolver.is_enabled("governance_approval")
+        use_aegis_governance = resolver.is_enabled("aegis_governance")
 
         gherkin_text: Optional[str] = None
 
@@ -112,6 +119,24 @@ class NormaAgent:
             self.approval_gate.submit_request(
                 feature_id=feature_id,
                 gherkin_text=gherkin_text,
+            )
+
+        if use_aegis_governance:
+            aegis_audit = self.aegis_audit or AuditLedger()
+            aegis_approval = self.aegis_approval or ApprovalWorkflow(audit=aegis_audit)
+            tenant_id = "default"
+            aegis_audit.append(
+                tenant_id=tenant_id,
+                actor_id="system",
+                action="generation.completed",
+                resource_type="feature",
+                resource_id=feature_id,
+                metadata={"hard_pass": verdict.hard_pass, "summary": verdict.summary},
+            )
+            aegis_approval.submit(
+                tenant_id=tenant_id,
+                feature_id=feature_id,
+                requested_by="system",
             )
 
         return gherkin_text, verdict

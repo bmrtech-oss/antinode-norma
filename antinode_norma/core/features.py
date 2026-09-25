@@ -12,6 +12,8 @@ DEFAULT_FEATURE_FLAGS: Dict[str, bool] = {
     "auth_saml": False,
     "execution_cloud": False,
     "edge_discovery": False,
+        "knowledge_graph": False,
+        "aegis_governance": False,
 }
 
 

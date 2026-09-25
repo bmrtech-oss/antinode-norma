@@ -473,6 +473,38 @@ requirements:
     status: implemented
     last_verified: "2026-09-25"
 
+  - requirement_id: AEGIS-P9-T01
+    release_profile: aegis-foundation
+    phase: P9
+    task_id: P9-T01
+    owner: engineering-lead
+    code_paths:
+      - antinode_norma/execution/parallel.py
+    test_paths:
+      - tests/unit/test_execution_p8_t01.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Execution status UI requires later web-surface work
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Execution API requires later web-surface work
+        test_paths: []
+      cli:
+        status: planned
+        command: Execution CLI surface is not enabled in this task
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: Execution MCP contract is not enabled
+        test_paths: []
+    command: python -m pytest tests/unit/test_execution_p8_t01.py --no-cov -q
+    expected_result: Parallel executor runs tasks concurrently, isolates failures, and reports aggregate metrics
+    artifact_path: docs/adr/evidence/AEGIS-P9-T01-parallel-execution.md
+    status: implemented
+    last_verified: "2026-09-25"
+
   - requirement_id: AEGIS-0-FOUNDATION
     release_profile: aegis-foundation
     phase: P0

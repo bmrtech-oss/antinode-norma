@@ -1,3 +1,4 @@
+    "kuzu>=0.11.0",
 from setuptools import setup, find_packages
 
 setup(

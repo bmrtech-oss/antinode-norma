@@ -1,0 +1,9 @@
+Evaluate semantic alignment between the generated Gherkin and the requirements.
+
+Generated Gherkin:
+{{gherkin}}
+
+Requirements:
+{{requirements}}
+
+Return only one decimal score between 0 and 1.
