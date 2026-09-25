@@ -20,6 +20,7 @@ setup(
         "fastapi>=0.100.0",
         "httpx>=0.24.0",
         "openpyxl>=3.1.0",
+        "anyio>=4.0.0,<4.15.0",
     ],
     entry_points={
         "console_scripts": [

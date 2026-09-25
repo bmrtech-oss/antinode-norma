@@ -16,7 +16,7 @@ def get_llm_callable():
     config = {
         "provider": os.getenv("LLM_PROVIDER", "anthropic"),
         "api_key": os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENAI_API_KEY"),
-        "model": os.getenv("LLM_MODEL", "claude-3-5-sonnet-20241022"),
+        "model": os.getenv("LLM_MODEL"),
         "temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
         "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "1024")),
         "url": os.getenv("LLM_URL"),

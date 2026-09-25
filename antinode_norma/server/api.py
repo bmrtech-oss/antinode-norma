@@ -1,6 +1,7 @@
 """FastAPI application server foundation for Norma BDD Platform."""
 
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 import os
 from fastapi import FastAPI, APIRouter, HTTPException, Request
@@ -26,15 +27,8 @@ from antinode_norma.server.routes import (
     legacy_generation_router,
 )
 
-app = FastAPI(
-    title="Norma BDD Platform API",
-    description="Enterprise BDD Feature Generation, Quality Gates, Governance, and Execution Platform API",
-    version="0.1.0-alpha",
-)
-
-
-@app.on_event("startup")
-async def recover_generation_jobs() -> None:
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     """Sweep durable jobs left behind by a previous worker process."""
     from antinode_norma.server.generation_worker import recover_abandoned_jobs
     recover_abandoned_jobs()
@@ -43,6 +37,15 @@ async def recover_generation_jobs() -> None:
     if os.getenv("NORMA_RETENTION_CLEANUP_ENABLED", "false").lower() in {"1", "true", "yes", "on"}:
         from antinode_norma.server.import_storage import cleanup_retention
         cleanup_retention()
+    yield
+
+
+app = FastAPI(
+    title="Norma BDD Platform API",
+    description="Enterprise BDD Feature Generation, Quality Gates, Governance, and Execution Platform API",
+    version="0.1.0-alpha",
+    lifespan=lifespan,
+)
 
 # Configure CORS
 app.add_middleware(

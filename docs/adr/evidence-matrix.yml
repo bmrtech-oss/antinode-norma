@@ -304,6 +304,175 @@ requirements:
     status: implemented
     last_verified: "2026-09-23"
 
+  - requirement_id: AEGIS-P3A-T01
+    release_profile: aegis-foundation
+    phase: P3a
+    task_id: P3a-T01
+    owner: qa-architect
+    code_paths:
+      - antinode_norma/gates/types.py
+      - antinode_norma/gates/aggregate.py
+      - antinode_norma/gates/norma_validator.py
+      - antinode_norma/gates/runner.py
+    test_paths:
+      - tests/unit/test_aegis_p3a_t01.py
+      - tests/unit/test_gates_p3a_t01.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Gate verdict presentation requires a later Aegis UI contract
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Gate verdict API requires a later versioned contract
+        test_paths: []
+      cli:
+        status: planned
+        command: Gate runner CLI surface is not enabled in the foundation profile
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: Gate evaluation MCP contract is a later P6 capability
+        test_paths: []
+    command: python -m pytest tests/unit/test_aegis_p3a_t01.py tests/unit/test_gates_p3a_t01.py --no-cov -q
+    expected_result: Typed gate contracts, Q0 validation, ordered registration, and hard/soft aggregation pass
+    artifact_path: docs/adr/evidence/AEGIS-P3a-T01-gates-q0.md
+    status: implemented
+    last_verified: "2026-09-24"
+
+  - requirement_id: AEGIS-P3A-T02
+    release_profile: aegis-foundation
+    phase: P3a
+    task_id: P3a-T02
+    owner: qa-architect
+    code_paths:
+      - antinode_norma/core/validator.py
+      - antinode_norma/gates/syntax.py
+      - antinode_norma/gates/rspec_guard.py
+    test_paths:
+      - tests/unit/test_gates_p3a_t02.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Gate verdict presentation requires a later Aegis UI contract
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Gate verdict API requires a later versioned contract
+        test_paths: []
+      cli:
+        status: planned
+        command: Gate runner CLI surface is not enabled in the foundation profile
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: Gate evaluation MCP contract is a later P6 capability
+        test_paths: []
+    command: python -m pytest tests/unit/test_gates_p3a_t02.py --no-cov -q
+    expected_result: Q1 accepts valid Gherkin and rejects malformed syntax; Q2 rejects standalone RSpec vocabulary without false positives
+    artifact_path: docs/adr/evidence/AEGIS-P3a-T02-q1-q2.md
+    status: implemented
+    last_verified: "2026-09-25"
+
+  - requirement_id: AEGIS-P3A-T03
+    release_profile: aegis-foundation
+    phase: P3a
+    task_id: P3a-T03
+    owner: qa-architect
+    code_paths:
+      - antinode_norma/gates/traceability.py
+      - antinode_norma/gates/runner.py
+    test_paths:
+      - tests/unit/test_gates_p3a_t03.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Traceability verdict presentation requires a later Aegis UI contract
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Traceability verdict API requires a later versioned contract
+        test_paths: []
+      cli:
+        status: planned
+        command: Gate runner CLI surface is not enabled in the foundation profile
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: Gate evaluation MCP contract is a later P6 capability
+        test_paths: []
+    command: python -m pytest tests/unit/test_gates_p3a_t03.py --no-cov -q
+    expected_result: Q3 detects missing TestCase IDs and Q4 detects orphan tags while allowing known system tags
+    artifact_path: docs/adr/evidence/AEGIS-P3a-T03-q3-q4.md
+    status: implemented
+    last_verified: "2026-09-25"
+
+  - requirement_id: AEGIS-P3A-T04
+    release_profile: aegis-foundation
+    phase: P3a
+    task_id: P3a-T04
+    owner: qa-architect
+    code_paths:
+      - antinode_norma/gates/duplicates.py
+      - antinode_norma/gates/runner.py
+    test_paths:
+      - tests/unit/test_gates_p3a_t04.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Duplicate verdict presentation requires a later Aegis UI contract
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Duplicate verdict API requires a later versioned contract
+        test_paths: []
+      cli:
+        status: planned
+        command: Gate runner CLI surface is not enabled in the foundation profile
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: Gate evaluation MCP contract is a later P6 capability
+        test_paths: []
+    command: python -m pytest tests/unit/test_gates_p3a_t04.py --no-cov -q
+    expected_result: Q5 passes unique scenarios and rejects duplicate scenario titles after case and whitespace normalization
+    artifact_path: docs/adr/evidence/AEGIS-P3a-T04-q5-duplicates.md
+    status: implemented
+    last_verified: "2026-09-25"
+
+  - requirement_id: AEGIS-P3A-T05
+    release_profile: aegis-foundation
+    phase: P3a
+    task_id: P3a-T05
+    owner: qa-architect
+    code_paths:
+      - antinode_norma/gates/runner.py
+      - antinode_norma/gates/aggregate.py
+    test_paths:
+      - tests/unit/test_gates_p3a_t05.py
+    surfaces:
+      ui:
+        status: planned
+        route_or_component: Gate report presentation requires a later Aegis UI contract
+        test_paths: []
+      api:
+        status: planned
+        endpoint_or_schema: Gate verdict API requires a later versioned contract
+        test_paths: []
+      cli:
+        status: planned
+        command: Gate runner CLI surface is not enabled in the foundation profile
+        test_paths: []
+      mcp:
+        status: planned
+        tool_or_resource: Gate evaluation MCP contract is a later P6 capability
+        test_paths: []
+    command: python -m pytest tests/unit/test_gates_p3a_t05.py --no-cov -q
+    expected_result: Default Q0-Q10 runner aggregates hard and soft outcomes, reports gate results, and fails on hard-gate violations
+    artifact_path: docs/adr/evidence/AEGIS-P3a-T05-gate-runner.md
+    status: implemented
+    last_verified: "2026-09-25"
+
   - requirement_id: AEGIS-0-FOUNDATION
     release_profile: aegis-foundation
     phase: P0

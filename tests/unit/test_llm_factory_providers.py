@@ -104,3 +104,19 @@ def test_anthropic_preserves_temperature_when_sdk_accepts_it():
         )
         assert llm("Hello Anthropic") == "Anthropic response"
         assert client.messages.create.call_args.kwargs["temperature"] == 0.7
+
+
+def test_provider_requires_explicit_model_when_missing(monkeypatch):
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+
+    with pytest.raises(ValueError, match="LLM_MODEL is required"):
+        create_llm_callable({"provider": "anthropic", "api_key": "dummy_key"})
+
+    with pytest.raises(ValueError, match="LLM_MODEL is required"):
+        create_llm_callable({"provider": "openrouter", "api_key": "dummy_key"})
+
+    with pytest.raises(ValueError, match="LLM_MODEL is required"):
+        create_llm_callable({"provider": "openai", "api_key": "dummy_key"})

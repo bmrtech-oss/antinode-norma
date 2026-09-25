@@ -3,6 +3,14 @@ import json
 from typing import Callable, Dict, Any
 
 
+def _resolve_model(config: Dict[str, Any], *, env_name: str = "LLM_MODEL") -> str:
+    """Require an explicit model selection; never silently invent a default."""
+    model = config.get("model") or os.getenv(env_name)
+    if not model:
+        raise ValueError(f"{env_name} is required for this provider")
+    return model
+
+
 def _anthropic_messages_create(client: Any, **kwargs: Any) -> Any:
     """Call Messages.create across SDK versions with differing temperature support."""
     try:
@@ -25,7 +33,7 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         client = Anthropic(
             api_key=config.get("api_key") or os.getenv("ANTHROPIC_API_KEY")
         )
-        model = config.get("model", "claude-3-5-sonnet-20241022")
+        model = _resolve_model(config)
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
 
@@ -45,7 +53,7 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         from openai import OpenAI
 
         client = OpenAI(api_key=config.get("api_key") or os.getenv("OPENAI_API_KEY"))
-        model = config.get("model", "gpt-4o")
+        model = _resolve_model(config)
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
 
@@ -68,7 +76,7 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         if not api_key:
             raise ValueError("OPENROUTER_API_KEY is required for openrouter provider")
         client = OpenAI(base_url=base_url, api_key=api_key)
-        model = config.get("model", "openai/gpt-oss-120b:free")
+        model = _resolve_model(config)
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
         extra_body = config.get("extra_body", {})
@@ -91,7 +99,7 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         api_key = config.get("api_key") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not api_key:
             raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY is required for gemini provider")
-        model = config.get("model", "gemini-1.5-flash")
+        model = _resolve_model(config)
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
 
@@ -136,7 +144,7 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         api_key = config.get("api_key") or os.getenv("GROQ_API_KEY")
         if not api_key:
             raise ValueError("GROQ_API_KEY is required for groq provider")
-        model = config.get("model", "llama-3.3-70b-versatile")
+        model = _resolve_model(config)
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
 
@@ -179,7 +187,7 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
         api_key = config.get("api_key") or os.getenv("MISTRAL_API_KEY")
         if not api_key:
             raise ValueError("MISTRAL_API_KEY is required for mistral provider")
-        model = config.get("model", "mistral-small-latest")
+        model = _resolve_model(config)
         temperature = config.get("temperature", 0.2)
         max_tokens = config.get("max_tokens", 1024)
 
@@ -297,8 +305,8 @@ def create_llm_callable(config: Dict[str, Any]) -> Callable[[str], str]:
                         "action": action,
                         "benefit": benefit,
                         "acceptance_criteria": [
-                            "The story is converted into a valid JSON schema.",
-                            "The story is suitable for Gherkin generation.",
+                            "The system should return valid JSON that matches the story schema.",
+                            "The system should generate a Gherkin feature file from the parsed story.",
                         ],
                     }
                 )

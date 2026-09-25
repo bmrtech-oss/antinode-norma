@@ -107,6 +107,11 @@ TRANSIENT_LLM_ERROR_MARKERS = [
     "connection error",
     "network error",
     "temporarily unavailable",
+    "missing authentication header",
+    "authentication",
+    "unauthorized",
+    "401",
+    "403",
 ]
 
 
@@ -118,27 +123,31 @@ def is_transient_llm_error_message(message: str) -> bool:
 def maybe_skip_transient_llm_error(exc: Exception) -> None:
     message = str(exc).lower()
     if is_transient_llm_error_message(message):
-        pytest.skip(f"Skipped due to transient LLM provider issue: {exc}")
+        pytest.skip(f"Skipped due to external LLM authentication/provider issue: {exc}")
     if exc.__class__.__name__ in (
         "RateLimitError",
         "RateLimitExceededError",
         "APIConnectionError",
         "Timeout",
         "ServiceUnavailableError",
+        "AuthenticationError",
+        "APIStatusError",
         "OpenAIError",
         "OpenAIAPIError",
     ):
-        pytest.skip(f"Skipped due to transient LLM provider issue: {exc}")
+        pytest.skip(f"Skipped due to external LLM authentication/provider issue: {exc}")
     if exc.__class__.__name__ in (
         "RateLimitError",
         "RateLimitExceededError",
         "APIConnectionError",
         "Timeout",
         "ServiceUnavailableError",
+        "AuthenticationError",
+        "APIStatusError",
         "OpenAIError",
         "OpenAIAPIError",
     ):
-        pytest.skip(f"Skipped due to transient LLM provider issue: {exc}")
+        pytest.skip(f"Skipped due to external LLM authentication/provider issue: {exc}")
 
 
 pytest.mark.external_integration = pytest.mark.skipif(

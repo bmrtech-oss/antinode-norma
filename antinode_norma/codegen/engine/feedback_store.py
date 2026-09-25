@@ -11,7 +11,7 @@ import hashlib
 import json
 import sqlite3
 from dataclasses import dataclass, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 import logging
@@ -150,10 +150,12 @@ class FeedbackStore:
         """
         if execution_context is None:
             execution_context = {}
-        execution_context.setdefault("timestamp", datetime.utcnow().isoformat())
+        execution_context.setdefault(
+            "timestamp", datetime.now(timezone.utc).isoformat()
+        )
 
         mapping_id = self._make_mapping_id(step_text, selector)
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
 
         record = FeedbackRecord(
             mapping_id=mapping_id,

@@ -4,7 +4,7 @@ from .schemas import UserStory
 
 
 def parse_story(raw_text: str, llm_call: Callable[[str], str]) -> UserStory:
-    schema_json = UserStory.schema_json(indent=2)
+    schema_json = json.dumps(UserStory.model_json_schema(), indent=2)
     prompt = f"""Convert the following user story into a JSON object that exactly matches this schema.
 
 Schema:

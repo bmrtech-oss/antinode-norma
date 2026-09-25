@@ -1,4 +1,4 @@
-# ADR-003: NORMA-BDD / Aegis — Platform Extension and Market Positioning
+****# ADR-003: NORMA-BDD / Aegis — Platform Extension and Market Positioning
 
 **Single-file architecture decision record. Version 15.2 (FROZEN). Renamed from ADR-001 for the ADR index.**
 
@@ -19,6 +19,24 @@
 | **Total tasks** | 101 |
 | **Total phases** | 16 |
 | **Release profiles** | **1.5.0** (BDD-only) or **2.0.0** (with KG) |
+
+---
+
+## Progress Tracker
+
+This tracker records the current repository implementation that supports the
+Norma workflow release candidate. It is separate from the frozen Aegis phase
+plan and must not be interpreted as Aegis profile completion.
+
+| Workstream | Status | Evidence | Last verified |
+|---|---|---|---|
+| Environment loading and YAML/env precedence | Implemented | `antinode_norma/runner.py`, `antinode_norma/core/config.py`, configuration tests | 2026-09-25 |
+| Explicit LLM model selection with no silent factory default | Implemented | `antinode_norma/utils/llm_factory.py`, provider tests | 2026-09-25 |
+| CLI config generation persists provider and model | Implemented | `antinode_norma/cli.py`, `antinode_norma/templates/norma.config.yml.j2`, `tests/unit/test_cli.py` | 2026-09-25 |
+| Structured CSV ingestion and Gherkin generation | Implemented | `antinode_norma/ingest_structured/`, CSV and generation tests | 2026-09-25 |
+| Provider resilience, redaction, and compatibility fixes | Implemented for current workflow | Provider, server, and compatibility regression tests | 2026-09-25 |
+| Full Norma regression suite | Passing | `pytest -q`: 484 passed, 2 skipped | 2026-09-25 |
+| Next Aegis implementation task | Planned | P4-T01 — prompt builders | 2026-09-25 |
 
 ---
 
@@ -1729,8 +1747,8 @@ view for agents and reviewers.
 
 **Last updated:** 2026-09-23
 **Current baseline:** Norma workflow release candidate
-**Current Aegis workstream:** P0 — Foundations
-**Next task:** P3a-T01 — Gate types, aggregator, and Q0 validator
+**Current Aegis workstream:** P4 — Walking skeleton
+**Next task:** P4-T01 — prompt builders
 **Release profile:** `aegis-foundation`
 **Overall Aegis status:** In progress; not release-approved
 
@@ -1756,7 +1774,7 @@ and **Planned** when no implementation has started.
 | P0 — Foundations | — | Complete | 9/9* | — |
 | P1 — Baseline + IR | — | Complete | 7/7* | P0 |
 | P2 — Structured ingest | — | Complete | 6/6 | P1 |
-| P3a — Hard gates | — | Not started | 0/5 | P0, P2 |
+| P3a — Hard gates | — | Complete | 5/5 | P0, P2 |
 | P4 — Walking skeleton | — | Not started | 0/8 | P3a |
 | P5 — Eval + cache | A1 | Not started | 0/7 | P4 |
 | P6 — MCP tools | A1 | Not started | 0/3 | P5 |
@@ -1779,8 +1797,14 @@ flags, P0-T05 escalation policy, P0-T06 UI spike, and P0-T07 reuse candidate
 verification, and P0-T08 AI governance documentation. The denominator includes
 the AEGIS-0 foundation record plus the eight frozen P0 tasks; P1 counts all seven P1
 tasks after the public API contract tests and checkpoint passed. P2
-implementation is complete. P3a is now unblocked by P0 and P2; the frozen ADR
-task index remains unchanged.
+implementation is complete. P3a is now unblocked by P0 and P2. P3a-T01 has
+evidence for the typed gate contract, Q0 validator, ordered runner
+registration, and hard/soft aggregation. P3a-T02 has evidence for parser-backed
+Q1 syntax validation and the Q2 no-RSpec guard. P3a-T03 has evidence for Q3
+missing-ID detection and Q4 orphan-tag detection. P3a-T04 has evidence for Q5
+duplicate scenario detection. P3a-T05 has evidence for default gate registration,
+hard/soft aggregation, report generation, and hard-gate failure behavior; the
+P3a phase is complete and the frozen ADR task index remains unchanged.
 
 ---
 

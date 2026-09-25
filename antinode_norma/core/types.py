@@ -3,6 +3,8 @@ from pydantic import BaseModel, Field
 
 
 class TestCase(BaseModel):
+    __test__ = False
+
     id: str
     title: str
     role: str = "user"

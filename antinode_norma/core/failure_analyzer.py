@@ -46,7 +46,7 @@ def set_db_file(path: Path | str) -> None:
 
 
 def _get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(_get_db_file()), detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = sqlite3.connect(str(_get_db_file()))
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -326,7 +326,9 @@ def create_weekly_failure_report(
     output_path: Path, lookback_days: int = 7, top_n: int = 10
 ) -> str:
     failures = get_failures_since(lookback_days)
-    report_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    report_date = datetime.datetime.now(datetime.timezone.utc).strftime(
+        "%Y-%m-%d %H:%M:%S UTC"
+    )
     header = [
         "# Weekly Failure Report",
         "",

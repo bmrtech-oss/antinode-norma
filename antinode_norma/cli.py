@@ -722,6 +722,10 @@ def init(force):
             type=click.Choice(["openrouter", "anthropic", "openai", "local"], case_sensitive=False),
             default="openrouter",
         )
+        llm_model = click.prompt(
+            "LLM model",
+            default="gpt-4o-mini" if llm_provider == "openrouter" else "claude-3-5-sonnet-20241022",
+        )
         api_var = "OPENROUTER_API_KEY" if llm_provider == "openrouter" else (
             "ANTHROPIC_API_KEY" if llm_provider == "anthropic" else "OPENAI_API_KEY"
         )
@@ -747,6 +751,7 @@ def init(force):
         tmpl = Template(tmpl_text)
         rendered = tmpl.render(
             llm_provider=llm_provider,
+            llm_model=llm_model,
             api_key_env_var=api_var,
             default_framework=default_framework,
             output_dir=output_dir,

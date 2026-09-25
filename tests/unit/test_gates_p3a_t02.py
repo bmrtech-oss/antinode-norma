@@ -33,6 +33,22 @@ def test_q1_syntax_gate_invalid():
     assert any("Missing 'Feature:' line" in issue for issue in res.issues)
 
 
+def test_q1_syntax_gate_rejects_malformed_gherkin():
+    gherkin = """
+Feature: Account Login
+  Scenario: Successful Login
+    Given
+"""
+    ctx = GateContext(gherkin_text=gherkin)
+    gate = Q1SyntaxGate()
+    res = gate.evaluate(ctx)
+
+    assert res.gate_id == "Q1"
+    assert res.passed is False
+    assert res.score == 0.0
+    assert res.issues
+
+
 def test_q2_rspec_guard_clean():
     gherkin = """
 Feature: User Profile

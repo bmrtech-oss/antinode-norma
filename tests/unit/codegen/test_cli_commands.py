@@ -30,7 +30,7 @@ class TestCodegenCLIParallelGeneration:
     @patch("antinode_norma.codegen.cli.commands.load_config")
     @patch("antinode_norma.codegen.cli.commands.Orchestrator")
     def test_generate_multiple_features_in_parallel(
-        self, mock_orchestrator_cls, mock_load_config
+        self, mock_orchestrator_cls, mock_load_config, tmp_path, monkeypatch
     ):
         config = CodegenConfig()
         config.default_framework = "playwright"
@@ -44,22 +44,22 @@ class TestCodegenCLIParallelGeneration:
         mock_orch.generate.return_value = None
 
         runner = CliRunner()
-        with runner.isolated_filesystem():
-            Path("login.feature").write_text("Feature: Login")
-            Path("checkout.feature").write_text("Feature: Checkout")
+        monkeypatch.chdir(tmp_path)
+        Path("login.feature").write_text("Feature: Login")
+        Path("checkout.feature").write_text("Feature: Checkout")
 
-            result = runner.invoke(
-                cli,
-                [
-                    "generate",
-                    "-f",
-                    "login.feature",
-                    "-f",
-                    "checkout.feature",
-                    "--workers",
-                    "2",
-                ],
-            )
+        result = runner.invoke(
+            cli,
+            [
+                "generate",
+                "-f",
+                "login.feature",
+                "-f",
+                "checkout.feature",
+                "--workers",
+                "2",
+            ],
+        )
 
         assert result.exit_code == 0
         assert mock_orchestrator_cls.call_count >= 1
@@ -70,7 +70,7 @@ class TestCodegenCLIParallelGeneration:
     @patch("antinode_norma.codegen.cli.commands.load_config")
     @patch("antinode_norma.codegen.cli.commands.Orchestrator")
     def test_generate_single_feature_still_works(
-        self, mock_orchestrator_cls, mock_load_config
+        self, mock_orchestrator_cls, mock_load_config, tmp_path, monkeypatch
     ):
         config = CodegenConfig()
         config.default_framework = "playwright"
@@ -84,9 +84,9 @@ class TestCodegenCLIParallelGeneration:
         mock_orch.generate.return_value = None
 
         runner = CliRunner()
-        with runner.isolated_filesystem():
-            Path("login.feature").write_text("Feature: Login")
-            result = runner.invoke(cli, ["generate", "-f", "login.feature"])
+        monkeypatch.chdir(tmp_path)
+        Path("login.feature").write_text("Feature: Login")
+        result = runner.invoke(cli, ["generate", "-f", "login.feature"])
 
         assert result.exit_code == 0
         assert mock_orch.generate.call_count == 1

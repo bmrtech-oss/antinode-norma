@@ -16,6 +16,8 @@ class DeliveryReport(BaseModel):
 
 
 class TestRailDeliveryAdapter:
+    __test__ = False
+
     def __init__(self, approval_gate: Optional[ApprovalGate] = None):
         self.approval_gate = approval_gate
 

@@ -9,6 +9,10 @@ SYSTEM_WORDS = {"call", "update", "insert", "delete", "compute"}
 # Only consider criteria testable when they contain a concrete assertion or measurable outcome.
 TESTABLE_PATTERNS = [
     r"\bshould\b",
+    r"\bmust\b",
+    r"\bwill\b",
+    r"\bcan\b",
+    r"\b(?:is|are)\s+able\s+to\b",
     r"\breturn(s?)\b",
     r"\bdisplay(s?)\b",
     r"\bshow(s?)\b",
