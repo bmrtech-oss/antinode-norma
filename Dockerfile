@@ -1,5 +1,13 @@
 # Dockerfile for antinode-norma
 
+FROM node:20-slim AS ui-build
+
+WORKDIR /ui
+COPY ui/package*.json ./
+RUN npm ci
+COPY ui/ ./
+RUN npm run build
+
 FROM python:3.11-slim
 
 # Set working directory
@@ -46,8 +54,14 @@ RUN npm ci
 # Copy the application and install it in editable mode
 COPY . .
 
+# Serve the compiled SPA through FastAPI's static mount when present.
+COPY --from=ui-build /ui/dist ./ui/dist
+
 # Install the package in editable mode
 RUN pip install -e .
+
+COPY docker/entrypoint.sh /usr/local/bin/norma-entrypoint
+RUN chmod +x /usr/local/bin/norma-entrypoint
 
 # Install Playwright browsers and required browser dependencies
 RUN npx playwright install --with-deps
@@ -61,8 +75,4 @@ ENV LLM_TEMPERATURE=0.2
 ENV LLM_MAX_TOKENS=1024
 ENV PYTHONUNBUFFERED=1
 
-# Default command: show help
-CMD ["anorm", "--help"]
-
-# Alternative: run the MCP server (requires stdio)
-# CMD ["python", "-m", "antinode_norma.server.mcp_server"]
+ENTRYPOINT ["/usr/local/bin/norma-entrypoint"]

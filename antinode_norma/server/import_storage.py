@@ -2,11 +2,33 @@
 
 import json
 import os
+import time
 from antinode_norma.utils.observability import metrics_registry
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
+
+
+class _PostgresCompat:
+    def __init__(self, connection):
+        self.connection = connection
+
+    def __enter__(self):
+        self.connection.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return self.connection.__exit__(exc_type, exc_value, traceback)
+
+    def execute(self, statement: str, parameters=()):
+        return self.connection.execute(statement.replace("?", "%s"), parameters)
+
+    def commit(self):
+        self.connection.commit()
+
+    def close(self):
+        self.connection.close()
 
 
 def _retention_setting(name: str, default: int) -> int:
@@ -41,8 +63,35 @@ def database_path() -> Path:
 
 
 def connect() -> sqlite3.Connection:
-    connection = sqlite3.connect(database_path(), timeout=10)
+    database_url = os.getenv("DATABASE_URL", "")
+    if database_url.startswith(("postgresql://", "postgres://")):
+        import psycopg
+        from psycopg.rows import dict_row
+
+        from antinode_norma.database import migrate
+
+        migrate(database_url)
+        connection = psycopg.connect(database_url, row_factory=dict_row)
+        connection.execute("CREATE SEQUENCE IF NOT EXISTS generation_events_id_seq")
+        connection.execute(
+            "ALTER TABLE generation_events ALTER COLUMN id SET DEFAULT nextval('generation_events_id_seq')"
+        )
+        connection.commit()
+        return _PostgresCompat(connection)
+    path = database_path()
+    database_exists = path.exists()
+    connection = sqlite3.connect(path, timeout=10)
     connection.row_factory = sqlite3.Row
+    if not database_exists:
+        for attempt in range(10):
+            try:
+                connection.execute("PRAGMA journal_mode=WAL")
+                break
+            except sqlite3.OperationalError as error:
+                if "locked" not in str(error).lower() or attempt == 9:
+                    raise
+                time.sleep(0.05)
+    connection.execute("PRAGMA busy_timeout=10000")
     connection.execute(
         """CREATE TABLE IF NOT EXISTS import_jobs (
             id TEXT PRIMARY KEY, filename TEXT NOT NULL, format TEXT NOT NULL,
@@ -274,10 +323,15 @@ def list_generation_events(job_id: str, after_id: int = 0) -> list[dict[str, Any
 
 def save_generation_result(record: dict[str, Any]) -> None:
     with connect() as db:
-        db.execute("""INSERT OR REPLACE INTO generation_results
+                db.execute("""INSERT INTO generation_results
             (id, job_id, row_number, case_id, status, artifact_path, artifact_name,
              content, warnings_json, error, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(job_id, row_number) DO UPDATE SET
+                            id=excluded.id,
+                            status=excluded.status, artifact_path=excluded.artifact_path,
+                            artifact_name=excluded.artifact_name, content=excluded.content,
+                            warnings_json=excluded.warnings_json, error=excluded.error""",
             (record["id"], record["job_id"], record["row_number"], record.get("case_id"),
              record["status"], record.get("artifact_path"), record.get("artifact_name"),
              record.get("content"), json.dumps(record.get("warnings", [])), record.get("error"),

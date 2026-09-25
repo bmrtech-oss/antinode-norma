@@ -3,7 +3,8 @@ import tempfile
 from typing import Any, Dict, List, Optional
 
 import kuzu
-import yaml
+
+from antinode_aegis.facts import FactCatalog
 
 
 class KnowledgeGraphStore:
@@ -15,29 +16,33 @@ class KnowledgeGraphStore:
         self.connection = kuzu.Connection(kuzu.Database(str(self._workspace / "db")))
         self.connection.execute(
             "CREATE NODE TABLE Fact(id STRING PRIMARY KEY, subject STRING, "
-            "predicate STRING, object STRING, contradiction_phrase STRING)"
+            "predicate STRING, object STRING, contradiction_phrase STRING, "
+            "provenance_source STRING, tags STRING)"
         )
         self._load_facts()
 
     def _load_facts(self) -> None:
-        data = yaml.safe_load(self.facts_path.read_text(encoding="utf-8")) or {}
-        for fact in data.get("facts", []):
+        catalog = FactCatalog.from_yaml(self.facts_path)
+        for fact in catalog.facts:
             self.connection.execute(
                 "CREATE (f:Fact {id: $id, subject: $subject, predicate: $predicate, "
-                "object: $object, contradiction_phrase: $contradiction_phrase})",
+                "object: $object, contradiction_phrase: $contradiction_phrase, "
+                "provenance_source: $provenance_source, tags: $tags})",
                 {
-                    "id": fact["id"],
-                    "subject": fact["subject"],
-                    "predicate": fact["predicate"],
-                    "object": fact["object"],
-                    "contradiction_phrase": fact["contradiction_phrase"],
+                    "id": fact.id,
+                    "subject": fact.subject,
+                    "predicate": fact.predicate,
+                    "object": fact.object,
+                    "contradiction_phrase": fact.contradiction_phrase,
+                    "provenance_source": fact.provenance.source,
+                    "tags": ",".join(fact.tags),
                 },
             )
 
     def facts(self) -> List[Dict[str, Any]]:
         result = self.connection.execute(
             "MATCH (f:Fact) RETURN f.id, f.subject, f.predicate, f.object, "
-            "f.contradiction_phrase"
+            "f.contradiction_phrase, f.provenance_source, f.tags"
         )
         return [
             {
@@ -46,6 +51,8 @@ class KnowledgeGraphStore:
                 "predicate": row[2],
                 "object": row[3],
                 "contradiction_phrase": row[4],
+                "provenance": {"source": row[5]},
+                "tags": [tag for tag in row[6].split(",") if tag],
             }
             for row in result.get_all()
         ]

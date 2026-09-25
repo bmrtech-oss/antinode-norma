@@ -9,6 +9,7 @@ Stores mapping outcomes (pass/fail/skipped) to enable:
 
 import hashlib
 import json
+import os
 import sqlite3
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
@@ -17,6 +18,38 @@ from typing import Optional, List, Dict, Any
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class _CursorCompat:
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def execute(self, statement, parameters=()):
+        return self._cursor.execute(statement.replace("?", "%s"), parameters)
+
+    def fetchone(self):
+        return self._cursor.fetchone()
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+
+class _ConnectionCompat:
+    def __init__(self, connection):
+        self._connection = connection
+
+    def __enter__(self):
+        self._connection.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return self._connection.__exit__(exc_type, exc_value, traceback)
+
+    def cursor(self):
+        return _CursorCompat(self._connection.cursor())
+
+    def commit(self):
+        self._connection.commit()
 
 
 @dataclass
@@ -37,7 +70,7 @@ class FeedbackRecord:
 class FeedbackStore:
     """SQLite-backed persistent feedback store."""
 
-    def __init__(self, db_path: Optional[Path] = None):
+    def __init__(self, db_path: Optional[Path] = None, database_url: Optional[str] = None):
         """
         Initialize feedback store.
 
@@ -48,8 +81,15 @@ class FeedbackStore:
             db_path = Path.home() / ".antinode_norma" / "feedback.db"
         db_path.parent.mkdir(parents=True, exist_ok=True)
         self.db_path = db_path
+        self.database_url = database_url or os.getenv("DATABASE_URL")
         self._conn = None
         self._init_schema()
+
+    def _connect(self):
+        if self.database_url and self.database_url.startswith(("postgres://", "postgresql://")):
+            import psycopg
+            return _ConnectionCompat(psycopg.connect(self.database_url))
+        return sqlite3.connect(self.db_path)
 
     def __enter__(self):
         """Context manager entry."""
@@ -67,7 +107,12 @@ class FeedbackStore:
 
     def _init_schema(self):
         """Create tables if they don't exist."""
-        with sqlite3.connect(self.db_path) as conn:
+        if self.database_url and self.database_url.startswith(("postgres://", "postgresql://")):
+            from antinode_norma.database import migrate
+
+            migrate(self.database_url)
+            return
+        with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
@@ -170,14 +215,20 @@ class FeedbackStore:
         )
 
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                    INSERT OR REPLACE INTO feedback
+                    INSERT INTO feedback
                     (mapping_id, step_text, action_type, selector, test_result,
                      execution_context, mapping_source, confidence, timestamp)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(mapping_id) DO UPDATE SET
+                    step_text=excluded.step_text, action_type=excluded.action_type,
+                    selector=excluded.selector, test_result=excluded.test_result,
+                    execution_context=excluded.execution_context,
+                    mapping_source=excluded.mapping_source, confidence=excluded.confidence,
+                    timestamp=excluded.timestamp
                     """,
                     (
                         mapping_id,
@@ -239,7 +290,7 @@ class FeedbackStore:
             Success rate as float (0.0-1.0), or 0.0 if no history
         """
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
                     """
@@ -273,7 +324,7 @@ class FeedbackStore:
             List of FeedbackRecord
         """
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
                 cursor.execute(
@@ -316,7 +367,7 @@ class FeedbackStore:
             List of FeedbackRecord
         """
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
                 cursor.execute(
@@ -359,7 +410,7 @@ class FeedbackStore:
             List of FeedbackRecord sorted by most recent
         """
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
                 if action_type:
@@ -404,7 +455,7 @@ class FeedbackStore:
     def clear_all(self):
         """Clear all feedback data (for testing)."""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 cursor = conn.cursor()
                 cursor.execute("DELETE FROM feedback")
                 cursor.execute("DELETE FROM selector_stats")

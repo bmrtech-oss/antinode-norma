@@ -4,7 +4,22 @@
 assessment
 **Release profile:** `aegis-foundation`
 **Owner:** Platform Governance
-**Last reviewed:** 2026-09-23
+**Last reviewed:** 2026-09-25
+
+## Current implementation status
+
+ADR-003 phases P4 through P13 have completed their recorded checkpoints for
+the `aegis-foundation` workstream. The current next task is P14-T03 analytics
+polish. The full Aegis release profiles remain not release-approved until the
+profile-specific evidence, security review, and release-manager sign-off are
+complete.
+
+| Evidence surface | Current verification |
+|---|---|
+| Python regression | `python -m pytest -q` with external-provider tests requiring valid credentials or explicit skip handling |
+| Cross-track regression | `tests/integration/test_cross_track_regression_p12_t01.py` |
+| Frontend quality | `cd ui && npm run ci:ui` |
+| Evidence matrix | `python -m antinode_aegis.evidence docs/adr/evidence-matrix.yml` |
 
 This register defines the governance boundary for Aegis and distinguishes
 controls that are evidenced in the current Norma workflow from target controls

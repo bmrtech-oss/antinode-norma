@@ -31,6 +31,7 @@ Works with **any LLM** (Claude, GPT, OpenRouter, local) and integrates via **MCP
 - [Track Coordination](docs/TRACKS.md) – Parallel track ownership and convergence points.
 - [Web UI & Frontend](docs/UI.md) – React SPA dashboard, feature viewer, and approval queue.
 - [Local Runbook](docs/LOCAL_RUNBOOK.md) – onboarding, installation, smoke tests, and end-to-end local verification.
+- [Local Development Command Reference](docs/LOCAL_DEV_COMMANDS.md) – copy-paste commands for engineering and QA workflows on Windows and Fedora/Podman.
 - [Local System and UI Testing](docs/LOCAL_SYSTEM_AND_UI_TESTING.md) – exact mock-provider environment, startup commands, manual generation workflow, and troubleshooting.
 - [Authentication & RBAC](docs/AUTH.md) – OIDC, SAML 2.0, session management, and permission matrix.
 - [Execution Maturity](docs/EXECUTION.md) – Parallel runners, cloud grids, artifact capture, and flake detection.

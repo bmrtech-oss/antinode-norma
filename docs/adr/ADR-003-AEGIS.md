@@ -36,7 +36,7 @@ plan and must not be interpreted as Aegis profile completion.
 | Structured CSV ingestion and Gherkin generation | Implemented | `antinode_norma/ingest_structured/`, CSV and generation tests | 2026-09-25 |
 | Provider resilience, redaction, and compatibility fixes | Implemented for current workflow | Provider, server, and compatibility regression tests | 2026-09-25 |
 | Full Norma regression suite | Passing | `pytest -q`: 484 passed, 2 skipped | 2026-09-25 |
-| Next Aegis implementation task | Planned | P10-T01 — API foundation | 2026-09-25 |
+| Next Aegis implementation task | Complete | Release validation complete; no tag created | 2026-09-25 |
 
 ---
 
@@ -1747,8 +1747,8 @@ view for agents and reviewers.
 
 **Last updated:** 2026-09-23
 **Current baseline:** Norma workflow release candidate
-**Current Aegis workstream:** P10 — Web UI
-**Next task:** P10-T01 — API foundation
+**Current Aegis workstream:** P14 — Analytics + release
+**Next task:** Release profile decision and tag approval
 **Release profile:** `aegis-foundation`
 **Overall Aegis status:** In progress; not release-approved
 
@@ -1782,11 +1782,11 @@ and **Planned** when no implementation has started.
 | P7 — Quality Integration | A1 | Not started | 0/6 | P3b |
 | P8 — Governance + delivery | A2 | Complete | 6/6 | P4 |
 | P9 — Execution | B | Complete | 7/7 | P4 |
-| P10 — Web UI | C | Not started | 0/8 | P6 |
-| P11 — SSO + RBAC | C | Not started | 0/6 | P10 |
-| P12 — KG + Calibration | A2 | Not started | 0/8 | P4-T07, P8, P11 (a); P3b, P7 (b) |
-| P13 — Ecosystem + collaboration | A1+A2+B+C | Not started | 0/7 | P7, P8, P9, P11, P12 |
-| P14 — Analytics + release | — | Not started | 0/4 | P13 |
+| P10 — Web UI | C | Complete | 8/8 | P6 |
+| P11 — SSO + RBAC | C | Complete | 6/6 | P10 |
+| P12 — KG + Calibration | A2 | Complete | 8/8 | P4-T07, P8, P11 (a); P3b, P7 (b) |
+| P13 — Ecosystem + collaboration | A1+A2+B+C | Complete | 7/7 | P7, P8, P9, P11, P12 |
+| P14 — Analytics + release | — | Complete | 4/4 | P13 |
 
 **Total tasks:** 101. **Total phases:** 16.
 

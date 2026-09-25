@@ -78,6 +78,22 @@ def cli():
     pass
 
 
+@cli.command("seed-local")
+@click.option("--reset", is_flag=True, help="Reset only the local seed directory before seeding.")
+@click.option("--root", type=click.Path(path_type=Path), default=Path(".runtime/local-seed"), show_default=True)
+@click.option("--database-url", default=None, help="Optional SQLite/PostgreSQL URL for seed records.")
+def seed_local_command(reset, root, database_url):
+    """Seed deterministic local development data without external services."""
+    from antinode_norma.local_seed import seed_local
+
+    marker = seed_local(root=root, reset=reset, database_url=database_url)
+    success_message(
+        f"Local seed {marker['seed_version']} ready: "
+        f"{marker['fixture_counts']['users']} users, "
+        f"{marker['fixture_counts']['approvals']} approvals."
+    )
+
+
 @cli.group()
 def aegis():
     """Aegis contract and normalization operations."""

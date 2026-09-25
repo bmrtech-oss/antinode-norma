@@ -18,18 +18,31 @@ interface DashboardSummary {
   system_status: string;
 }
 
+interface DashboardTrends {
+  daily_generations?: number[];
+  quality_scores?: number[];
+  cost_usd?: number[];
+}
+
+interface DashboardResponse {
+  summary: DashboardSummary;
+  trends?: DashboardTrends;
+}
+
 export const Dashboard: React.FC = () => {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [trends, setTrends] = useState<DashboardTrends>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchSummary = () => {
     setLoading(true);
     setError(null);
-    getJson<{ summary: DashboardSummary }>("/api/dashboard")
+    getJson<DashboardResponse>("/api/dashboard")
       .then((data) => {
         if (data && data.summary) {
           setSummary(data.summary);
+          setTrends(data.trends ?? {});
         }
       })
       .catch(() => setError("Dashboard metrics are unavailable."))
@@ -140,12 +153,39 @@ export const Dashboard: React.FC = () => {
               <span className="text-muted-foreground">Reported quality pass rate</span>
               <span className="font-semibold text-success">{Math.round((summary?.quality_gate_pass_rate ?? 0) * 100)}%</span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              This dashboard intentionally presents the current API snapshot. Historical trends are not shown because the backend does not currently expose time-series data.
-            </p>
+            <p className="text-xs text-muted-foreground">Snapshot and trend data are supplied by the dashboard API.</p>
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent trends</CardTitle>
+          <p className="text-xs text-muted-foreground">Last seven reported values from the analytics service</p>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {[
+            { label: "Daily generations", values: trends.daily_generations ?? [], format: (value: number) => String(value), tone: "bg-primary" },
+            { label: "Quality scores", values: trends.quality_scores ?? [], format: (value: number) => `${Math.round(value * 100)}%`, tone: "bg-success" },
+            { label: "Cost (USD)", values: trends.cost_usd ?? [], format: (value: number) => `$${value.toFixed(3)}`, tone: "bg-warning" },
+          ].map(({ label, values, format, tone }) => {
+            const maximum = Math.max(...values, 1)
+            return (
+              <div key={label}>
+                <div className="mb-2 flex items-center justify-between text-xs">
+                  <span className="font-medium text-muted-foreground">{label}</span>
+                  <span className="font-semibold text-foreground">{values.length ? format(values[values.length - 1]) : "No data"}</span>
+                </div>
+                <div className="flex h-16 items-end gap-1" aria-label={`${label} trend`}>
+                  {values.map((value, index) => (
+                    <div key={`${label}-${index}`} className={`min-w-0 flex-1 rounded-t ${tone}`} style={{ height: `${Math.max(8, (value / maximum) * 100)}%` }} title={format(value)} />
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </CardContent>
+      </Card>
     </div>
   );
 };

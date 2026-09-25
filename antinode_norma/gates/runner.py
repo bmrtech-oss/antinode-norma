@@ -1,6 +1,6 @@
 from typing import List, Optional
 from antinode_norma.gates.types import BaseGate, GateContext
-from antinode_norma.gates.graph import Q11GraphConsistencyGate
+from antinode_norma.gates.graph import Q11GraphConsistencyGate, Q12GraphCoverageGate
 from antinode_norma.core.features import FeatureFlagResolver
 from antinode_norma.core.types import Verdict, GateResult
 from antinode_norma.gates.aggregate import aggregate_results
@@ -40,6 +40,7 @@ class GateRunner:
             ]
             if FeatureFlagResolver().is_enabled("knowledge_graph"):
                 self.gates.append(Q11GraphConsistencyGate())
+                self.gates.append(Q12GraphCoverageGate())
         else:
             self.gates = gates
 

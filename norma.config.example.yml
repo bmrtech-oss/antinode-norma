@@ -1,0 +1,18 @@
+# Safe local development defaults for ADR-013.
+llm_provider: mock
+llm_model: mock-model
+llm_temperature: 0.0
+output_dir: features
+
+features:
+  unified_agent: false
+  governance_audit: false
+  governance_approval: false
+  execution_cloud: false
+  knowledge_graph: false
+
+development:
+  runtime_mode: http
+  seed_enabled: true
+  seed_root: .runtime/local-seed
+  database_url: postgresql://norma:norma-local-only@db:5432/norma
