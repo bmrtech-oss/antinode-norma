@@ -70,6 +70,41 @@ async def test_run_agent_from_raw_generation():
 
 
 @pytest.mark.asyncio
+async def test_run_agent_from_raw_uses_unified_agent_when_enabled(monkeypatch):
+    story = UserStory(
+        role="tester",
+        action="test",
+        benefit="learn",
+        acceptance_criteria=["should pass"],
+    )
+    mock_report = QualityReport(
+        passes_invest=True,
+        invest_details={},
+        issues=[],
+        suggestions=[],
+        quality_score=1.0,
+    )
+    monkeypatch.setenv("NORMA_FEATURE_UNIFIED_AGENT", "true")
+    with (
+        patch("antinode_norma.runner.parse_story", return_value=story),
+        patch("antinode_norma.runner.compute_quality", return_value=mock_report),
+        patch("antinode_norma.runner.get_llm_callable", return_value=lambda _: "unused"),
+        patch("antinode_norma.runner.NormaAgent") as mock_agent_cls,
+        patch("antinode_norma.runner.write_feature_file") as mock_write,
+    ):
+        mock_agent_cls.return_value.generate_feature_with_repair.return_value = (
+            "Feature: Unified\nScenario: Test\nGiven step",
+            type("Verdict", (), {"hard_pass": True, "gate_results": {}})(),
+            1,
+        )
+        result = await run_agent_from_raw("raw")
+
+    assert result["validation_passed"] is True
+    mock_agent_cls.assert_called_once()
+    mock_write.assert_called_once()
+
+
+@pytest.mark.asyncio
 async def test_run_agent_from_raw_fails_quality():
     """Test that the runner returns an error when quality fails."""
     story = UserStory(

@@ -70,6 +70,7 @@ def test_init_creates_norma_config(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     input_text = """openrouter
+gpt-4o-mini
 playwright
 generated_tests
 y
@@ -85,6 +86,7 @@ prettier
 
     content = config_path.read_text(encoding="utf-8")
     assert "llm_provider: openrouter" in content
+    assert "llm_model: gpt-4o-mini" in content
     assert "default_framework: playwright" in content
     assert "output_dir: generated_tests" in content
     assert "use_page_objects: true" in content
@@ -101,6 +103,7 @@ def test_init_force_overwrites_existing_config(tmp_path, monkeypatch):
     config_path.write_text("llm_provider: openai\n")
 
     input_text = """anthropic
+claude-3-5-sonnet-20241022
 selenium
 out_tests
 n
@@ -113,6 +116,7 @@ ruff
     assert result.exit_code == 0
     content = config_path.read_text(encoding="utf-8")
     assert "llm_provider: anthropic" in content
+    assert "llm_model: claude-3-5-sonnet-20241022" in content
     assert "default_framework: selenium" in content
     assert "output_dir: out_tests" in content
     assert "use_page_objects: false" in content

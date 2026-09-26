@@ -1,0 +1,51 @@
+facts:
+  - id: reset-link-expiry
+    subject: password_reset_link
+    predicate: expires_after
+    object: 24_hours
+    contradiction_phrase: reset link remains valid forever
+  - id: reset-token-single-use
+    subject: password_reset_token
+    predicate: is
+    object: single_use
+    contradiction_phrase: reset token can be reused
+  - id: registered-email-required
+    subject: password_reset
+    predicate: requires
+    object: registered_email
+    contradiction_phrase: reset can be requested without an account
+  - id: account-lock-threshold
+    subject: account
+    predicate: locks_after
+    object: five_failed_attempts
+    contradiction_phrase: account never locks after failed attempts
+  - id: password-minimum-length
+    subject: password
+    predicate: requires_minimum
+    object: eight_characters
+    contradiction_phrase: password may be one character
+  - id: mfa-required-admin
+    subject: administrator
+    predicate: requires
+    object: multi_factor_authentication
+    contradiction_phrase: administrator can sign in without multi factor authentication
+  - id: session-timeout
+    subject: session
+    predicate: expires_after
+    object: thirty_minutes
+    contradiction_phrase: session never expires
+  - id: audit-retention
+    subject: audit_event
+    predicate: retained_for
+    object: seven_years
+    contradiction_phrase: audit events are deleted immediately
+  - id: payment-confirmation
+    subject: payment
+    predicate: requires
+    object: confirmation
+    contradiction_phrase: payment succeeds without confirmation
+  - id: order-total-integrity
+    subject: order_total
+    predicate: equals
+    object: item_sum_plus_tax
+    contradiction_phrase: order total ignores item prices

@@ -1,0 +1,27 @@
+version: 2026-09-25.v1
+provider: mock
+users:
+  - id: seed-admin
+    username: admin
+    roles: [admin]
+  - id: seed-reviewer
+    username: reviewer
+    roles: [reviewer]
+  - id: seed-generator
+    username: generator
+    roles: [generator]
+  - id: seed-viewer
+    username: viewer
+    roles: [viewer]
+approvals:
+  pending: seed-approval-pending
+  approved: seed-approval-approved
+  rejected: seed-approval-rejected
+features:
+  - seed-login.feature
+  - seed-reset.feature
+  - seed-export.feature
+expected_counts:
+  users: 4
+  approvals: 3
+  features: 3

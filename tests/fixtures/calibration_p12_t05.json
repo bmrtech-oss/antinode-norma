@@ -1,0 +1,9 @@
+{
+  "version": "2026-09-25.v1",
+  "examples": [
+    {"id": "cal-1", "predicted_probability": 0.9, "observed_success": true},
+    {"id": "cal-2", "predicted_probability": 0.8, "observed_success": true},
+    {"id": "cal-3", "predicted_probability": 0.2, "observed_success": false},
+    {"id": "cal-4", "predicted_probability": 0.1, "observed_success": false}
+  ]
+}

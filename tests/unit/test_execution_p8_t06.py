@@ -34,3 +34,13 @@ def test_flake_detector_persistence(tmp_path):
     assert len(records) == 1
     assert records[0].test_id == "TC-201"
     assert records[0].is_flaky is True
+
+
+def test_flake_detector_database_persistence(tmp_path):
+    database_url = f"sqlite:///{tmp_path / 'norma.db'}"
+    detector = FlakeDetector(database_url=database_url)
+    detector.record_run_result("TC-301", passed=True)
+    detector.record_run_result("TC-301", passed=False)
+
+    restored = FlakeDetector(database_url=database_url)
+    assert restored.history["TC-301"] == {"passed": 1, "failed": 1}

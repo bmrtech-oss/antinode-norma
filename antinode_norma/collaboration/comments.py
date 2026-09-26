@@ -24,8 +24,13 @@ def extract_mentions(text: str) -> List[str]:
 
 
 class CommentStore:
-    def __init__(self) -> None:
+    def __init__(self, database_url: Optional[str] = None) -> None:
+        self.database_url = database_url
         self._comments: List[Comment] = []
+        if database_url:
+            from antinode_norma.database import load_comments
+
+            self._comments = [Comment(**item) for item in load_comments(database_url)]
 
     def add_comment(
         self,
@@ -43,6 +48,10 @@ class CommentStore:
             mentions=extracted,
         )
         self._comments.append(comment)
+        if self.database_url:
+            from antinode_norma.database import save_comment
+
+            save_comment(self.database_url, comment.model_dump())
         return comment
 
     def get_comments(self, feature_id: Optional[str] = None) -> List[Comment]:

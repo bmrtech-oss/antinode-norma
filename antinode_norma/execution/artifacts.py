@@ -1,4 +1,5 @@
 import shutil
+import os
 import uuid
 from datetime import datetime, timezone
 from enum import Enum
@@ -25,10 +26,23 @@ class Artifact(BaseModel):
 
 
 class ArtifactManager:
-    def __init__(self, output_dir: Optional[Path] = None):
+    def __init__(self, output_dir: Optional[Path] = None, database_url: Optional[str] = None):
         self.output_dir = output_dir or Path("build/artifacts")
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.database_url = database_url or os.getenv("DATABASE_URL")
         self.artifacts: List[Artifact] = []
+        if self.database_url:
+            from antinode_norma.database import load_execution_artifacts, migrate
+
+            migrate(self.database_url)
+            self.artifacts = [
+                Artifact(**record)
+                for record in load_execution_artifacts(self.database_url, self._storage_root)
+            ]
+
+    @property
+    def _storage_root(self) -> str:
+        return str(self.output_dir.resolve())
 
     def save_artifact(
         self,
@@ -52,6 +66,18 @@ class ArtifactManager:
             content_type=content_type,
             size_bytes=len(source_data),
         )
+        if self.database_url:
+            from antinode_norma.database import save_execution_artifact
+
+            try:
+                save_execution_artifact(
+                    self.database_url,
+                    self._storage_root,
+                    artifact.model_dump(mode="json"),
+                )
+            except Exception:
+                target_path.unlink(missing_ok=True)
+                raise
         self.artifacts.append(artifact)
         return artifact
 
@@ -73,8 +99,16 @@ class ArtifactManager:
             if exec_dir.exists():
                 shutil.rmtree(exec_dir)
             self.artifacts = [a for a in self.artifacts if a.execution_id != execution_id]
+            if self.database_url:
+                from antinode_norma.database import delete_execution_artifacts
+
+                delete_execution_artifacts(self.database_url, self._storage_root, execution_id)
         else:
             if self.output_dir.exists():
                 shutil.rmtree(self.output_dir)
                 self.output_dir.mkdir(parents=True, exist_ok=True)
             self.artifacts = []
+            if self.database_url:
+                from antinode_norma.database import delete_execution_artifacts
+
+                delete_execution_artifacts(self.database_url, self._storage_root)

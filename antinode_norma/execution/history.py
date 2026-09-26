@@ -31,11 +31,17 @@ class ExecutionHistoryRecord:
 class ExecutionHistoryStore:
     """Manages reading and writing execution history records to disk."""
 
-    def __init__(self, history_file: str = "build/execution_history.json"):
+    def __init__(self, history_file: str = "build/execution_history.json", database_url: Optional[str] = None):
         self.history_file = Path(history_file)
+        self.database_url = database_url
 
     def save_run(self, record: ExecutionHistoryRecord) -> None:
         """Saves an execution history record to the JSON store."""
+        if self.database_url:
+            from antinode_norma.database import save_execution_history
+
+            save_execution_history(self.database_url, record.to_dict())
+            return
         history = self._load_all()
         history.append(record.to_dict())
         self.history_file.parent.mkdir(parents=True, exist_ok=True)
@@ -43,6 +49,12 @@ class ExecutionHistoryStore:
 
     def get_history(self, limit: Optional[int] = 50) -> List[ExecutionHistoryRecord]:
         """Retrieves recent execution history records, sorted newest first."""
+        if self.database_url:
+            from antinode_norma.database import load_execution_history
+
+            records = [ExecutionHistoryRecord.from_dict(item) for item in load_execution_history(self.database_url)]
+            records.sort(key=lambda r: r.timestamp, reverse=True)
+            return records[:limit] if limit is not None and limit > 0 else records
         history_dicts = self._load_all()
         records = [ExecutionHistoryRecord.from_dict(d) for d in history_dicts]
         # Sort newest first based on timestamp

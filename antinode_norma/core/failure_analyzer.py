@@ -46,12 +46,64 @@ def set_db_file(path: Path | str) -> None:
 
 
 def _get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(_get_db_file()), detect_types=sqlite3.PARSE_DECLTYPES)
+    database_url = os.getenv("DATABASE_URL", "")
+    if database_url.startswith(("postgres://", "postgresql://")):
+        import psycopg
+        from psycopg.rows import dict_row
+
+        from antinode_norma.database import migrate
+
+        migrate(database_url)
+        return _ConnectionCompat(psycopg.connect(database_url, row_factory=dict_row))
+    if database_url.startswith("sqlite:///"):
+        from antinode_norma.database import _database_url
+
+        sqlite_path = Path(_database_url(database_url).removeprefix("sqlite:///"))
+        sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(sqlite_path))
+        conn.row_factory = sqlite3.Row
+        return conn
+    conn = sqlite3.connect(str(_get_db_file()))
     conn.row_factory = sqlite3.Row
     return conn
 
 
+class _CursorCompat:
+    def __init__(self, cursor):
+        self.cursor = cursor
+
+    def execute(self, statement, parameters=()):
+        return self.cursor.execute(statement.replace("?", "%s"), parameters)
+
+    def fetchall(self):
+        return self.cursor.fetchall()
+
+
+class _ConnectionCompat:
+    def __init__(self, connection):
+        self.connection = connection
+
+    def __enter__(self):
+        self.connection.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return self.connection.__exit__(exc_type, exc_value, traceback)
+
+    def execute(self, statement, parameters=()):
+        return _CursorCompat(self.connection.execute(statement.replace("?", "%s"), parameters))
+
+    def commit(self):
+        self.connection.commit()
+
+
 def _ensure_database() -> None:
+    database_url = os.getenv("DATABASE_URL", "")
+    if database_url.startswith(("postgres://", "postgresql://", "sqlite:///")):
+        from antinode_norma.database import migrate
+
+        migrate(database_url)
+        return
     with _get_connection() as conn:
         conn.execute(f"""
             CREATE TABLE IF NOT EXISTS {_TABLE_NAME} (
@@ -326,7 +378,9 @@ def create_weekly_failure_report(
     output_path: Path, lookback_days: int = 7, top_n: int = 10
 ) -> str:
     failures = get_failures_since(lookback_days)
-    report_date = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    report_date = datetime.datetime.now(datetime.timezone.utc).strftime(
+        "%Y-%m-%d %H:%M:%S UTC"
+    )
     header = [
         "# Weekly Failure Report",
         "",

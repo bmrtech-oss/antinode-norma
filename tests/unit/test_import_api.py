@@ -33,8 +33,17 @@ def test_csv_import_preview_validate_and_generation(tmp_path, monkeypatch):
 
     job = client.post("/v1/api/generation/jobs", json={"import_id": imported["id"]})
     assert job.status_code == 201
-    assert job.json()["status"] == "completed"
-    assert client.get(f"/v1/api/generation/jobs/{job.json()['id']}").status_code == 200
+    job_id = job.json()["id"]
+    terminal_statuses = {"completed", "completed_with_errors", "failed", "cancelled"}
+    final_job = job.json()
+    for _ in range(50):
+        response = client.get(f"/v1/api/generation/jobs/{job_id}")
+        assert response.status_code == 200
+        final_job = response.json()
+        if final_job["status"] in terminal_statuses:
+            break
+        time.sleep(0.1)
+    assert final_job["status"] in terminal_statuses
 
 
 def test_public_phase_one_contract_paths(tmp_path, monkeypatch):

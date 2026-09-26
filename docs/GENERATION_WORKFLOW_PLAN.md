@@ -1082,11 +1082,48 @@ This roadmap operationalizes the target-state controls in
 It is intentionally separate from the completed five-phase Norma workflow and
 does not claim that Aegis 1.5.0 or 2.0.0 is release-ready.
 
+### Canonical agent implementation order
+
+Agents must follow this order unless the Release Manager records an approved
+dependency exception in the evidence matrix. Each step is a gate: complete its
+exit criteria and evidence before starting the next step.
+
+| Order | Start here | Scope | Must be true before proceeding |
+|---:|---|---|---|
+| 0 | Repository boundary | Confirm Sections 1–17 are the current Norma baseline; identify regressions only | Baseline tests pass and no unrelated Norma redesign is proposed |
+| 1 | AEGIS-0 / P0 | Create `antinode_aegis` boundary, validate the evidence matrix, assign owners, release profiles, and UI/API/CLI/MCP surface status | Matrix validator passes; P0 records have owners, commands, paths, and tests |
+| 2 | P1 | Establish shared IR, domain contracts, configuration schema, and API contract tests | Versioned contracts and fixtures pass without changing Norma behavior |
+| 3 | P2 | Implement structured ingest adapters and CLI integration | CSV/XLSX/story adapters produce the shared IR and contract evidence |
+| 4 | P3a | Implement hard gates Q0–Q5 and the gate aggregator | Invalid, duplicate, untraceable, or syntactically invalid inputs fail closed |
+| 5 | P4 | Implement prompt builders, Aegis agent boundary, and bounded repair loop | Repair contract tests pass and generated output remains traceable |
+| 6 | P5–P7 | Add evaluation, deterministic/semantic cache, cost gates, MCP contracts, soft gates Q6–Q10, audit, approvals, and delivery adapters | Evaluation, determinism, cost, MCP, governance, and regression evidence pass |
+| 7 | P8–P11 | Add production governance, durable operations, execution maturity, full web UI, OIDC, and RBAC | Migration, authorization, recovery, observability, UI, and rollback evidence pass |
+| 8 | P12.b | Add calibration, ECE/MCE/Brier reports, confidence thresholds, SME routing, and feedback | Versioned calibration dataset/report meets the 1.5.0 threshold and routing is audited |
+| 9 | P12.a | Add the knowledge-graph adapter, provenance, supersession, Q11/Q12, and curation | P12.a validation gate passes; otherwise keep KG capability unavailable |
+| 10 | P13–P14 | Complete ecosystem integrations, analytics, release profiles, security/compliance evidence, and signed release decision | Declared profile has complete evidence, approved waivers, and rollback readiness |
+
+#### Agent stop conditions
+
+An agent must stop and report `Blocked` rather than advancing when:
+
+- A prior order item lacks passing exit evidence.
+- A required dependency, owner, fixture, or acceptance command is missing.
+- A proposed change would alter completed Norma behavior without a regression
+  requirement.
+- A release profile would be implied by an unimplemented or unevidenced
+  capability.
+- UI, API, CLI, or MCP policy results would diverge for the same fixture.
+
+The next agent should start by reading this table, selecting the first
+unfinished order item, and checking its evidence-matrix records. The canonical
+instruction is: **one order item, one exit gate, one evidence update, then
+stop and report**.
+
 ### Aegis workstreams
 
 | Workstream | Scope | Primary stack | Exit evidence | Status |
 |---|---|---|---|---|
-| AEGIS-0 Foundation and traceability | Create `antinode_aegis` boundary, `COMPONENT_SOURCING.md`, `evidence-matrix.yml` validation, owners, task IDs, and release-profile records | Python package boundaries, YAML schema validation, pytest | Matrix lint passes; every P0 task has owner, code/test paths, command, and status | **Planned — start here** |
+| AEGIS-0 Foundation and traceability | Create `antinode_aegis` boundary, `COMPONENT_SOURCING.md`, `evidence-matrix.yml` validation, owners, task IDs, and release-profile records | Python package boundaries, YAML schema validation, pytest | Matrix lint passes; every P0 task has owner, code/test paths, command, and status | **Implemented for AEGIS-0; P0 governance continues at P0-T02** |
 | AEGIS-1 Quality gates and evaluation | Implement Q0–Q10 adapters, gate aggregation, repair loop, deterministic cache, cost/eval reports, and MCP contracts | `gherkin-official`, gherkin linting, Promptfoo/DeepEval adapters, MCP Python SDK | Gate contract suite, repair convergence report, cost/determinism/eval artifacts | Planned |
 | AEGIS-2 Governance, identity, and operations | OIDC/RBAC, PostgreSQL/Alembic migrations, durable queue, audit ledger, retention, backup/restore, deployment topology, and rollback | Authlib, PostgreSQL, SQLAlchemy, Alembic, Redis + Dramatiq/Celery, OpenTelemetry, Prometheus | Auth/security suite, migration rollback, backup/restore, RPO/RTO, alerts, and deployment drill | Planned |
 | AEGIS-3 Calibration and SME routing | Confidence scores, calibration datasets, ECE/MCE/Brier reporting, threshold policy, SME queue, decisions, and feedback loop | NumPy, pandas, scikit-learn calibration, FastAPI/React workflow | Versioned calibration report, ECE threshold, SME routing integration, escalation audit evidence | Planned |

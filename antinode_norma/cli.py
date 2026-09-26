@@ -78,6 +78,66 @@ def cli():
     pass
 
 
+@cli.command("seed-local")
+@click.option("--reset", is_flag=True, help="Reset only the local seed directory before seeding.")
+@click.option("--root", type=click.Path(path_type=Path), default=Path(".runtime/local-seed"), show_default=True)
+@click.option("--database-url", default=None, help="Optional SQLite/PostgreSQL URL for seed records.")
+def seed_local_command(reset, root, database_url):
+    """Seed deterministic local development data without external services."""
+    from antinode_norma.local_seed import seed_local
+
+    marker = seed_local(root=root, reset=reset, database_url=database_url)
+    success_message(
+        f"Local seed {marker['seed_version']} ready: "
+        f"{marker['fixture_counts']['users']} users, "
+        f"{marker['fixture_counts']['approvals']} approvals."
+    )
+
+
+@cli.group()
+def aegis():
+    """Aegis contract and normalization operations."""
+
+
+@aegis.command("normalize")
+@click.argument("source")
+@click.option(
+    "--kind",
+    type=click.Choice(["csv", "xlsx", "story"], case_sensitive=False),
+    required=True,
+    help="Input format to normalize.",
+)
+@click.option("--sheet-name", default=None, help="Worksheet name for XLSX input.")
+@click.option("--source-reference", default=None, help="External provenance reference for story input.")
+def aegis_normalize(source, kind, sheet_name, source_reference):
+    """Normalize an input into the versioned Aegis RequirementIR contract."""
+    from antinode_aegis.shared_ir import normalize_requirements
+
+    try:
+        normalized_source = source
+        if kind.lower() == "story":
+            story_path = Path(source)
+            if story_path.exists():
+                normalized_source = json.loads(story_path.read_text(encoding="utf-8"))
+            else:
+                normalized_source = json.loads(source)
+        requirements = normalize_requirements(
+            normalized_source,
+            kind,
+            source_reference=source_reference,
+            sheet_name=sheet_name,
+        )
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise click.ClickException(f"Unable to normalize {kind} input: {exc}") from exc
+
+    click.echo(
+        json.dumps(
+            [requirement.model_dump(mode="json") for requirement in requirements],
+            indent=2,
+        )
+    )
+
+
 @cli.command()
 @click.argument("story_text", required=False)
 @click.option("--file", "-f", type=click.Path(exists=True), help="Read story text from file (.txt)")
@@ -678,6 +738,10 @@ def init(force):
             type=click.Choice(["openrouter", "anthropic", "openai", "local"], case_sensitive=False),
             default="openrouter",
         )
+        llm_model = click.prompt(
+            "LLM model",
+            default="gpt-4o-mini" if llm_provider == "openrouter" else "claude-3-5-sonnet-20241022",
+        )
         api_var = "OPENROUTER_API_KEY" if llm_provider == "openrouter" else (
             "ANTHROPIC_API_KEY" if llm_provider == "anthropic" else "OPENAI_API_KEY"
         )
@@ -703,6 +767,7 @@ def init(force):
         tmpl = Template(tmpl_text)
         rendered = tmpl.render(
             llm_provider=llm_provider,
+            llm_model=llm_model,
             api_key_env_var=api_var,
             default_framework=default_framework,
             output_dir=output_dir,

@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -39,6 +41,15 @@ jobs:
       - name: Install JS dev dependencies
         run: |
           npm ci
+
+      - name: Validate Aegis evidence matrix
+        run: |
+          python -m antinode_aegis.evidence docs/adr/evidence-matrix.yml
+
+      - name: Scan repository for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check unused imports with Ruff
         run: |
@@ -69,6 +80,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -106,6 +119,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -135,6 +150,33 @@ jobs:
             python -m antinode_norma.codegen.cli.commands generate -f "$f" -o generated_tests_ci -fw playwright
           done
 
+  evaluation:
+    name: Evaluation and cost gates
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install -r requirements-dev.txt
+
+      - name: Run deterministic evaluation gates
+        run: |
+          pytest tests/unit/test_eval_harness_p5_t04.py tests/unit/test_exact_cache_p5_t01.py tests/unit/test_wire_cache_p5_t02.py tests/unit/test_semantic_cache_p5_t03.py tests/unit/test_cost_tracker_p5_t05.py -q --no-cov
+
   integration:
     name: Integration tests
     runs-on: ubuntu-latest
@@ -144,6 +186,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5

@@ -29,9 +29,17 @@ class ApprovalRequest(BaseModel):
 
 
 class ApprovalGate:
-    def __init__(self, audit_log: Optional[AuditLog] = None):
+    def __init__(self, audit_log: Optional[AuditLog] = None, database_url: Optional[str] = None):
         self.audit_log = audit_log or AuditLog()
+        self.database_url = database_url
         self.requests: Dict[str, ApprovalRequest] = {}
+        if database_url:
+            from antinode_norma.database import load_approval_requests
+
+            self.requests = {
+                item["id"]: ApprovalRequest(**item)
+                for item in load_approval_requests(database_url)
+            }
 
     def submit_request(
         self,
@@ -54,6 +62,7 @@ class ApprovalGate:
             tenant_id=tenant_id,
         )
         self.requests[req.id] = req
+        self._persist(req)
         self.audit_log.record_event(
             action="approval_submitted",
             resource=feature_id,
@@ -75,6 +84,7 @@ class ApprovalGate:
         req.reviewer = reviewer
         req.reason = reason
         req.updated_at = datetime.now(timezone.utc).isoformat()
+        self._persist(req)
 
         self.audit_log.record_event(
             action="approval_approved",
@@ -97,6 +107,7 @@ class ApprovalGate:
         req.reviewer = reviewer
         req.reason = reason
         req.updated_at = datetime.now(timezone.utc).isoformat()
+        self._persist(req)
 
         self.audit_log.record_event(
             action="approval_rejected",
@@ -115,3 +126,9 @@ class ApprovalGate:
             if req.feature_id == feature_id and req.status == ApprovalStatus.APPROVED:
                 return True
         return False
+
+    def _persist(self, request: ApprovalRequest) -> None:
+        if self.database_url:
+            from antinode_norma.database import save_approval_request
+
+            save_approval_request(self.database_url, request.model_dump())

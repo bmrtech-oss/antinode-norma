@@ -24,7 +24,9 @@ def test_mistral_missing_api_key(monkeypatch):
         create_llm_callable({"provider": "mistral"})
 
 
-def test_gemini_openai_fallback():
+def test_gemini_openai_fallback(monkeypatch):
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("NORMA_LLM_MODEL", raising=False)
     with patch("openai.OpenAI") as mock_openai:
         mock_client = MagicMock()
         mock_openai.return_value = mock_client
@@ -39,7 +41,9 @@ def test_gemini_openai_fallback():
             assert result == "Gemini OpenAI response"
 
 
-def test_groq_openai_fallback():
+def test_groq_openai_fallback(monkeypatch):
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("NORMA_LLM_MODEL", raising=False)
     with patch("openai.OpenAI") as mock_openai:
         mock_client = MagicMock()
         mock_openai.return_value = mock_client
@@ -53,7 +57,9 @@ def test_groq_openai_fallback():
             assert result == "Groq response"
 
 
-def test_mistral_openai_fallback():
+def test_mistral_openai_fallback(monkeypatch):
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("NORMA_LLM_MODEL", raising=False)
     with patch("openai.OpenAI") as mock_openai:
         mock_client = MagicMock()
         mock_openai.return_value = mock_client
@@ -80,7 +86,12 @@ def test_anthropic_retries_without_temperature_when_sdk_rejects_it():
         ]
 
         llm = create_llm_callable(
-            {"provider": "anthropic", "api_key": "dummy_key", "temperature": 0.2}
+            {
+                "provider": "anthropic",
+                "api_key": "dummy_key",
+                "model": "test-model",
+                "temperature": 0.2,
+            }
         )
         assert llm("Hello Anthropic") == "Anthropic response"
 
@@ -100,7 +111,28 @@ def test_anthropic_preserves_temperature_when_sdk_accepts_it():
         client.messages.create.return_value = response
 
         llm = create_llm_callable(
-            {"provider": "anthropic", "api_key": "dummy_key", "temperature": 0.7}
+            {
+                "provider": "anthropic",
+                "api_key": "dummy_key",
+                "model": "test-model",
+                "temperature": 0.7,
+            }
         )
         assert llm("Hello Anthropic") == "Anthropic response"
         assert client.messages.create.call_args.kwargs["temperature"] == 0.7
+
+
+def test_provider_requires_explicit_model_when_missing(monkeypatch):
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+
+    with pytest.raises(ValueError, match="LLM_MODEL is required"):
+        create_llm_callable({"provider": "anthropic", "api_key": "dummy_key"})
+
+    with pytest.raises(ValueError, match="LLM_MODEL is required"):
+        create_llm_callable({"provider": "openrouter", "api_key": "dummy_key"})
+
+    with pytest.raises(ValueError, match="LLM_MODEL is required"):
+        create_llm_callable({"provider": "openai", "api_key": "dummy_key"})

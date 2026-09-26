@@ -13,6 +13,10 @@ def _run_cli(cmd, timeout=60):
     env = os.environ.copy()
     env.setdefault("PYTHONIOENCODING", "utf-8")
     env.setdefault("PYTHONUTF8", "1")
+    # Keep CLI subprocesses deterministic and offline by default. These tests
+    # validate the command flow itself, not live provider availability.
+    env.setdefault("LLM_PROVIDER", "mock")
+    env.setdefault("LLM_MODEL", "mock-model")
     return subprocess.run(
         cmd,
         capture_output=True,

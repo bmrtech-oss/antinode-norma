@@ -1,7 +1,10 @@
-import yaml
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
+import yaml
 from pydantic import BaseModel, Field
+
+from antinode_aegis.config import AegisConfig
 from antinode_norma.core.features import DEFAULT_FEATURE_FLAGS
 
 
@@ -43,6 +46,7 @@ class HybridConfig(BaseModel):
 
 
 class NormaConfig(BaseModel):
+    aegis: AegisConfig = Field(default_factory=AegisConfig)
     gates: GateConfig = Field(default_factory=GateConfig)
     cache: CacheConfig = Field(default_factory=CacheConfig)
     governance: GovernanceConfig = Field(default_factory=GovernanceConfig)

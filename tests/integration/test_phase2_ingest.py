@@ -6,9 +6,10 @@ from antinode_norma.cli import cli
 
 @pytest.fixture(autouse=True)
 def mock_llm_calls_for_cli():
-    mock = MagicMock(return_value="Feature: Test\n\n  Scenario: Test\n    Given something\n")
+    mock = MagicMock(return_value='{"role":"user","action":"complete the task","benefit":"achieve the outcome","acceptance_criteria":["The outcome is displayed"]}')
     with patch("antinode_norma.utils.llm_factory.create_llm_callable", return_value=mock), \
-         patch("antinode_norma.agent_tools.create_llm_callable", return_value=mock):
+         patch("antinode_norma.agent_tools.create_llm_callable", return_value=mock), \
+         patch("antinode_norma.runner.get_llm_callable", return_value=mock):
         yield
 
 

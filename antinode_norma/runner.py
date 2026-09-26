@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 from .core.quality import compute_quality
 from .core.parser import parse_story
 from .core.gherkin_generator import generate_gherkin
+from .core.agent import NormaAgent
+from .core.features import FeatureFlagResolver
+from .core.types import TestCase
 from .core.validator import validate_gherkin
 from .utils.llm_factory import create_llm_callable
 from .utils.file_writer import write_feature_file
@@ -16,7 +19,7 @@ def get_llm_callable():
     config = {
         "provider": os.getenv("LLM_PROVIDER", "anthropic"),
         "api_key": os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENAI_API_KEY"),
-        "model": os.getenv("LLM_MODEL", "claude-3-5-sonnet-20241022"),
+        "model": os.getenv("LLM_MODEL"),
         "temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
         "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "1024")),
         "url": os.getenv("LLM_URL"),
@@ -58,11 +61,34 @@ async def run_agent_from_raw(
             "issues": report.issues,
             "suggestions": report.suggestions,
         }
-    step_defs = get_step_definitions()
-    gherkin = generate_gherkin(story, step_defs, llm_call)
-    validation = validate_gherkin(gherkin)
-    if not validation.valid:
-        return {"error": "Gherkin validation failed", "errors": validation.errors}
+    if FeatureFlagResolver().is_enabled("unified_agent"):
+        test_case = TestCase(
+            id=getattr(story, "id", "TC-001"),
+            title=f"Feature for {story.action}",
+            role=story.role,
+            action=story.action,
+            benefit=story.benefit,
+            acceptance_criteria=story.acceptance_criteria,
+        )
+        agent = NormaAgent(llm_callable=llm_call)
+        gherkin, verdict, attempts = agent.generate_feature_with_repair([test_case])
+        if not verdict.hard_pass:
+            return {
+                "error": "Quality gate validation failed",
+                "errors": [
+                    issue
+                    for result in verdict.gate_results.values()
+                    if not result.passed
+                    for issue in result.issues
+                ],
+                "attempts": attempts,
+            }
+    else:
+        step_defs = get_step_definitions()
+        gherkin = generate_gherkin(story, step_defs, llm_call)
+        validation = validate_gherkin(gherkin)
+        if not validation.valid:
+            return {"error": "Gherkin validation failed", "errors": validation.errors}
     output_dir = os.getenv("NORMA_OUTPUT_DIR", "features")
     safe_action = story.action.lower().replace(" ", "_")
     file_path = os.path.join(output_dir, f"{safe_action}.feature")

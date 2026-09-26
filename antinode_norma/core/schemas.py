@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 
 
@@ -7,18 +7,20 @@ class UserStory(BaseModel):
     role: str
     action: str
     benefit: str
-    acceptance_criteria: List[str] = Field(min_items=1)
+    acceptance_criteria: List[str] = Field(min_length=1)
     dependencies: Optional[List[str]] = Field(default_factory=list)
     estimated_points: Optional[int] = None
     story_id: Optional[str] = None
 
-    @validator("dependencies", pre=True, always=True)
+    @field_validator("dependencies", mode="before")
+    @classmethod
     def ensure_dependencies_list(cls, v):
         if v is None:
             return []
         return v
 
-    @validator("acceptance_criteria")
+    @field_validator("acceptance_criteria")
+    @classmethod
     def criteria_not_empty(cls, v):
         if not v or all(not c.strip() for c in v):
             raise ValueError("At least one non‑empty acceptance criterion required")

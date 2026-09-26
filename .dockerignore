@@ -1,4 +1,5 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
 .env
@@ -6,6 +7,8 @@ __pycache__/
 .gitignore
 *.log
 .pytest_cache/
+.ruff_cache/
+.tmp/
 .coverage
 htmlcov/
 dist/
@@ -15,3 +18,11 @@ generated_tests/
 playwright-report/
 test-results/
 .vscode/
+.env.*
+.runtime/
+build/
+ui/dist/
+ui/node_modules/
+*.db
+*.sqlite
+*.sqlite3

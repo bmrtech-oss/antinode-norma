@@ -357,6 +357,11 @@ def _run(job_id: str) -> None:
             _audit("generation.completed", current, processed_rows=processed,
                    successful_rows=successful, failed_rows=failed,
                    warning_rows=warnings)
+    except Exception as exc:
+        current = get_generation(job_id)
+        if current and current.get("status") not in {"completed", "completed_with_errors", "failed", "cancelled", "abandoned"}:
+            update_generation(job_id, status="failed", error=_safe_error(exc), completed_at=_now(), current_item=None)
+            _audit("generation.failed", {**current, "status": "failed"}, result="failure", error_type=type(exc).__name__)
     finally:
         current = get_generation(job_id)
         if current and current["status"] in {"completed", "completed_with_errors", "failed", "cancelled", "abandoned"}:

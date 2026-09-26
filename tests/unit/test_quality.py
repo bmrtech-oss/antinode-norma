@@ -69,6 +69,8 @@ class TestInvestChecks:
             role="u", action="a", benefit="b", acceptance_criteria=["should return 200"]
         )
         assert is_testable(story) is True
+        story.acceptance_criteria = ["The user is able to reset the password."]
+        assert is_testable(story) is True
         story.acceptance_criteria = ["click the button"]
         assert is_testable(story) is False
 

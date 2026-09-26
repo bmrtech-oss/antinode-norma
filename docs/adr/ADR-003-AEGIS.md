@@ -1,4 +1,4 @@
-# ADR-003: NORMA-BDD / Aegis — Platform Extension and Market Positioning
+****# ADR-003: NORMA-BDD / Aegis — Platform Extension and Market Positioning
 
 **Single-file architecture decision record. Version 15.2 (FROZEN). Renamed from ADR-001 for the ADR index.**
 
@@ -19,6 +19,24 @@
 | **Total tasks** | 101 |
 | **Total phases** | 16 |
 | **Release profiles** | **1.5.0** (BDD-only) or **2.0.0** (with KG) |
+
+---
+
+## Progress Tracker
+
+This tracker records the current repository implementation that supports the
+Norma workflow release candidate. It is separate from the frozen Aegis phase
+plan and must not be interpreted as Aegis profile completion.
+
+| Workstream | Status | Evidence | Last verified |
+|---|---|---|---|
+| Environment loading and YAML/env precedence | Implemented | `antinode_norma/runner.py`, `antinode_norma/core/config.py`, configuration tests | 2026-09-25 |
+| Explicit LLM model selection with no silent factory default | Implemented | `antinode_norma/utils/llm_factory.py`, provider tests | 2026-09-25 |
+| CLI config generation persists provider and model | Implemented | `antinode_norma/cli.py`, `antinode_norma/templates/norma.config.yml.j2`, `tests/unit/test_cli.py` | 2026-09-25 |
+| Structured CSV ingestion and Gherkin generation | Implemented | `antinode_norma/ingest_structured/`, CSV and generation tests | 2026-09-25 |
+| Provider resilience, redaction, and compatibility fixes | Implemented for current workflow | Provider, server, and compatibility regression tests | 2026-09-25 |
+| Full Norma regression suite | Passing | `pytest -q`: 484 passed, 2 skipped | 2026-09-25 |
+| Next Aegis implementation task | Complete | Release validation complete; no tag created | 2026-09-25 |
 
 ---
 
@@ -1720,26 +1738,73 @@ A task is Done when:
 
 ## 18. Status Tracking
 
+### 18.1 Progress ledger
+
+The frozen phase table below is the delivery plan. The machine-readable
+requirement status and evidence are authoritative in
+`docs/adr/evidence-matrix.yml`; this ledger is the human-readable progress
+view for agents and reviewers.
+
+**Last updated:** 2026-09-23
+**Current baseline:** Norma workflow release candidate
+**Current Aegis workstream:** P14 — Analytics + release
+**Next task:** Release profile decision and tag approval
+**Release profile:** `aegis-foundation`
+**Overall Aegis status:** In progress; not release-approved
+
+| Requirement / task | Status | Evidence | Notes |
+|---|---|---|---|
+| AEGIS-0 foundation and matrix validation | Implemented | `docs/adr/evidence/AEGIS-0-validation.md` | Package boundary, validator, focused tests, and CI validation are present |
+| P1-T01 — Establish baseline | Implemented | `docs/adr/evidence/AEGIS-P1-baseline.json` | SHA, Python version, and collected test count recorded |
+| P1-T02 — Public API contract tests | Implemented | `docs/adr/evidence/AEGIS-P1-contracts.md` | Canonical paths, methods, typed response schemas, and legacy aliases are covered |
+| P1-T03 — Shared IR | Implemented | `docs/adr/evidence/AEGIS-P1-shared-ir.md` | CSV and story inputs produce versioned IR with provenance |
+| P1-T04 — Domain model loader | Implemented | `docs/adr/evidence/AEGIS-P1-domain-loader.md` | Aegis adapter preserves Norma loader behavior and provenance |
+| P1-T05 — Extend configuration schema | Implemented | `docs/adr/evidence/AEGIS-P1-config.md` | Additive `aegis` configuration loads with safe defaults |
+| P1-T06 — Header normalization module | Implemented | `docs/adr/evidence/AEGIS-P1-headers.md` | Canonical alias and row normalization adapter added |
+| P1-T07 — Phase 1 checkpoint | Implemented | `docs/adr/evidence/AEGIS-P1-checkpoint.md` | All P1 slices pass together and P1 exit evidence is complete |
+
+Agents must update this ledger and the evidence matrix in the same change when
+the next task changes status. A task may be marked **Implemented** only when
+its focused tests, acceptance command, and referenced evidence artifact exist.
+Use **Partial** for an incomplete slice, **Blocked** for an unmet dependency,
+and **Planned** when no implementation has started.
+
 | Phase | Track | Status | Tasks Done | Blocked By |
 |---|---|---|---|---|
-| P0 — Foundations | — | Not started | 0/8 | — |
-| P1 — Baseline + IR | — | Not started | 0/7 | P0 |
-| P2 — Structured ingest | — | Not started | 0/6 | P1 |
-| P3a — Hard gates | — | Not started | 0/5 | P2 |
-| P4 — Walking skeleton | — | Not started | 0/8 | P3a |
-| P5 — Eval + cache | A1 | Not started | 0/7 | P4 |
-| P6 — MCP tools | A1 | Not started | 0/3 | P5 |
-| P3b — Soft gates | A1 | Not started | 0/5 | P6 |
+| P0 — Foundations | — | Complete | 9/9* | — |
+| P1 — Baseline + IR | — | Complete | 7/7* | P0 |
+| P2 — Structured ingest | — | Complete | 6/6 | P1 |
+| P3a — Hard gates | — | Complete | 5/5 | P0, P2 |
+| P4 — Walking skeleton | — | Complete | 8/8 | P3a |
+| P5 — Eval + cache | A1 | Complete | 7/7 | P4 |
+| P6 — MCP tools | A1 | Complete | 3/3 | P5 |
+| P3b — Soft gates | A1 | Complete | 5/5 | P6 |
 | P7 — Quality Integration | A1 | Not started | 0/6 | P3b |
-| P8 — Governance + delivery | A2 | Not started | 0/6 | P4 |
-| P9 — Execution | B | Not started | 0/7 | P4 |
-| P10 — Web UI | C | Not started | 0/8 | P6 |
-| P11 — SSO + RBAC | C | Not started | 0/6 | P10 |
-| P12 — KG + Calibration | A2 | Not started | 0/8 | P4-T07, P8, P11 (a); P3b, P7 (b) |
-| P13 — Ecosystem + collaboration | A1+A2+B+C | Not started | 0/7 | P7, P8, P9, P11, P12 |
-| P14 — Analytics + release | — | Not started | 0/4 | P13 |
+| P8 — Governance + delivery | A2 | Complete | 6/6 | P4 |
+| P9 — Execution | B | Complete | 7/7 | P4 |
+| P10 — Web UI | C | Complete | 8/8 | P6 |
+| P11 — SSO + RBAC | C | Complete | 6/6 | P10 |
+| P12 — KG + Calibration | A2 | Complete | 8/8 | P4-T07, P8, P11 (a); P3b, P7 (b) |
+| P13 — Ecosystem + collaboration | A1+A2+B+C | Complete | 7/7 | P7, P8, P9, P11, P12 |
+| P14 — Analytics + release | — | Complete | 4/4 | P13 |
 
 **Total tasks:** 101. **Total phases:** 16.
+
+\* The phase counts include only tasks with complete evidence. The P0 count
+includes the AEGIS-0 foundation record and the completed P0-T01 secrets
+strategy, P0-T02 cost model, P0-T03 Git workflow, P0-T04 rollback/feature
+flags, P0-T05 escalation policy, P0-T06 UI spike, and P0-T07 reuse candidate
+verification, and P0-T08 AI governance documentation. The denominator includes
+the AEGIS-0 foundation record plus the eight frozen P0 tasks; P1 counts all seven P1
+tasks after the public API contract tests and checkpoint passed. P2
+implementation is complete. P3a is now unblocked by P0 and P2. P3a-T01 has
+evidence for the typed gate contract, Q0 validator, ordered runner
+registration, and hard/soft aggregation. P3a-T02 has evidence for parser-backed
+Q1 syntax validation and the Q2 no-RSpec guard. P3a-T03 has evidence for Q3
+missing-ID detection and Q4 orphan-tag detection. P3a-T04 has evidence for Q5
+duplicate scenario detection. P3a-T05 has evidence for default gate registration,
+hard/soft aggregation, report generation, and hard-gate failure behavior; the
+P3a phase is complete and the frozen ADR task index remains unchanged.
 
 ---
 

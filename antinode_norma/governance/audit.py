@@ -32,10 +32,15 @@ class AuditRecord(BaseModel):
 
 
 class AuditLog:
-    def __init__(self, log_path: Optional[Path] = None):
+    def __init__(self, log_path: Optional[Path] = None, database_url: Optional[str] = None):
         self.log_path = log_path or Path("build/audit_log.jsonl")
+        self.database_url = database_url
         self.records: List[AuditRecord] = []
-        if self.log_path.exists():
+        if self.database_url:
+            from antinode_norma.database import load_audit_events
+
+            self.records = [AuditRecord(**item) for item in load_audit_events(self.database_url)]
+        elif self.log_path.exists():
             self._load_from_file()
 
     def _load_from_file(self) -> None:
@@ -60,7 +65,12 @@ class AuditLog:
         )
         record.content_hash = record.calculate_hash()
         self.records.append(record)
-        self._persist_record(record)
+        if self.database_url:
+            from antinode_norma.database import save_audit_event
+
+            save_audit_event(self.database_url, record.model_dump())
+        else:
+            self._persist_record(record)
         return record
 
     def record_user_action(

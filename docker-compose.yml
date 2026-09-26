@@ -1,48 +1,138 @@
 version: "3.9"
 services:
-  app:
+  db:
+    image: docker.io/library/postgres:16-alpine
+    container_name: antinode-norma-db
+    profiles: [http, mcp, local]
+    environment:
+      POSTGRES_DB: norma
+      POSTGRES_USER: norma
+      POSTGRES_PASSWORD: norma-local-only
+    volumes:
+      - norma-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U norma -d norma"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app-http:
     build:
       context: .
       dockerfile: Dockerfile
     image: antinode-norma:dev
-    container_name: antinode-norma-app
+    container_name: antinode-norma-http
     working_dir: /app
-    tty: true
-    stdin_open: true
+    profiles: [http, local]
     volumes:
-      - .:/app
+      - .:/app:Z
       - /app/node_modules
-    env_file:
-      - .env
     environment:
       - PYTHONUNBUFFERED=1
-    command: tail -f /dev/null
+      - LLM_PROVIDER=mock
+      - NORMA_RUNTIME_MODE=http
+      - DATABASE_URL=postgresql://norma:norma-local-only@db:5432/norma
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      local-seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  app-mcp:
+    image: antinode-norma:dev
+    container_name: antinode-norma-mcp
+    working_dir: /app
+    profiles: [mcp, local]
+    volumes:
+      - .:/app:Z
+      - /app/node_modules
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LLM_PROVIDER=mock
+      - NORMA_RUNTIME_MODE=mcp
+      - DATABASE_URL=postgresql://norma:norma-local-only@db:5432/norma
+    depends_on:
+      db:
+        condition: service_healthy
+      local-seed:
+        condition: service_completed_successfully
+
+  local-seed:
+    image: antinode-norma:dev
+    container_name: antinode-norma-local-seed
+    working_dir: /app
+    profiles: [http, mcp, local]
+    volumes:
+      - .:/app:Z
+      - /app/node_modules
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LLM_PROVIDER=mock
+      - DATABASE_URL=postgresql://norma:norma-local-only@db:5432/norma
+    depends_on:
+      db:
+        condition: service_healthy
+      local-migrate:
+        condition: service_completed_successfully
+    entrypoint: ["python", "-m", "antinode_norma.cli"]
+    command: ["seed-local", "--reset", "--root", ".runtime/local-seed", "--database-url", "postgresql://norma:norma-local-only@db:5432/norma"]
+
+  local-migrate:
+    image: antinode-norma:dev
+    container_name: antinode-norma-local-migrate
+    working_dir: /app
+    profiles: [http, mcp, local]
+    volumes:
+      - .:/app:Z
+      - /app/node_modules
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://norma:norma-local-only@db:5432/norma
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["python", "-m", "antinode_norma.database"]
+    command: ["migrate"]
 
   prometheus:
-    image: prom/prometheus:v2.50.0
+    image: docker.io/prom/prometheus:v2.50.0
     container_name: antinode-norma-prometheus
+    profiles: [observability]
     ports:
       - "9090:9090"
     volumes:
-      - ./build/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./build/prometheus.yml:/etc/prometheus/prometheus.yml:Z
 
   grafana:
-    image: grafana/grafana:10.3.0
+    image: docker.io/grafana/grafana:10.3.0
     container_name: antinode-norma-grafana
+    profiles: [observability]
     ports:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
 
   loki:
-    image: grafana/loki:2.9.4
+    image: docker.io/grafana/loki:2.9.4
     container_name: antinode-norma-loki
+    profiles: [observability]
     ports:
       - "3100:3100"
 
   tempo:
-    image: grafana/tempo:2.3.1
+    image: docker.io/grafana/tempo:2.3.1
     container_name: antinode-norma-tempo
+    profiles: [observability]
     ports:
       - "3200:3200"
       - "4317:4317" # OTLP gRPC
+
+volumes:
+  norma-db-data:

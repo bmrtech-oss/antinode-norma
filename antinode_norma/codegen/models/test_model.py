@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 from enum import Enum
 
+__test__ = False
+
 
 class ActionType(Enum):
     """Supported test actions."""
@@ -38,6 +40,7 @@ class ActionType(Enum):
 
 @dataclass(frozen=True)
 class TestStep:
+    __test__ = False
     """A single test step."""
 
     action: ActionType
@@ -49,6 +52,7 @@ class TestStep:
 
 @dataclass(frozen=True)
 class TestCase:
+    __test__ = False
     """A single test case (scenario)."""
 
     name: str
@@ -60,6 +64,7 @@ class TestCase:
 
 @dataclass(frozen=True)
 class TestSuite:
+    __test__ = False
     """A collection of test cases from one feature file."""
 
     name: str
