@@ -152,11 +152,11 @@ Update this table whenever a task starts, is blocked, or is completed. A task is
 | AUTH-3-T02 | Complete | Updated Generation.tsx, FeatureReview.tsx, and ApprovalQueue.tsx to check user write/approval permissions and disable action controls when unpermitted; verified with Vitest and Playwright e2e tests |
 | AUTH-3-T03 | Complete | Added requiredPermission and requiredRole props to AuthGuard and configured active tab permissions in App.tsx; unpermitted views render AccessDenied while retaining session; verified in AuthGuard.test.tsx |
 | AUTH-3-T04 | Complete | Removed client-supplied reviewer overrides in FeatureReview.tsx and ApprovalQueue.tsx; all mutation calls rely on server-derived authenticated actor attribution |
-| AUTH-4-T01 | Not started | |
-| AUTH-4-T02 | Not started | |
-| AUTH-4-T03 | Not started | |
-| AUTH-4-T04 | Not started | |
-| AUTH-4-T05 | Not started | |
+| AUTH-4-T01 | Complete | Verified fake-provider browser/API auth contract suite execution in ui/e2e/auth_flow.spec.ts and ui/package.json test:e2e:quality script |
+| AUTH-4-T02 | Complete | Verified CSRF token binding, session fixation protection, logout revocation, cookie security flags, exact-origin CORS, return path allowlisting, and rate limiting in tests/unit/test_route_security_matrix.py and 72 Python auth unit tests |
+| AUTH-4-T03 | Complete | Updated docs/AUTH.md with Authentik configuration details, claim mapping contracts, IdP certificate rotation runbook, local no-auth mode safeguards, and session recovery runbooks |
+| AUTH-4-T04 | Complete | Verified log redaction of tokens/codes/secrets and verified audit lifecycle events (auth:login, auth:logout, auth:revoke, auth:denied, auth:backchannel_logout) write to audit_events in antinode_norma/auth/middleware.py and antinode_norma/server/routes/auth.py |
+| AUTH-4-T05 | Complete | Updated ADR-014 task tracker with completion evidence for AUTH-4-T01 through AUTH-4-T05; production startup gates enforce NORMA_AUTH_MODE=oidc and reject test identity header simulation |
 
 #### Phase AUTH-0 — Backend identity and browser-session contract
 

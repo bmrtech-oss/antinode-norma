@@ -65,7 +65,7 @@ test.describe('OIDC Login, User Identity & Logout E2E Flow', () => {
     await userMenuButton.click()
     await expect(page.getByRole('menu')).toBeVisible()
     await expect(page.getByText('admin@norma.local')).toBeVisible()
-    await expect(page.getByText('admin')).toBeVisible()
+    await expect(page.getByText('admin', { exact: true })).toBeVisible()
 
     // Click Sign Out
     await page.getByRole('menuitem', { name: 'Sign Out' }).click()
