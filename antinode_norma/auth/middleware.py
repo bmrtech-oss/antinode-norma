@@ -5,7 +5,7 @@ import hmac
 import os
 from typing import Callable, Optional
 from urllib.parse import urlsplit
-from fastapi import Header, HTTPException, Request
+from fastapi import Depends, Header, HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
@@ -124,8 +124,7 @@ def requires_permission(permission: str) -> Callable:
     Raises HTTP 401 Unauthenticated if user is missing or inactive.
     Raises HTTP 403 Forbidden if user lacks required permission.
     """
-    async def dependency(request: Request) -> User:
-        user = await get_current_user(request)
+    async def dependency(user: Optional[User] = Depends(get_current_user)) -> User:
         if not user or not user.is_active:
             raise HTTPException(
                 status_code=401,
