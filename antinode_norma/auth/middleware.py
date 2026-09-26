@@ -3,14 +3,19 @@
 import hashlib
 import hmac
 import os
-from typing import Callable, Optional
+from collections.abc import Callable
 from urllib.parse import urlsplit
+
 from fastapi import Depends, Header, HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
 from antinode_norma import database
-from antinode_norma.auth.config import CSRF_COOKIE_NAME, SESSION_COOKIE_NAME, load_auth_settings
+from antinode_norma.auth.config import (
+    CSRF_COOKIE_NAME,
+    SESSION_COOKIE_NAME,
+    load_auth_settings,
+)
 from antinode_norma.auth.models import Role, User
 from antinode_norma.auth.roles import has_permission
 
@@ -62,9 +67,9 @@ class AuthCSRFMiddleware(BaseHTTPMiddleware):
 
 async def get_current_user(
     request: Request,
-    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
-    x_tenant_id: Optional[str] = Header(None, alias="X-Tenant-ID"),
-) -> Optional[User]:
+    x_user_id: str | None = Header(None, alias="X-User-ID"),
+    x_tenant_id: str | None = Header(None, alias="X-Tenant-ID"),
+) -> User | None:
     """Dependency to retrieve currently authenticated user from request state or header."""
     if hasattr(request.state, "user") and request.state.user:
         return request.state.user
@@ -124,7 +129,7 @@ def requires_permission(permission: str) -> Callable:
     Raises HTTP 401 Unauthenticated if user is missing or inactive.
     Raises HTTP 403 Forbidden if user lacks required permission.
     """
-    async def dependency(user: Optional[User] = Depends(get_current_user)) -> User:
+    async def dependency(user: User | None = Depends(get_current_user)) -> User:
         if not user or not user.is_active:
             raise HTTPException(
                 status_code=401,
@@ -144,11 +149,11 @@ def requires_permission(permission: str) -> Callable:
 
 def log_user_action(
     request: Request,
-    user: Optional[User],
+    user: User | None,
     action: str,
     resource: str,
     result: str = "success",
-    payload: Optional[dict] = None,
+    payload: dict | None = None,
 ) -> None:
     """Helper function to record a user action event into audit trail."""
     from antinode_norma.server.routes.audit import audit_log

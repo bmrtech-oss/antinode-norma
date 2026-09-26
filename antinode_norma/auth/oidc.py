@@ -3,13 +3,14 @@
 import base64
 import hashlib
 import hmac
-import httpx
-import jwt
 import os
 import threading
 import time
 import urllib.parse
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
+
+import httpx
+import jwt
 from pydantic import BaseModel, Field
 
 from antinode_norma.auth.models import Role, User
@@ -18,15 +19,15 @@ from antinode_norma.auth.models import Role, User
 class OIDCConfig(BaseModel):
     issuer: str = "https://auth.example.com"
     client_id: str = "norma-client"
-    client_secret: Optional[str] = None
+    client_secret: str | None = None
     redirect_uri: str = "http://localhost:8000/api/auth/oidc/callback"
-    scopes: List[str] = Field(default_factory=lambda: ["openid", "profile", "email"])
-    discovery_url: Optional[str] = None
+    scopes: list[str] = Field(default_factory=lambda: ["openid", "profile", "email"])
+    discovery_url: str | None = None
     require_https: bool = False
-    authorization_endpoint: Optional[str] = None
-    token_endpoint: Optional[str] = None
-    userinfo_endpoint: Optional[str] = None
-    jwks_uri: Optional[str] = None
+    authorization_endpoint: str | None = None
+    token_endpoint: str | None = None
+    userinfo_endpoint: str | None = None
+    jwks_uri: str | None = None
 
     def get_authorization_endpoint(self) -> str:
         if not self.issuer:
@@ -39,7 +40,7 @@ class OIDCConfig(BaseModel):
         return self.token_endpoint or f"{self.issuer.rstrip('/')}/protocol/openid-connect/token"
 
 
-def generate_pkce_pair() -> Tuple[str, str]:
+def generate_pkce_pair() -> tuple[str, str]:
     """Generate a high-entropy PKCE code_verifier and S256 code_challenge."""
     raw_bytes = os.urandom(32)
     code_verifier = base64.urlsafe_b64encode(raw_bytes).decode("utf-8").rstrip("=")
@@ -54,7 +55,7 @@ def build_authorization_url(
     config: OIDCConfig,
     state: str,
     code_challenge: str,
-    nonce: Optional[str] = None,
+    nonce: str | None = None,
 ) -> str:
     """Build the full OIDC authorization redirect URL with PKCE S256 parameters."""
     base_url = config.authorization_endpoint or config.get_authorization_endpoint()
@@ -81,7 +82,7 @@ class OIDCTransactionStore:
 
     def __init__(self, ttl_seconds: int = 600) -> None:
         self._ttl_seconds = ttl_seconds
-        self._transactions: Dict[str, Dict[str, Any]] = {}
+        self._transactions: dict[str, dict[str, Any]] = {}
         self._lock = threading.Lock()
 
     def create(
@@ -103,7 +104,7 @@ class OIDCTransactionStore:
                 "expires_at": time.monotonic() + self._ttl_seconds,
             }
 
-    def consume(self, state: str) -> Optional[Dict[str, Any]]:
+    def consume(self, state: str) -> dict[str, Any] | None:
         with self._lock:
             transaction = self._transactions.pop(state, None)
             if not transaction or transaction["expires_at"] <= time.monotonic():
@@ -131,7 +132,7 @@ def _validate_endpoint(url: str, *, require_https: bool) -> None:
         raise OIDCProviderError("OIDC metadata endpoints must use HTTPS")
 
 
-async def discover_provider(config: OIDCConfig, client: httpx.AsyncClient) -> Dict[str, Any]:
+async def discover_provider(config: OIDCConfig, client: httpx.AsyncClient) -> dict[str, Any]:
     discovery_url = config.discovery_url or (
         f"{config.issuer.rstrip('/')}/.well-known/openid-configuration"
     )
@@ -168,7 +169,7 @@ async def exchange_code_and_validate_id_token(
     verifier: str,
     nonce: str,
     client: httpx.AsyncClient,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Exchange an authorization code and validate the returned OIDC ID token."""
     metadata = await discover_provider(config, client)
     try:
@@ -262,12 +263,12 @@ ROLE_CLAIM_MAPPINGS = {
 }
 
 
-def map_claims_to_roles(claims: Dict[str, Any]) -> List[Role]:
+def map_claims_to_roles(claims: dict[str, Any]) -> list[Role]:
     """Map OIDC / Authentik groups or roles claims to Norma Role list.
 
     Unmapped or unknown claims default to least privilege ([Role.VIEWER]).
     """
-    raw_groups: List[Any] = []
+    raw_groups: list[Any] = []
 
     for key in ("groups", "roles", "norma_roles", "norma_groups"):
         val = claims.get(key)
@@ -280,7 +281,7 @@ def map_claims_to_roles(claims: Dict[str, Any]) -> List[Role]:
     if isinstance(realm_access, dict) and isinstance(realm_access.get("roles"), list):
         raw_groups.extend(realm_access["roles"])
 
-    mapped_roles: List[Role] = []
+    mapped_roles: list[Role] = []
     for item in raw_groups:
         if isinstance(item, str):
             normalized = item.strip().lower()
@@ -296,7 +297,7 @@ def map_claims_to_roles(claims: Dict[str, Any]) -> List[Role]:
     return mapped_roles
 
 
-def map_claims_to_user(claims: Dict[str, Any], roles: Optional[List[Role]] = None) -> User:
+def map_claims_to_user(claims: dict[str, Any], roles: list[Role] | None = None) -> User:
     """Map OIDC ID token or userinfo claims to a Norma User model."""
     sub = str(claims.get("sub", ""))
     email = str(claims.get("email", f"{sub}@oidc.user" if sub else "user@oidc.local"))
@@ -310,11 +311,7 @@ def map_claims_to_user(claims: Dict[str, Any], roles: Optional[List[Role]] = Non
     resolved_roles = roles if roles is not None else map_claims_to_roles(claims)
 
     is_active = True
-    if "active" in claims and claims["active"] in (False, "false", "False", 0):
-        is_active = False
-    elif "enabled" in claims and claims["enabled"] in (False, "false", "False", 0):
-        is_active = False
-    elif "is_active" in claims and claims["is_active"] in (False, "false", "False", 0):
+    if "active" in claims and claims["active"] in (False, "false", "False", 0) or "enabled" in claims and claims["enabled"] in (False, "false", "False", 0) or "is_active" in claims and claims["is_active"] in (False, "false", "False", 0):
         is_active = False
 
     user_kwargs = {

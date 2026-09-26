@@ -1,5 +1,6 @@
 """Focused unit tests for AUTH-0-T06: Protected Route Security Matrix."""
 
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from antinode_norma.auth.middleware import ensure_resource_owner, get_current_user
@@ -143,16 +144,16 @@ def test_resource_ownership_enforcement():
     try:
         ensure_resource_owner(user2, resource)
         assert False, "Should have raised 404 for tenant mismatch"
-    except Exception as exc:
-        assert getattr(exc, "status_code", None) == 404
+    except HTTPException as exc:
+        assert exc.status_code == 404
 
     # Different owner, same tenant, non-admin -> 404
     other_user_same_tenant = User(id="u3", username="u3", email="u3@norma.local", tenant_id="tenant-A", roles=[Role.VIEWER])
     try:
         ensure_resource_owner(other_user_same_tenant, resource)
         assert False, "Should have raised 404 for owner mismatch"
-    except Exception as exc:
-        assert getattr(exc, "status_code", None) == 404
+    except HTTPException as exc:
+        assert exc.status_code == 404
 
 
 def test_actor_attribution_in_audit_log():

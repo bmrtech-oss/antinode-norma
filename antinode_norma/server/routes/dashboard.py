@@ -1,20 +1,22 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends
-from typing import Dict, Any
+
+from antinode_norma.analytics.metrics import AnalyticsCollector
 from antinode_norma.auth.middleware import requires_permission
 from antinode_norma.auth.roles import FEATURE_READ
 from antinode_norma.governance.approval import ApprovalStatus
-from antinode_norma.server.routes.features import _get_feature_dir
 from antinode_norma.server.routes.approvals import gate as _approval_gate
 from antinode_norma.server.routes.audit import audit_log as _audit_log
+from antinode_norma.server.routes.features import _get_feature_dir
 from antinode_norma.utils.observability import metrics_registry
-from antinode_norma.analytics.metrics import AnalyticsCollector
 
 dashboard_router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
 
 @dashboard_router.get(
     "",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     dependencies=[Depends(requires_permission(FEATURE_READ))],
 )
 async def get_dashboard_summary():
