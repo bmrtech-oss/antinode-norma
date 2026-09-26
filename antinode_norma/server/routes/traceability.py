@@ -2,10 +2,15 @@
 
 import os
 from pathlib import Path
-from typing import Optional
-from fastapi import APIRouter, Query
 
-from antinode_norma.governance.traceability import TraceabilityRenderer, TraceabilityMatrix
+from fastapi import APIRouter, Depends, Query
+
+from antinode_norma.auth.middleware import requires_permission
+from antinode_norma.auth.roles import FEATURE_READ
+from antinode_norma.governance.traceability import (
+    TraceabilityMatrix,
+    TraceabilityRenderer,
+)
 
 router = APIRouter(prefix="/api/traceability", tags=["Traceability"])
 
@@ -15,8 +20,12 @@ def _get_feature_dir() -> Path:
     return Path(feature_dir)
 
 
-@router.get("", response_model=TraceabilityMatrix)
-async def get_traceability_matrix(dir_override: Optional[str] = Query(None, alias="dir")) -> TraceabilityMatrix:
+@router.get(
+    "",
+    response_model=TraceabilityMatrix,
+    dependencies=[Depends(requires_permission(FEATURE_READ))],
+)
+async def get_traceability_matrix(dir_override: str | None = Query(None, alias="dir")) -> TraceabilityMatrix:
     """Generates and returns requirement-to-scenario traceability matrix."""
     feature_dir = Path(dir_override) if dir_override else _get_feature_dir()
 

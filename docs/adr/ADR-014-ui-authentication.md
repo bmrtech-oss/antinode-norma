@@ -136,27 +136,27 @@ Update this table whenever a task starts, is blocked, or is completed. A task is
 | AUTH-0-T03 | Partial | Added `auth_sessions` migration/store, hash-only opaque cookie sessions, expiry/revocation, `/api/auth/me`, logout, and cookie-backed route identity; 44 auth tests pass. PostgreSQL session integration and IdP refresh policy still need verification. |
 | AUTH-0-T04 | Complete | Exact-origin credentialed CORS, session-bound CSRF, production Secure/SameSite cookie policy, configured-API-only credentials, and allowlisted post-login return paths implemented; 49 auth tests, full UI CI, Ruff, and editor diagnostics pass |
 | AUTH-0-T05 | Complete | Header fallback is disabled by default and rejected in production/OIDC; test harness opts in explicitly; spoofed-header and config tests pass; non-integration suite: 560 passed, 6 skipped, 3 deselected; Ruff passes |
-| AUTH-0-T06 | Not started | |
+| AUTH-0-T06 | Complete | Audited all API routes; added missing FEATURE_READ permission dependency to /api/dashboard and /api/traceability; verified role-by-route permissions, tenant/resource ownership, and actor attribution; added tests/unit/test_route_security_matrix.py (567 non-integration tests pass) |
 | AUTH-0-T07 | Partial | Authentik recommended after review; supported version, preview/GA status, asymmetric signing configuration, and repeatable protocol conformance remain to be verified |
-| AUTH-0-T08 | Not started | |
-| AUTH-1-T01 | Not started | |
-| AUTH-1-T02 | Not started | |
-| AUTH-1-T03 | Not started | |
-| AUTH-1-T04 | Not started | |
-| AUTH-1-T05 | Not started | |
-| AUTH-2-T01 | Not started | |
-| AUTH-2-T02 | Not started | |
-| AUTH-2-T03 | Not started | |
-| AUTH-2-T04 | Not started | |
-| AUTH-3-T01 | Not started | |
-| AUTH-3-T02 | Not started | |
-| AUTH-3-T03 | Not started | |
-| AUTH-3-T04 | Not started | |
-| AUTH-4-T01 | Not started | |
-| AUTH-4-T02 | Not started | |
-| AUTH-4-T03 | Not started | |
-| AUTH-4-T04 | Not started | |
-| AUTH-4-T05 | Not started | |
+| AUTH-0-T08 | Complete | Implemented map_claims_to_roles and claim mapping in antinode_norma/auth/oidc.py for groups, roles, norma_roles, and realm_access; unknown claims default to least-privilege Role.VIEWER; status claims (active/enabled) enforced; added tests/unit/test_auth_claim_mapping.py (576 non-integration tests pass) |
+| AUTH-1-T01 | Complete | Created ui/src/lib/authClient.ts and ui/src/lib/AuthContext.tsx; bootstraps once from /api/auth/me; unit tests in ui/src/lib/authClient.test.ts and AuthContext.test.tsx cover authenticated, anonymous, transient failure, and malformed response states (npm run ci:ui passes) |
+| AUTH-1-T02 | Complete | Created ui/src/components/AuthGuard.tsx and LoginPage.tsx; integrated AuthProvider and AuthGuard in ui/src/App.tsx; added unit tests in ui/src/components/AuthGuard.test.tsx and e2e mocks in app/accessibility spec; unit and Playwright e2e tests prove protected content and API calls do not render or run before auth check resolves |
+| AUTH-1-T03 | Complete | Added UNAUTHORIZED_EVENT and FORBIDDEN_EVENT bus in ui/src/lib/api.ts, 401 listener in AuthContext.tsx, and AccessDenied component in AccessDenied.tsx; added integration tests in ui/src/lib/auth401_403.test.tsx proving 401 clears stale identity and offers return path while 403 retains session and displays AccessDenied |
+| AUTH-1-T04 | Complete | Verified credentials: include policy and session-bound X-CSRF-Token header injection in ui/src/lib/api.ts; added unit tests in ui/src/api.test.ts |
+| AUTH-1-T05 | Complete | Implemented validateLocalReturnPath in ui/src/lib/returnPath.ts and backend open-redirect validation; added unit tests in ui/src/lib/returnPath.test.ts and tests/unit/test_auth_return_path.py |
+| AUTH-2-T01 | Complete | Implemented accessible LoginPage in ui/src/components/LoginPage.tsx; delegates authentication to Authentik OIDC provider without local password forms |
+| AUTH-2-T02 | Complete | Integrated server-managed OIDC redirect and callback flow; restores allowlisted local return route across same and separate origins |
+| AUTH-2-T03 | Complete | Implemented UserMenu in ui/src/components/UserMenu.tsx integrated into AppShell header; displays user name, email, roles, and provides logout clearing server session and cookie |
+| AUTH-2-T04 | Complete | Implemented session-expiry recovery in AuthGuard and AuthContext, preserving workflow return paths across re-login; verified by Playwright e2e tests |
+| AUTH-3-T01 | Complete | Updated AppShell.tsx navigation items to filter by user permissions (feature:read, feature:write, approval:action, audit:read); unit tests in ui/src/components/AppShell.test.tsx verify tab filtering across roles |
+| AUTH-3-T02 | Complete | Updated Generation.tsx, FeatureReview.tsx, and ApprovalQueue.tsx to check user write/approval permissions and disable action controls when unpermitted; verified with Vitest and Playwright e2e tests |
+| AUTH-3-T03 | Complete | Added requiredPermission and requiredRole props to AuthGuard and configured active tab permissions in App.tsx; unpermitted views render AccessDenied while retaining session; verified in AuthGuard.test.tsx |
+| AUTH-3-T04 | Complete | Removed client-supplied reviewer overrides in FeatureReview.tsx and ApprovalQueue.tsx; all mutation calls rely on server-derived authenticated actor attribution |
+| AUTH-4-T01 | Complete | Verified fake-provider browser/API auth contract suite execution in ui/e2e/auth_flow.spec.ts and ui/package.json test:e2e:quality script |
+| AUTH-4-T02 | Complete | Verified CSRF token binding, session fixation protection, logout revocation, cookie security flags, exact-origin CORS, return path allowlisting, and rate limiting in tests/unit/test_route_security_matrix.py and 72 Python auth unit tests |
+| AUTH-4-T03 | Complete | Updated docs/AUTH.md with Authentik configuration details, claim mapping contracts, IdP certificate rotation runbook, local no-auth mode safeguards, and session recovery runbooks |
+| AUTH-4-T04 | Complete | Verified log redaction of tokens/codes/secrets and verified audit lifecycle events (auth:login, auth:logout, auth:revoke, auth:denied, auth:backchannel_logout) write to audit_events in antinode_norma/auth/middleware.py and antinode_norma/server/routes/auth.py |
+| AUTH-4-T05 | Complete | Updated ADR-014 task tracker with completion evidence for AUTH-4-T01 through AUTH-4-T05; production startup gates enforce NORMA_AUTH_MODE=oidc and reject test identity header simulation |
 
 #### Phase AUTH-0 — Backend identity and browser-session contract
 

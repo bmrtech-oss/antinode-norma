@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Download, Eye, FileSpreadsheet, Loader2, RotateCcw, UploadCloud } from 'lucide-react'
 import { getApiBaseUrl, getBlob, getJson, postForm, postJson } from '../lib/api'
+import { useAuth } from '../lib/AuthContext'
 import { Alert } from './ui/Alert'
 import { Button } from './ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card'
@@ -78,6 +79,9 @@ const ACTIVE_GENERATION_JOB_KEY = 'norma-ui-active-generation-job'
 
 export default function Generation() {
   const inputRef = useRef<HTMLInputElement>(null)
+  const { hasPermission } = useAuth()
+  const canWriteFeature = hasPermission('feature:write')
+  const canActionApproval = hasPermission('approval:action')
   const [file, setFile] = useState<File | null>(null)
   const [importJob, setImportJob] = useState<ImportResponse | null>(null)
   const [validation, setValidation] = useState<ValidationResponse | null>(null)
@@ -441,7 +445,7 @@ export default function Generation() {
             onChange={(event) => selectFile(event.target.files?.[0])}
           />
           <div className="flex justify-end">
-            <Button onClick={() => void uploadFile()} disabled={!file || loading}>
+            <Button onClick={() => void uploadFile()} disabled={!file || loading || !canWriteFeature} title={canWriteFeature ? undefined : 'Requires feature:write permission'}>
               {loading ? 'Uploading...' : 'Upload and validate'}
             </Button>
           </div>
@@ -460,7 +464,7 @@ export default function Generation() {
               <Button variant="outline" onClick={() => void validateImport()} disabled={loading}>
                 {loading && !generationJob ? 'Validating...' : 'Validate import'}
               </Button>
-              <Button onClick={() => void startGeneration()} disabled={loading || !validation?.valid}>
+              <Button onClick={() => void startGeneration()} disabled={loading || !validation?.valid || !canWriteFeature} title={canWriteFeature ? undefined : 'Requires feature:write permission'}>
                 Start generation
               </Button>
             </div>
@@ -677,7 +681,8 @@ export default function Generation() {
                     variant="outline"
                     size="sm"
                     onClick={() => void submitSelectedForApproval()}
-                    disabled={loading || selectedResults.size === 0}
+                    disabled={loading || selectedResults.size === 0 || !canActionApproval}
+                    title={canActionApproval ? undefined : 'Requires approval:action permission'}
                   >
                     Submit selected ({selectedResults.size})
                   </Button>
@@ -718,7 +723,8 @@ export default function Generation() {
                           variant="outline"
                           size="sm"
                           onClick={() => void submitForApproval(result)}
-                          disabled={loading || submittedResults.has(result.id)}
+                          disabled={loading || submittedResults.has(result.id) || !canActionApproval}
+                          title={canActionApproval ? undefined : 'Requires approval:action permission'}
                         >
                           {result.approval_status || (submittedResults.has(result.id) ? 'PENDING' : 'Submit for approval')}
                         </Button>

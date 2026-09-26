@@ -1,6 +1,23 @@
 import { expect, test } from '@playwright/test'
 
 async function mockApi(page: import('@playwright/test').Page) {
+  await page.route('**/api/auth/me', (route) =>
+    route.fulfill({
+      json: {
+        user: {
+          id: 'e2e-user',
+          username: 'e2e_tester',
+          email: 'tester@norma.local',
+          roles: ['admin'],
+          is_active: true,
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+        },
+        permissions: ['feature:read', 'feature:write', 'approval:action', 'audit:read', 'admin:write'],
+        session_expires_at: '2026-12-31T23:59:59Z',
+      },
+    }),
+  )
   await page.route('**/health', (route) => route.fulfill({ json: { status: 'ok', version: '1.2.3', timestamp: new Date().toISOString() } }))
   await page.route('**/api/dashboard', (route) => route.fulfill({ json: { summary: {} } }))
   await page.route('**/api/features', (route) => route.fulfill({ json: [] }))
@@ -32,7 +49,7 @@ test('exposes navigation, form controls, and status semantics to assistive techn
   const navigation = page.getByRole('tablist', { name: 'Primary navigation' }).first()
   await expect(navigation.getByRole('tab')).toHaveCount(6)
   await expect(page.getByRole('main')).toHaveAttribute('id', 'main-content')
-  await expect(page.getByRole('status')).toContainText('API:')
+  await expect(page.getByRole('status').filter({ hasText: 'API:' })).toBeVisible()
 
   await page.getByRole('tab', { name: 'Generation' }).click()
   await expect(page.getByLabel('Choose a CSV or XLSX file')).toHaveAttribute('accept', /csv/)

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Activity, Cpu, FileText, GitMerge, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, RefreshCw, Settings, ShieldCheck, UploadCloud, X } from 'lucide-react'
 import { ThemeSwitcher } from './ThemeSwitcher'
+import { UserMenu } from './UserMenu'
+import { useAuth } from '../lib/AuthContext'
 import { getApiBaseUrl, resetApiBaseUrl, setApiBaseUrl } from '../lib/api'
 import { Button } from './ui/Button'
 import { Tooltip } from './ui/Tooltip'
@@ -26,13 +28,14 @@ const navigationItems: Array<{
   id: AppTab
   label: string
   icon: typeof LayoutDashboard
+  requiredPermission?: string
 }> = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'generation', label: 'Generation', icon: UploadCloud },
-  { id: 'review', label: 'Feature Review', icon: FileText },
-  { id: 'approvals', label: 'Approval Queue', icon: ShieldCheck },
-  { id: 'traceability', label: 'Traceability', icon: GitMerge },
-  { id: 'audit', label: 'Audit Log', icon: Activity },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, requiredPermission: 'feature:read' },
+  { id: 'generation', label: 'Generation', icon: UploadCloud, requiredPermission: 'feature:write' },
+  { id: 'review', label: 'Feature Review', icon: FileText, requiredPermission: 'feature:read' },
+  { id: 'approvals', label: 'Approval Queue', icon: ShieldCheck, requiredPermission: 'approval:action' },
+  { id: 'traceability', label: 'Traceability', icon: GitMerge, requiredPermission: 'feature:read' },
+  { id: 'audit', label: 'Audit Log', icon: Activity, requiredPermission: 'audit:read' },
 ]
 
 const SIDEBAR_STORAGE_KEY = 'norma-ui-sidebar-collapsed'
@@ -86,6 +89,8 @@ export function AppShell({
     }
   }, [settingsOpen])
 
+  const auth = useAuth()
+
   const selectTab = (tab: AppTab) => {
     onTabChange(tab)
     setMobileMenuOpen(false)
@@ -117,8 +122,11 @@ export function AppShell({
       role="tablist"
       aria-orientation="vertical"
     >
-      {navigationItems.map(({ id, label, icon: Icon }) => {
+      {navigationItems.map(({ id, label, icon: Icon, requiredPermission }) => {
         const isActive = activeTab === id
+        const isPermitted = !requiredPermission || auth.hasPermission(requiredPermission)
+        if (!isPermitted) return null
+
         return (
           <Button
             key={id}
@@ -228,6 +236,7 @@ export function AppShell({
             </div>
 
             <div className="flex shrink-0 items-center gap-3 text-sm">
+              <UserMenu />
               <div ref={settingsRef} className="relative">
                 <Button
                   variant="outline"

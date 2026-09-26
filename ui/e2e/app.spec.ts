@@ -29,6 +29,23 @@ const approvals = [
 ]
 
 async function mockApi(page: import('@playwright/test').Page) {
+  await page.route('**/api/auth/me', async (route) => {
+    await route.fulfill({
+      json: {
+        user: {
+          id: 'e2e-user',
+          username: 'e2e_tester',
+          email: 'tester@norma.local',
+          roles: ['admin'],
+          is_active: true,
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+        },
+        permissions: ['feature:read', 'feature:write', 'approval:action', 'audit:read', 'admin:write'],
+        session_expires_at: '2026-12-31T23:59:59Z',
+      },
+    })
+  })
   await page.route('**/health', async (route) => {
     await route.fulfill({ json: { status: 'ok', version: '1.2.3', timestamp: new Date().toISOString() } })
   })

@@ -2,20 +2,16 @@
 
 This document describes the authentication (OIDC, SAML 2.0) and role-based access control (RBAC) architecture for the Antinode Norma BDD Platform.
 
-> **Implementation status:** Authentication routes and RBAC helpers exist, but
-> the OIDC UI flow is not yet production-ready. OIDC authorization-code and
-> ID-token validation is implemented, and successful callbacks now create a
-> database-backed opaque session cookie. `GET /api/auth/me`, protected-route
-> session resolution, and `POST /api/auth/logout` use that session. The OIDC
-> login transaction store remains process-local; PostgreSQL session behavior,
-> IdP refresh, UI login/session handling, and production IdP conformance remain
-> incomplete. Same-origin and configured separate-origin credentialed CORS,
-> session-bound CSRF checks, and allowlisted callback return targets are now
-> implemented. The SAML parser does not validate signed assertions and falls
-> back to synthetic claims for invalid input. Do not expose this as production
-> authentication until the remaining controls are implemented and verified.
-> See [ADR-014](adr/ADR-014-ui-authentication.md) for the security prerequisites
-> and phased UI implementation plan.
+> **Implementation status:** Authentication routes, OIDC discovery, PKCE code
+> exchange, database-backed opaque session cookies, RBAC route security matrix,
+> OIDC claim-to-role mapping, typed UI auth context and guards, 401/403 event bus,
+> open-redirect prevention, and permission-aware UI navigation/controls are fully
+> implemented across Phases AUTH-0 through AUTH-3 per [ADR-014](adr/ADR-014-ui-authentication.md).
+>
+> The recommended identity provider is **Authentik**. The one-time OIDC transaction
+> store remains process-local (suitable for single-replica or sticky sessions);
+> PostgreSQL runtime verification, back-channel logout, and SAML signature validation
+> remain as documented operational milestones.
 
 The intended production model uses an open-source OIDC provider (candidate
 evaluation: Keycloak or Authentik). Sign-in and IdP account management remain on
@@ -107,3 +103,46 @@ Integrity verification is available at `GET /api/audit/verify`.
 Platform settings management endpoints:
 - `GET /api/admin/settings` (Requires `admin:write`)
 - `PUT /api/admin/settings` (Requires `admin:write`)
+
+---
+
+## 6. Authentik Integration & Operational Runbooks
+
+### Authentik Setup & Configuration
+1. **OIDC Provider Setup**:
+   - In Authentik, create an OAuth2/OpenID Provider under **Applications > Providers**.
+   - Select **Authorization Code** flow and configure PKCE (S256).
+   - Configure an **Asymmetric Signing Key** (e.g., RS256). Norma's JWKS validator requires asymmetric public key signatures.
+   - Configure the Redirect URI: `https://<norma-domain>/api/auth/oidc/callback`.
+2. **Back-Channel Logout Setup**:
+   - Set the Back-Channel Logout URI: `https://<norma-domain>/api/auth/backchannel-logout`.
+   - Ensure the provider sends signed Logout Tokens containing `sub` or `sid` and `http://schemas.openid.net/event/backchannel-logout`.
+
+### Role & Claim Mapping
+Norma parses claims from `groups`, `roles`, `norma_roles`, or `realm_access.roles`:
+- `norma-admins` or `admin` -> `Role.ADMIN`
+- `norma-reviewers` or `reviewer` -> `Role.REVIEWER`
+- `norma-generators` or `generator` -> `Role.GENERATOR`
+- `norma-viewers` or `viewer` -> `Role.VIEWER`
+- Unmapped/unknown claims default to least-privilege `Role.VIEWER`.
+- Inactive users (`active: false` or `enabled: false`) are denied access.
+
+### IdP Certificate & Key Rotation Runbook
+1. Generate or upload the new signing certificate/key pair in Authentik.
+2. Update the Provider's Signing Key selection in Authentik.
+3. Authentik automatically updates its JWKS endpoint (`/.well-known/jwks.json`).
+4. Norma fetches keys dynamically from the JWKS endpoint upon receiving ID tokens; no Norma API restart is required unless JWKS caching is enabled.
+
+### Local Development (No-Auth Mode)
+For local offline development, set in `.env`:
+```env
+NORMA_AUTH_MODE=disabled
+NORMA_AUTH_ALLOW_IDENTITY_HEADERS=true
+```
+- In `NORMA_AUTH_MODE=disabled`, authentication dependencies inject a default viewer identity or accept simulated `X-User-ID` / `X-Tenant-ID` headers.
+- **Production Safety Gate**: Production mode (`NORMA_ENVIRONMENT=production`) strictly rejects `NORMA_AUTH_MODE=disabled` and `NORMA_AUTH_ALLOW_IDENTITY_HEADERS=true` at startup.
+
+### Session & Recovery Runbook
+- **Session Expiry**: Sessions expire after the configured TTL (`NORMA_AUTH_SESSION_TTL_HOURS`, default 24h).
+- **Session Revocation**: Admin deactivations in Authentik trigger a Back-Channel Logout token sent to `/api/auth/backchannel-logout`, revoking all active Norma sessions for that subject.
+- **Manual Revocation**: Execute `DELETE FROM auth_sessions WHERE user_id = '<user-id>'` in the Norma PostgreSQL database to immediately force user re-authentication.
