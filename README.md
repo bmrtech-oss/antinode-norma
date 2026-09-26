@@ -4,7 +4,7 @@
 [![Coverage](https://img.shields.io/codecov/c/github/bmrtech-oss/antinode-norma.svg)](https://codecov.io/gh/bmrtech-oss/antinode-norma)
 [![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=bmrtech-oss_antinode-norma&metric=alert_status)](https://sonarcloud.io/dashboard?id=bmrtech-oss_antinode-norma)
 [![Dependabot](https://img.shields.io/github/dependabot/bmrtech-oss/antinode-norma?label=Dependabot&logo=dependabot)](https://github.com/bmrtech-oss/antinode-norma/network/alerts)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://python.org)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP](https://img.shields.io/badge/MCP-compatible-9B59B6)](https://github.com/modelcontextprotocol)
 
@@ -77,8 +77,8 @@ python -m antinode_norma.codegen.cli.commands generate -f features/reset_passwor
 ### Core BDD Generator
 - **INVEST quality assessment** – Checks stories against Independent, Negotiable, Valuable, Estimable, Small, Testable.
 - **Automatic Gherkin generation** – Uses your preferred LLM to produce feature files.
-- **MCP server** – Exposes tools (`submit_story`, `improve_story`, `generate_feature`) for integration with connectors (JIRA, GitHub, etc.).
-- **Provider-agnostic LLM** – Switch between Anthropic, OpenAI, OpenRouter, or local models via configuration.
+- **MCP server** – Exposes `generate_from_csv`, `generate_from_xlsx`, `run_quality_gates`, and `assess_story` over stdio.
+- **Provider-agnostic LLM** – Supports Anthropic, OpenAI, OpenRouter, Gemini, Groq, Mistral, local, and mock providers.
 - **CLI and library** – Use as a command-line tool or import into your own system.
 - **Quality-first** – Rejects stories that don't meet INVEST criteria, with actionable suggestions.
 - **Learning from failures** – Capture Playwright test failures and use them to improve future generation. Use `anorm learn --show-suggestions` to surface failure-driven healing recommendations.
@@ -156,7 +156,7 @@ Edit `.env` with your preferred LLM provider:
 
 ```ini
 # LLM Configuration
-# Supported providers: anthropic, openai, openrouter, local, mock
+# Supported providers: anthropic, openai, openrouter, gemini, groq, mistral, local, mock
 LLM_PROVIDER=openrouter
 
 # For Anthropic:
@@ -289,7 +289,7 @@ Start the Norma MCP server:
 anorm serve
 ```
 
-This exposes the tools over stdio (or SSE with `--transport sse`).
+The current MCP server transport is stdio. Connect to it with an MCP client that launches this command.
 
 ### JIRA Connector
 
@@ -475,50 +475,28 @@ flowchart TB
 
 ```text
 antinode-norma/
-├── antinode_norma/          # Python package
-│   ├── core/                # Pure business logic
-│   │   ├── schemas.py       # Data schemas
-│   │   ├── quality.py       # INVEST quality checks
-│   │   ├── parser.py        # Story -> structured data
-│   │   ├── gherkin_generator.py
-│   │   └── validator.py     # Gherkin validation
-│   ├── codegen/             # NEW! Test code generation module
-│   │   ├── models/          # Immutable data models (TestSuite, TestCase, etc.)
-│   │   ├── parsers/         # GherkinParser
-│   │   ├── engine/          # RuleEngine, Orchestrator, QualityConfig
-│   │   ├── emitters/        # Playwright, Cypress, Selenium emitters
-│   │   ├── templates/       # Jinja2 templates (optional)
-│   │   ├── post_processors/ # CodeFormatter, CodeLinter
-│   │   ├── cli/             # Click-based CLI commands
-│   │   ├── utils/           # File I/O, logging helpers
-│   │   └── config.py        # Configuration management
-│   ├── server/              # MCP server
-│   │   └── mcp_server.py
-│   ├── connectors/          # External integrations
-│   │   └── jira_connector.py
-│   ├── utils/               # Helpers
-│   │   ├── llm_factory.py   # LLM provider abstraction
-│   │   └── file_writer.py
-│   ├── cli.py               # Click CLI
-│   └── runner.py            # Orchestration
-├── bin/
-│   └── anorm                # CLI wrapper
-├── docs/                    # Documentation
-│   ├── CLIENT_USAGE.md      # Client setup guide
-│   └── TESTING.md           # Testing guide
-├── tests/                   # Test suite
-│   ├── unit/                # Fast unit tests
-│   ├── integration/         # Tests with real LLM calls
-│   └── connectors/          # Connector tests (mocked)
-├── features/                # Sample feature files
-├── generated_tests/         # Generated test scripts (output)
-├── .env.example
-├── README.md
-├── requirements.txt
-├── requirements-dev.txt
-├── setup.py
-├── pyproject.toml
-└── pytest.ini
+├── antinode_aegis/          # Shared contracts, evidence, governance, and adapters
+├── antinode_norma/          # Python application and CLI
+│   ├── core/                # Story parsing, quality, and validation
+│   ├── codegen/             # Gherkin parsing, mapping, emitters, and post-processors
+│   ├── server/              # FastAPI and MCP server surfaces
+│   ├── gates/               # Quality gate implementations
+│   ├── connectors/          # External service connectors
+│   └── ...                  # Auth, cache, persistence, governance, and execution
+├── tests/                   # Unit, integration, connector, evaluation, and load tests
+├── ui/                      # React/TypeScript application (source in ui/src)
+├── claude-plugin/           # Claude Desktop MCP plugin package
+├── docs/                    # Guides, architecture docs, and ADRs in docs/adr
+├── e2e/                     # End-to-end tests
+├── examples/                # Demonstrations and sample data
+├── features/                # Gherkin feature examples
+├── .github/workflows/       # CI and automation workflows
+├── bin/anorm                # CLI wrapper
+├── docker-compose.yml       # Local container services
+├── Dockerfile
+├── pyproject.toml            # Python metadata and dependencies
+├── pytest.ini                # Pytest configuration
+└── package.json              # Root JavaScript tooling
 ```
 
 ---
@@ -529,11 +507,19 @@ Set `LLM_PROVIDER` in `.env`:
 
 | Provider  | Required Env Vars               | Notes |
 |-----------|---------------------------------|-------|
-| `anthropic` | `ANTHROPIC_API_KEY`             | Uses Claude models |
-| `openai`    | `OPENAI_API_KEY`                | Uses GPT models |
-| `openrouter`| `OPENROUTER_API_KEY`            | Free/open models via OpenRouter (uses OpenAI SDK) |
-| `local`     | `LLM_URL` (local server endpoint) | For self-hosted models |
-| `mock`      | None                            | For testing without real LLM |
+| `anthropic` | `ANTHROPIC_API_KEY` | Set `LLM_MODEL` or `NORMA_LLM_MODEL` to choose a model |
+| `openai` | `OPENAI_API_KEY` | Set `LLM_MODEL` or `NORMA_LLM_MODEL` to choose a model |
+| `openrouter` | `OPENROUTER_API_KEY` | OpenAI-compatible API; set a model explicitly |
+| `gemini` | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | Defaults to `gemini-1.5-flash` when no model is configured |
+| `groq` | `GROQ_API_KEY` | Defaults to `llama-3.3-70b-versatile` when no model is configured |
+| `mistral` | `MISTRAL_API_KEY` | Defaults to `mistral-small-latest` when no model is configured |
+| `local` | `LLM_URL` | Uses a self-hosted model endpoint |
+| `mock` | None | For testing without a live LLM provider |
+
+Model selection uses the model in the provider configuration first, then
+`LLM_MODEL`, then `NORMA_LLM_MODEL`. Anthropic, OpenAI, and OpenRouter require
+one of these model values; Gemini, Groq, and Mistral use the documented
+provider default only when no model is supplied.
 
 ---
 
