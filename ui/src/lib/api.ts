@@ -6,6 +6,9 @@ export interface ApiErrorOptions {
 }
 
 export const API_BASE_URL_STORAGE_KEY = 'norma-ui-api-base-url'
+const CSRF_COOKIE_NAME = 'norma_csrf'
+const CSRF_HEADER_NAME = 'X-CSRF-Token'
+const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
 function normalizeApiBaseUrl(value: string): string {
   const trimmedValue = value.trim()
@@ -50,6 +53,35 @@ export function resetApiBaseUrl(): void {
   window.localStorage.removeItem(API_BASE_URL_STORAGE_KEY)
 }
 
+function resolveRequestUrl(input: RequestInfo | URL): string {
+  const inputUrl = typeof input === 'string'
+    ? input
+    : input instanceof URL
+      ? input.toString()
+      : input.url
+  return inputUrl.startsWith('/') ? `${getApiBaseUrl()}${inputUrl}` : inputUrl
+}
+
+function isConfiguredApiOrigin(requestUrl: string): boolean {
+  try {
+    return new URL(requestUrl, window.location.origin).origin
+      === new URL(getApiBaseUrl(), window.location.origin).origin
+  } catch {
+    return false
+  }
+}
+
+function getCookie(name: string): string | null {
+  const prefix = `${name}=`
+  const cookie = document.cookie.split(';').map((part) => part.trim()).find((part) => part.startsWith(prefix))
+  if (!cookie) return null
+  try {
+    return decodeURIComponent(cookie.slice(prefix.length))
+  } catch {
+    return cookie.slice(prefix.length)
+  }
+}
+
 export class ApiError extends Error {
   readonly status: number
   readonly statusText: string
@@ -89,15 +121,19 @@ export async function requestJson<T>(
   input: RequestInfo | URL,
   init: RequestInit = {},
 ): Promise<T> {
-  const requestUrl = typeof input === 'string' && input.startsWith('/')
-    ? `${getApiBaseUrl()}${input}`
-    : input
+  const requestUrl = resolveRequestUrl(input)
+  const sendsCredentials = isConfiguredApiOrigin(requestUrl)
+  const method = (init.method || 'GET').toUpperCase()
+  const headers = new Headers(init.headers)
+  headers.set('Accept', 'application/json')
+  if (sendsCredentials && UNSAFE_METHODS.has(method)) {
+    const csrfToken = getCookie(CSRF_COOKIE_NAME)
+    if (csrfToken) headers.set(CSRF_HEADER_NAME, csrfToken)
+  }
   const response = await fetch(requestUrl, {
     ...init,
-    headers: {
-      Accept: 'application/json',
-      ...init.headers,
-    },
+    credentials: sendsCredentials ? 'include' : 'omit',
+    headers,
   })
 
   if (!response.ok) {
@@ -137,10 +173,12 @@ export function postForm<TResponse>(
 }
 
 export async function getBlob(input: RequestInfo | URL): Promise<Blob> {
-  const requestUrl = typeof input === 'string' && input.startsWith('/')
-    ? `${getApiBaseUrl()}${input}`
-    : input
-  const response = await fetch(requestUrl, { method: 'GET', headers: { Accept: 'application/zip' } })
+  const requestUrl = resolveRequestUrl(input)
+  const response = await fetch(requestUrl, {
+    method: 'GET',
+    credentials: isConfiguredApiOrigin(requestUrl) ? 'include' : 'omit',
+    headers: { Accept: 'application/zip' },
+  })
   if (!response.ok) {
     throw await parseError(response)
   }

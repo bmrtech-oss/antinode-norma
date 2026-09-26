@@ -100,9 +100,15 @@ Environment variables take precedence over configuration file settings.
 | `GEMINI_API_KEY` / `GOOGLE_API_KEY` | Google Gemini API key | - |
 | `GROQ_API_KEY` | Groq API key | - |
 | `MISTRAL_API_KEY` | Mistral API key | - |
+| `NORMA_ENVIRONMENT` | Deployment environment; production requires OIDC auth and HTTPS | `development` |
+| `NORMA_AUTH_MODE` | Browser auth mode (`disabled` or `oidc`) | `disabled` |
+| `NORMA_AUTH_ALLOW_IDENTITY_HEADERS` | Allow `X-User-ID`/`X-Tenant-ID` test identities only in non-production auth-disabled mode | `false` |
+| `NORMA_OIDC_ISSUER` | OIDC issuer URL (or configure the discovery URL instead) | - |
+| `NORMA_OIDC_REDIRECT_URI` | Registered OIDC callback URL | - |
 | `NORMA_OIDC_CLIENT_ID` | OIDC Client ID | - |
 | `NORMA_OIDC_CLIENT_SECRET` | OIDC Client Secret | - |
 | `NORMA_OIDC_DISCOVERY_URL` | OIDC Issuer Discovery URL | - |
+| `NORMA_AUTH_ALLOWED_ORIGINS` | Comma-separated browser origins, without paths | - |
 | `NORMA_RETENTION_CLEANUP_ENABLED` | Run the safe, idempotent artifact/import cleanup sweep at startup | `false` |
 | `NORMA_ARTIFACT_RETENTION_DAYS` | Age threshold for generated artifact files from terminal jobs | `30` |
 | `NORMA_IMPORT_RETENTION_DAYS` | Age threshold for unreferenced uploaded import files | `30` |
@@ -113,6 +119,28 @@ Environment variables take precedence over configuration file settings.
 | `NORMA_GENERATION_PROVIDER_RETRY_MAX_SECONDS` | Maximum retry delay | `8` |
 | `NORMA_GENERATION_CIRCUIT_FAILURE_THRESHOLD` | Consecutive provider failures before opening the circuit | `3` |
 | `NORMA_GENERATION_CIRCUIT_RESET_SECONDS` | Open-circuit cooldown before a recovery probe | `30` |
+
+When `NORMA_AUTH_MODE=oidc`, configure an issuer or discovery URL, client ID,
+client secret, redirect URI, and at least one allowed origin. In production,
+set `NORMA_ENVIRONMENT=production`; startup rejects disabled or incomplete
+authentication configuration and requires HTTPS for identity, callback, and
+browser origins. For separately hosted UI/API deployments, list the exact UI
+origin(s), enable credentialed CORS only for those origins, and configure the
+browser/API cookie and CSRF policy. Some truly cross-site deployments require a
+same-origin BFF/reverse proxy because browsers may block third-party cookies.
+Development defaults to auth disabled; this mode must not be used in production.
+Header-based test identities are disabled by default and can be enabled only
+with `NORMA_AUTH_ALLOW_IDENTITY_HEADERS=true` while auth is disabled in a
+non-production environment. Production and OIDC mode reject this setting.
+Separate-origin CORS uses the configured exact origins with credentials, and
+mutating requests require the session-bound CSRF cookie/header pair. Production
+split-origin cookies use `SameSite=None; Secure`; the UI sends credentials only
+to its configured API origin. The OIDC callback performs discovery, code
+exchange, and ID-token validation, then creates a database-backed opaque
+session; `GET /api/auth/me` and `POST /api/auth/logout` use that session. The
+OIDC transaction store remains process-local; PostgreSQL session integration,
+IdP refresh, and production IdP conformance remain outstanding as tracked in
+[ADR-014](adr/ADR-014-ui-authentication.md).
 
 ### Deterministic deployment validation
 

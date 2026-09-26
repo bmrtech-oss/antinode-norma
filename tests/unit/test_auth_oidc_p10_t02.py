@@ -64,32 +64,18 @@ def test_map_claims_to_user():
     assert user.roles == [Role.REVIEWER]
 
 
-def test_oidc_api_flow():
-    # 1. Login initiate
-    login_resp = client.get("/api/auth/oidc/login")
-    assert login_resp.status_code == 200
-    login_data = login_resp.json()
-    assert "authorization_url" in login_data
-    assert "state" in login_data
-    assert "code_verifier" in login_data
+def test_oidc_login_is_unavailable_when_auth_is_disabled(monkeypatch):
+    monkeypatch.setenv("NORMA_AUTH_MODE", "disabled")
 
-    # 2. Callback token exchange
-    callback_resp = client.post(
+    response = client.get("/api/auth/oidc/login")
+
+    assert response.status_code == 503
+
+
+def test_oidc_callback_reports_provider_denial_without_code():
+    response = client.get(
         "/api/auth/oidc/callback",
-        json={
-            "code": "test_auth_code_987",
-            "state": login_data["state"],
-            "code_verifier": login_data["code_verifier"],
-        },
+        params={"error": "access_denied", "state": "provider-returned-state"},
     )
-    assert callback_resp.status_code == 200
-    user_data = callback_resp.json()
-    assert user_data["username"] == "oidc_user"
-    assert user_data["email"] == "oidc.user@example.com"
 
-    # 3. Get Me
-    me_resp = client.get(f"/api/auth/oidc/me?user_id={user_data['id']}")
-    assert me_resp.status_code == 200
-    me_data = me_resp.json()
-    assert me_data["id"] == user_data["id"]
-    assert me_data["username"] == "oidc_user"
+    assert response.status_code == 401

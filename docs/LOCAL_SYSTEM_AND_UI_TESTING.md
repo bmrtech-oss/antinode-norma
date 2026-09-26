@@ -376,7 +376,13 @@ Run these checks after the happy path:
 
 For backend-only authorization checks, send headers explicitly:
 
+These examples require `NORMA_AUTH_ALLOW_IDENTITY_HEADERS=true` with
+`NORMA_AUTH_MODE=disabled` in a non-production environment. Set the variable
+before starting the API and restart it after changing the setting. Production
+and OIDC mode reject this identity simulation; never use it as authentication.
+
 ```powershell
+$env:NORMA_AUTH_ALLOW_IDENTITY_HEADERS = "true"
 $headers = @{
   "X-User-ID" = "manual-user"
   "X-Tenant-ID" = "default"
@@ -387,6 +393,7 @@ Invoke-RestMethod -Headers $headers http://localhost:8000/v1/generation-jobs
 On Linux Bash:
 
 ```bash
+export NORMA_AUTH_ALLOW_IDENTITY_HEADERS=true
 curl --fail --silent \
   -H "X-User-ID: manual-user" \
   -H "X-Tenant-ID: default" \

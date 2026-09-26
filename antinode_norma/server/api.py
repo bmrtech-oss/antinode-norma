@@ -9,6 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from antinode_norma.auth.config import AuthSettings, load_auth_settings
+from antinode_norma.auth.middleware import AuthCSRFMiddleware
 from antinode_norma.server.schemas import HealthResponse, ErrorResponse
 from antinode_norma.utils.observability import get_health_status, metrics_registry
 from antinode_norma.server.routes import (
@@ -30,7 +32,10 @@ from antinode_norma.server.routes import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Sweep durable jobs left behind by a previous worker process."""
+    from antinode_norma.auth.config import load_auth_settings
     from antinode_norma.server.generation_worker import recover_abandoned_jobs
+
+    load_auth_settings()
     recover_abandoned_jobs()
     # Retention is opt-in: deployments can run this safe, idempotent sweep at
     # startup without risking broad deletion of active job storage.
@@ -47,14 +52,26 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def cors_options_for_auth(settings: AuthSettings) -> dict:
+    """Build a least-privilege CORS policy from validated auth settings."""
+    oidc_enabled = settings.mode == "oidc"
+    return {
+        "allow_origins": list(settings.allowed_origins) if oidc_enabled else ["*"],
+        "allow_credentials": oidc_enabled,
+        "allow_methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        "allow_headers": [
+            "Accept",
+            "Authorization",
+            "Content-Type",
+            "X-CSRF-Token",
+        ],
+        "max_age": 600,
+    }
+
+
+# CORS must wrap CSRF checks so browser preflight is answered before dispatch.
+app.add_middleware(AuthCSRFMiddleware)
+app.add_middleware(CORSMiddleware, **cors_options_for_auth(load_auth_settings()))
 
 
 @app.exception_handler(HTTPException)

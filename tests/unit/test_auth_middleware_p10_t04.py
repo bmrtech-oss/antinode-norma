@@ -85,3 +85,31 @@ def test_middleware_authorized_user_returns_200():
     resp = client.get("/admin")
     assert resp.status_code == 200
     assert resp.json() == {"status": "ok"}
+
+
+def test_identity_headers_are_denied_without_explicit_test_opt_in(monkeypatch):
+    monkeypatch.setenv("NORMA_ENVIRONMENT", "development")
+    monkeypatch.setenv("NORMA_AUTH_MODE", "disabled")
+    monkeypatch.setenv("NORMA_AUTH_ALLOW_IDENTITY_HEADERS", "false")
+    app_headers = FastAPI()
+
+    @app_headers.get("/admin", dependencies=[Depends(requires_permission(ADMIN_WRITE))])
+    async def header_admin():
+        return {"status": "ok"}
+
+    response = TestClient(app_headers).get("/admin", headers={"X-User-ID": "admin"})
+    assert response.status_code == 401
+
+
+def test_identity_headers_work_only_with_explicit_local_test_opt_in(monkeypatch):
+    monkeypatch.setenv("NORMA_ENVIRONMENT", "development")
+    monkeypatch.setenv("NORMA_AUTH_MODE", "disabled")
+    monkeypatch.setenv("NORMA_AUTH_ALLOW_IDENTITY_HEADERS", "true")
+    app_headers = FastAPI()
+
+    @app_headers.get("/admin", dependencies=[Depends(requires_permission(ADMIN_WRITE))])
+    async def header_admin():
+        return {"status": "ok"}
+
+    response = TestClient(app_headers).get("/admin", headers={"X-User-ID": "admin"})
+    assert response.status_code == 200
