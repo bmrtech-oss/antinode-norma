@@ -1,6 +1,5 @@
 import sqlite3
 
-from antinode_norma.database import migrate
 from antinode_norma.local_seed import seed_local
 
 

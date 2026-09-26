@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from antinode_norma.database import migrate, upsert_seed_records, load_audit_events
+from antinode_norma.database import migrate, upsert_seed_records
 
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
