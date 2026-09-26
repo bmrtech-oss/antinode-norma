@@ -140,14 +140,14 @@ Update this table whenever a task starts, is blocked, or is completed. A task is
 | AUTH-0-T07 | Partial | Authentik recommended after review; supported version, preview/GA status, asymmetric signing configuration, and repeatable protocol conformance remain to be verified |
 | AUTH-0-T08 | Complete | Implemented map_claims_to_roles and claim mapping in antinode_norma/auth/oidc.py for groups, roles, norma_roles, and realm_access; unknown claims default to least-privilege Role.VIEWER; status claims (active/enabled) enforced; added tests/unit/test_auth_claim_mapping.py (576 non-integration tests pass) |
 | AUTH-1-T01 | Complete | Created ui/src/lib/authClient.ts and ui/src/lib/AuthContext.tsx; bootstraps once from /api/auth/me; unit tests in ui/src/lib/authClient.test.ts and AuthContext.test.tsx cover authenticated, anonymous, transient failure, and malformed response states (npm run ci:ui passes) |
-| AUTH-1-T02 | Not started | |
-| AUTH-1-T03 | Not started | |
-| AUTH-1-T04 | Not started | |
-| AUTH-1-T05 | Not started | |
-| AUTH-2-T01 | Not started | |
-| AUTH-2-T02 | Not started | |
-| AUTH-2-T03 | Not started | |
-| AUTH-2-T04 | Not started | |
+| AUTH-1-T02 | Complete | Created ui/src/components/AuthGuard.tsx and LoginPage.tsx; integrated AuthProvider and AuthGuard in ui/src/App.tsx; added unit tests in ui/src/components/AuthGuard.test.tsx and e2e mocks in app/accessibility spec; unit and Playwright e2e tests prove protected content and API calls do not render or run before auth check resolves |
+| AUTH-1-T03 | Complete | Added UNAUTHORIZED_EVENT and FORBIDDEN_EVENT bus in ui/src/lib/api.ts, 401 listener in AuthContext.tsx, and AccessDenied component in AccessDenied.tsx; added integration tests in ui/src/lib/auth401_403.test.tsx proving 401 clears stale identity and offers return path while 403 retains session and displays AccessDenied |
+| AUTH-1-T04 | Complete | Verified credentials: include policy and session-bound X-CSRF-Token header injection in ui/src/lib/api.ts; added unit tests in ui/src/api.test.ts |
+| AUTH-1-T05 | Complete | Implemented validateLocalReturnPath in ui/src/lib/returnPath.ts and backend open-redirect validation; added unit tests in ui/src/lib/returnPath.test.ts and tests/unit/test_auth_return_path.py |
+| AUTH-2-T01 | Complete | Implemented accessible LoginPage in ui/src/components/LoginPage.tsx; delegates authentication to Authentik OIDC provider without local password forms |
+| AUTH-2-T02 | Complete | Integrated server-managed OIDC redirect and callback flow; restores allowlisted local return route across same and separate origins |
+| AUTH-2-T03 | Complete | Implemented UserMenu in ui/src/components/UserMenu.tsx integrated into AppShell header; displays user name, email, roles, and provides logout clearing server session and cookie |
+| AUTH-2-T04 | Complete | Implemented session-expiry recovery in AuthGuard and AuthContext, preserving workflow return paths across re-login; verified by Playwright e2e tests |
 | AUTH-3-T01 | Not started | |
 | AUTH-3-T02 | Not started | |
 | AUTH-3-T03 | Not started | |

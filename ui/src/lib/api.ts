@@ -6,6 +6,8 @@ export interface ApiErrorOptions {
 }
 
 export const API_BASE_URL_STORAGE_KEY = 'norma-ui-api-base-url'
+export const UNAUTHORIZED_EVENT = 'norma:unauthorized'
+export const FORBIDDEN_EVENT = 'norma:forbidden'
 const CSRF_COOKIE_NAME = 'norma_csrf'
 const CSRF_HEADER_NAME = 'X-CSRF-Token'
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
@@ -101,7 +103,7 @@ interface ApiErrorPayload {
   error_code?: string
 }
 
-async function parseError(response: Response): Promise<ApiError> {
+async function parseError(response: Response, requestUrl?: string): Promise<ApiError> {
   let payload: ApiErrorPayload = {}
   try {
     payload = (await response.json()) as ApiErrorPayload
@@ -109,12 +111,22 @@ async function parseError(response: Response): Promise<ApiError> {
     // Non-JSON responses still become a typed ApiError below.
   }
 
-  return new ApiError({
+  const error = new ApiError({
     status: response.status,
     statusText: response.statusText,
     detail: payload.detail || `Request failed with status ${response.status}`,
     code: payload.error_code,
   })
+
+  if (typeof window !== 'undefined') {
+    if (response.status === 401 && !requestUrl?.includes('/api/auth/me')) {
+      window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT, { detail: error }))
+    } else if (response.status === 403) {
+      window.dispatchEvent(new CustomEvent(FORBIDDEN_EVENT, { detail: error }))
+    }
+  }
+
+  return error
 }
 
 export async function requestJson<T>(
@@ -137,7 +149,7 @@ export async function requestJson<T>(
   })
 
   if (!response.ok) {
-    throw await parseError(response)
+    throw await parseError(response, requestUrl)
   }
 
   if (response.status === 204) {
@@ -180,7 +192,7 @@ export async function getBlob(input: RequestInfo | URL): Promise<Blob> {
     headers: { Accept: 'application/zip' },
   })
   if (!response.ok) {
-    throw await parseError(response)
+    throw await parseError(response, requestUrl)
   }
   return response.blob()
 }

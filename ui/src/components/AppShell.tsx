@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Activity, Cpu, FileText, GitMerge, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, RefreshCw, Settings, ShieldCheck, UploadCloud, X } from 'lucide-react'
 import { ThemeSwitcher } from './ThemeSwitcher'
+import { UserMenu } from './UserMenu'
 import { getApiBaseUrl, resetApiBaseUrl, setApiBaseUrl } from '../lib/api'
 import { Button } from './ui/Button'
 import { Tooltip } from './ui/Tooltip'
@@ -228,6 +229,7 @@ export function AppShell({
             </div>
 
             <div className="flex shrink-0 items-center gap-3 text-sm">
+              <UserMenu />
               <div ref={settingsRef} className="relative">
                 <Button
                   variant="outline"
