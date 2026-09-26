@@ -19,6 +19,7 @@ setup(
         "click>=8.1.0",
         "fastapi>=0.100.0",
         "httpx>=0.24.0",
+        "PyJWT[crypto]>=2.8.0",
         "openpyxl>=3.1.0",
         "anyio>=4.0.0,<4.15.0",
     ],

@@ -108,6 +108,22 @@ CREATE TABLE IF NOT EXISTS user_roles (
     PRIMARY KEY(user_id, role),
     FOREIGN KEY(user_id) REFERENCES users(id)
 );
+CREATE TABLE IF NOT EXISTS auth_sessions (
+    session_token_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    user_json TEXT NOT NULL,
+    issuer TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    idp_sid TEXT,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    revoked_at TEXT,
+    csrf_token_hash TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_subject
+    ON auth_sessions(issuer, subject);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_sid
+    ON auth_sessions(issuer, idp_sid);
 CREATE TABLE IF NOT EXISTS import_jobs (
     id TEXT PRIMARY KEY,
     filename TEXT NOT NULL,
@@ -236,10 +252,14 @@ def migrate(database_url: str | None = None) -> None:
 def _apply_schema(connection: Any, backend: str) -> None:
     if backend == "sqlite":
         connection.executescript(SCHEMA)
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(auth_sessions)")}
+        if "csrf_token_hash" not in columns:
+            connection.execute("ALTER TABLE auth_sessions ADD COLUMN csrf_token_hash TEXT")
     else:
         for statement in SCHEMA.split(";"):
             if statement.strip():
                 connection.execute(statement)
+        connection.execute("ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS csrf_token_hash TEXT")
 
 
 def execute(database_url: str, statement: str, parameters: tuple[Any, ...] = ()) -> list[tuple[Any, ...]]:
@@ -249,6 +269,130 @@ def execute(database_url: str, statement: str, parameters: tuple[Any, ...] = ())
         rows = cursor.fetchall() if cursor.description else []
         connection.commit()
         return rows
+    finally:
+        connection.close()
+
+
+def save_auth_session(database_url: str, session: dict[str, Any]) -> None:
+    """Persist a browser session using only the hash of its opaque token."""
+    connection, backend = _connect(database_url)
+    try:
+        placeholder = "%s" if backend == "postgres" else "?"
+        connection.execute(
+            "INSERT INTO auth_sessions(session_token_hash, user_id, user_json, issuer, subject, idp_sid, expires_at, created_at, revoked_at, csrf_token_hash) "
+            f"VALUES ({', '.join([placeholder] * 10)})",
+            (
+                session["session_token_hash"],
+                session["user_id"],
+                json.dumps(session["user"], sort_keys=True),
+                session["issuer"],
+                session["subject"],
+                session.get("idp_sid"),
+                session["expires_at"],
+                session["created_at"],
+                None,
+                session.get("csrf_token_hash"),
+            ),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def load_auth_session(
+    database_url: str,
+    session_token_hash: str,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any] | None:
+    """Load a non-revoked, non-expired browser session by opaque-token hash."""
+    rows = execute(
+        database_url,
+        "SELECT user_id, user_json, issuer, subject, idp_sid, expires_at, created_at, revoked_at, csrf_token_hash "
+        "FROM auth_sessions WHERE session_token_hash = ?"
+        if not database_url.startswith(("postgres://", "postgresql://"))
+        else "SELECT user_id, user_json, issuer, subject, idp_sid, expires_at, created_at, revoked_at, csrf_token_hash "
+        "FROM auth_sessions WHERE session_token_hash = %s",
+        (session_token_hash,),
+    )
+    if not rows:
+        return None
+
+    user_id, user_json, issuer, subject, idp_sid, expires_at, created_at, revoked_at, csrf_token_hash = rows[0]
+    if revoked_at is not None:
+        return None
+    current_time = now or datetime.now(timezone.utc)
+    expiry = datetime.fromisoformat(expires_at)
+    if expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=timezone.utc)
+    if expiry <= current_time:
+        revoke_auth_session(database_url, session_token_hash)
+        return None
+
+    return {
+        "user_id": user_id,
+        "user": json.loads(user_json),
+        "issuer": issuer,
+        "subject": subject,
+        "idp_sid": idp_sid,
+        "expires_at": expires_at,
+        "created_at": created_at,
+        "csrf_token_hash": csrf_token_hash,
+    }
+
+
+def revoke_auth_session(
+    database_url: str,
+    session_token_hash: str,
+    *,
+    revoked_at: str | None = None,
+) -> bool:
+    """Revoke one browser session; return whether a live row was changed."""
+    connection, backend = _connect(database_url)
+    try:
+        placeholder = "%s" if backend == "postgres" else "?"
+        cursor = connection.execute(
+            "UPDATE auth_sessions SET revoked_at = "
+            f"{placeholder} WHERE session_token_hash = {placeholder} AND revoked_at IS NULL",
+            (revoked_at or datetime.now(timezone.utc).isoformat(), session_token_hash),
+        )
+        connection.commit()
+        return cursor.rowcount > 0
+    finally:
+        connection.close()
+
+
+def revoke_auth_sessions_for_identity(
+    database_url: str,
+    *,
+    issuer: str,
+    subject: str | None = None,
+    idp_sid: str | None = None,
+    revoked_at: str | None = None,
+) -> int:
+    """Revoke matching sessions after a validated upstream logout event."""
+    if not subject and not idp_sid:
+        raise ValueError("An OIDC subject or session ID is required for revocation")
+    connection, backend = _connect(database_url)
+    try:
+        placeholder = "%s" if backend == "postgres" else "?"
+        selector = "subject = " + placeholder if subject else "1 = 0"
+        if idp_sid:
+            selector = (
+                f"({selector} OR idp_sid = {placeholder})" if subject else "idp_sid = " + placeholder
+            )
+        parameters: list[Any] = [revoked_at or datetime.now(timezone.utc).isoformat(), issuer]
+        if subject:
+            parameters.append(subject)
+        if idp_sid:
+            parameters.append(idp_sid)
+        cursor = connection.execute(
+            "UPDATE auth_sessions SET revoked_at = "
+            f"{placeholder} WHERE issuer = {placeholder} AND revoked_at IS NULL AND {selector}",
+            tuple(parameters),
+        )
+        connection.commit()
+        return cursor.rowcount
     finally:
         connection.close()
 

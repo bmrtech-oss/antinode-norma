@@ -115,6 +115,12 @@ TRANSIENT_LLM_ERROR_MARKERS = [
 ]
 
 
+@pytest.fixture(autouse=True)
+def enable_explicit_test_identity_header_mode(monkeypatch):
+    """Allow legacy X-User-ID fixtures only inside the test process."""
+    monkeypatch.setenv("NORMA_AUTH_ALLOW_IDENTITY_HEADERS", "true")
+
+
 def is_transient_llm_error_message(message: str) -> bool:
     message = message.lower()
     return any(marker in message for marker in TRANSIENT_LLM_ERROR_MARKERS)
