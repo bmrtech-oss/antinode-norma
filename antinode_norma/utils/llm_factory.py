@@ -3,12 +3,28 @@ import json
 from typing import Callable, Dict, Any
 
 
+_DEFAULT_PROVIDER_MODELS = {
+    "gemini": "gemini-1.5-flash",
+    "google": "gemini-1.5-flash",
+    "google-gemini": "gemini-1.5-flash",
+    "groq": "llama-3.3-70b-versatile",
+    "mistral": "mistral-small-latest",
+    "mistralai": "mistral-small-latest",
+}
+
+
 def _resolve_model(config: Dict[str, Any], *, env_name: str = "LLM_MODEL") -> str:
-    """Require an explicit model selection; never silently invent a default."""
-    model = config.get("model") or os.getenv(env_name)
-    if not model:
-        raise ValueError(f"{env_name} is required for this provider")
-    return model
+    """Resolve the selected model, using environment/defaults for known providers."""
+    model = config.get("model") or os.getenv(env_name) or os.getenv("NORMA_LLM_MODEL")
+    if model:
+        return model
+
+    provider = (config.get("provider") or "anthropic").lower()
+    default_model = _DEFAULT_PROVIDER_MODELS.get(provider)
+    if default_model:
+        return default_model
+
+    raise ValueError(f"{env_name} is required for this provider")
 
 
 def _anthropic_messages_create(client: Any, **kwargs: Any) -> Any:

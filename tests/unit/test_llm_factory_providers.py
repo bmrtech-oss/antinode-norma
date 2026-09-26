@@ -24,7 +24,9 @@ def test_mistral_missing_api_key(monkeypatch):
         create_llm_callable({"provider": "mistral"})
 
 
-def test_gemini_openai_fallback():
+def test_gemini_openai_fallback(monkeypatch):
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("NORMA_LLM_MODEL", raising=False)
     with patch("openai.OpenAI") as mock_openai:
         mock_client = MagicMock()
         mock_openai.return_value = mock_client
@@ -39,7 +41,9 @@ def test_gemini_openai_fallback():
             assert result == "Gemini OpenAI response"
 
 
-def test_groq_openai_fallback():
+def test_groq_openai_fallback(monkeypatch):
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("NORMA_LLM_MODEL", raising=False)
     with patch("openai.OpenAI") as mock_openai:
         mock_client = MagicMock()
         mock_openai.return_value = mock_client
@@ -53,7 +57,9 @@ def test_groq_openai_fallback():
             assert result == "Groq response"
 
 
-def test_mistral_openai_fallback():
+def test_mistral_openai_fallback(monkeypatch):
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("NORMA_LLM_MODEL", raising=False)
     with patch("openai.OpenAI") as mock_openai:
         mock_client = MagicMock()
         mock_openai.return_value = mock_client
