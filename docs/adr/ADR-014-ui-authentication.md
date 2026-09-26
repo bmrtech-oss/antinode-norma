@@ -138,7 +138,7 @@ Update this table whenever a task starts, is blocked, or is completed. A task is
 | AUTH-0-T05 | Complete | Header fallback is disabled by default and rejected in production/OIDC; test harness opts in explicitly; spoofed-header and config tests pass; non-integration suite: 560 passed, 6 skipped, 3 deselected; Ruff passes |
 | AUTH-0-T06 | Complete | Audited all API routes; added missing FEATURE_READ permission dependency to /api/dashboard and /api/traceability; verified role-by-route permissions, tenant/resource ownership, and actor attribution; added tests/unit/test_route_security_matrix.py (567 non-integration tests pass) |
 | AUTH-0-T07 | Partial | Authentik recommended after review; supported version, preview/GA status, asymmetric signing configuration, and repeatable protocol conformance remain to be verified |
-| AUTH-0-T08 | Not started | |
+| AUTH-0-T08 | Complete | Implemented map_claims_to_roles and claim mapping in antinode_norma/auth/oidc.py for groups, roles, norma_roles, and realm_access; unknown claims default to least-privilege Role.VIEWER; status claims (active/enabled) enforced; added tests/unit/test_auth_claim_mapping.py (576 non-integration tests pass) |
 | AUTH-1-T01 | Not started | |
 | AUTH-1-T02 | Not started | |
 | AUTH-1-T03 | Not started | |

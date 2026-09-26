@@ -250,23 +250,79 @@ async def exchange_code_and_validate_id_token(
     return claims
 
 
-def map_claims_to_user(claims: Dict[str, str], roles: Optional[List[Role]] = None) -> User:
+ROLE_CLAIM_MAPPINGS = {
+    "norma-admin": Role.ADMIN,
+    "admin": Role.ADMIN,
+    "norma-reviewer": Role.REVIEWER,
+    "reviewer": Role.REVIEWER,
+    "norma-generator": Role.GENERATOR,
+    "generator": Role.GENERATOR,
+    "norma-viewer": Role.VIEWER,
+    "viewer": Role.VIEWER,
+}
+
+
+def map_claims_to_roles(claims: Dict[str, Any]) -> List[Role]:
+    """Map OIDC / Authentik groups or roles claims to Norma Role list.
+
+    Unmapped or unknown claims default to least privilege ([Role.VIEWER]).
+    """
+    raw_groups: List[Any] = []
+
+    for key in ("groups", "roles", "norma_roles", "norma_groups"):
+        val = claims.get(key)
+        if isinstance(val, list):
+            raw_groups.extend(val)
+        elif isinstance(val, str):
+            raw_groups.append(val)
+
+    realm_access = claims.get("realm_access")
+    if isinstance(realm_access, dict) and isinstance(realm_access.get("roles"), list):
+        raw_groups.extend(realm_access["roles"])
+
+    mapped_roles: List[Role] = []
+    for item in raw_groups:
+        if isinstance(item, str):
+            normalized = item.strip().lower()
+            if normalized in ROLE_CLAIM_MAPPINGS:
+                role = ROLE_CLAIM_MAPPINGS[normalized]
+                if role not in mapped_roles:
+                    mapped_roles.append(role)
+
+    # Unknown or unmapped claims default to least privilege
+    if not mapped_roles:
+        mapped_roles = [Role.VIEWER]
+
+    return mapped_roles
+
+
+def map_claims_to_user(claims: Dict[str, Any], roles: Optional[List[Role]] = None) -> User:
     """Map OIDC ID token or userinfo claims to a Norma User model."""
-    sub = claims.get("sub", "")
-    email = claims.get("email", f"{sub}@oidc.user" if sub else "user@oidc.local")
-    username = (
+    sub = str(claims.get("sub", ""))
+    email = str(claims.get("email", f"{sub}@oidc.user" if sub else "user@oidc.local"))
+    username = str(
         claims.get("preferred_username")
         or claims.get("nickname")
         or (email.split("@")[0] if "@" in email else "oidc_user")
     )
     display_name = claims.get("name") or claims.get("given_name")
 
+    resolved_roles = roles if roles is not None else map_claims_to_roles(claims)
+
+    is_active = True
+    if "active" in claims and claims["active"] in (False, "false", "False", 0):
+        is_active = False
+    elif "enabled" in claims and claims["enabled"] in (False, "false", "False", 0):
+        is_active = False
+    elif "is_active" in claims and claims["is_active"] in (False, "false", "False", 0):
+        is_active = False
+
     user_kwargs = {
         "username": username,
         "email": email,
-        "roles": roles if roles else [Role.VIEWER],
+        "roles": resolved_roles,
         "display_name": display_name,
-        "is_active": True,
+        "is_active": is_active,
     }
     if sub:
         user_kwargs["id"] = sub
