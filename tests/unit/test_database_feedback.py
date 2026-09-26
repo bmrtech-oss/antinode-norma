@@ -1,3 +1,5 @@
+import sqlite3
+
 from antinode_norma.codegen.engine.feedback_store import FeedbackStore
 from antinode_norma.database import migrate
 
@@ -15,4 +17,8 @@ def test_feedback_store_database_url_uses_shared_sqlite_database(tmp_path):
         execution_context={"browser": "chromium"},
     )
 
+    with sqlite3.connect(tmp_path / "app.db") as conn:
+        row = conn.execute("SELECT COUNT(*) FROM feedback WHERE selector = ?", ("#login",)).fetchone()
+
+    assert row == (1,)
     assert store.get_success_rate("#login") == 1.0

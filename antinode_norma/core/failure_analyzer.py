@@ -55,6 +55,14 @@ def _get_connection() -> sqlite3.Connection:
 
         migrate(database_url)
         return _ConnectionCompat(psycopg.connect(database_url, row_factory=dict_row))
+    if database_url.startswith("sqlite:///"):
+        from antinode_norma.database import _database_url
+
+        sqlite_path = Path(_database_url(database_url).removeprefix("sqlite:///"))
+        sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(sqlite_path))
+        conn.row_factory = sqlite3.Row
+        return conn
     conn = sqlite3.connect(str(_get_db_file()))
     conn.row_factory = sqlite3.Row
     return conn
@@ -90,10 +98,11 @@ class _ConnectionCompat:
 
 
 def _ensure_database() -> None:
-    if os.getenv("DATABASE_URL", "").startswith(("postgres://", "postgresql://")):
+    database_url = os.getenv("DATABASE_URL", "")
+    if database_url.startswith(("postgres://", "postgresql://", "sqlite:///")):
         from antinode_norma.database import migrate
 
-        migrate(os.environ["DATABASE_URL"])
+        migrate(database_url)
         return
     with _get_connection() as conn:
         conn.execute(f"""

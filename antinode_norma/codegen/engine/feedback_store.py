@@ -86,9 +86,16 @@ class FeedbackStore:
         self._init_schema()
 
     def _connect(self):
-        if self.database_url and self.database_url.startswith(("postgres://", "postgresql://")):
-            import psycopg
-            return _ConnectionCompat(psycopg.connect(self.database_url))
+        if self.database_url:
+            if self.database_url.startswith(("postgres://", "postgresql://")):
+                import psycopg
+                return _ConnectionCompat(psycopg.connect(self.database_url))
+            if self.database_url.startswith("sqlite:///"):
+                from antinode_norma.database import _database_url
+
+                sqlite_path = Path(_database_url(self.database_url).removeprefix("sqlite:///"))
+                sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+                return sqlite3.connect(sqlite_path)
         return sqlite3.connect(self.db_path)
 
     def __enter__(self):
@@ -107,7 +114,7 @@ class FeedbackStore:
 
     def _init_schema(self):
         """Create tables if they don't exist."""
-        if self.database_url and self.database_url.startswith(("postgres://", "postgresql://")):
+        if self.database_url:
             from antinode_norma.database import migrate
 
             migrate(self.database_url)
