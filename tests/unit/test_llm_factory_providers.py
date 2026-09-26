@@ -86,7 +86,12 @@ def test_anthropic_retries_without_temperature_when_sdk_rejects_it():
         ]
 
         llm = create_llm_callable(
-            {"provider": "anthropic", "api_key": "dummy_key", "temperature": 0.2}
+            {
+                "provider": "anthropic",
+                "api_key": "dummy_key",
+                "model": "test-model",
+                "temperature": 0.2,
+            }
         )
         assert llm("Hello Anthropic") == "Anthropic response"
 
@@ -106,7 +111,12 @@ def test_anthropic_preserves_temperature_when_sdk_accepts_it():
         client.messages.create.return_value = response
 
         llm = create_llm_callable(
-            {"provider": "anthropic", "api_key": "dummy_key", "temperature": 0.7}
+            {
+                "provider": "anthropic",
+                "api_key": "dummy_key",
+                "model": "test-model",
+                "temperature": 0.7,
+            }
         )
         assert llm("Hello Anthropic") == "Anthropic response"
         assert client.messages.create.call_args.kwargs["temperature"] == 0.7
