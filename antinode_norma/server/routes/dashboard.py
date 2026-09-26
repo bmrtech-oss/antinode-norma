@@ -1,5 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from typing import Dict, Any
+from antinode_norma.auth.middleware import requires_permission
+from antinode_norma.auth.roles import FEATURE_READ
 from antinode_norma.governance.approval import ApprovalStatus
 from antinode_norma.server.routes.features import _get_feature_dir
 from antinode_norma.server.routes.approvals import gate as _approval_gate
@@ -10,7 +12,11 @@ from antinode_norma.analytics.metrics import AnalyticsCollector
 dashboard_router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
 
-@dashboard_router.get("", response_model=Dict[str, Any])
+@dashboard_router.get(
+    "",
+    response_model=Dict[str, Any],
+    dependencies=[Depends(requires_permission(FEATURE_READ))],
+)
 async def get_dashboard_summary():
     """Returns aggregated platform overview metrics for the Web UI Dashboard."""
     feature_dir = _get_feature_dir()

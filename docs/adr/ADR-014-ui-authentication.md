@@ -136,7 +136,7 @@ Update this table whenever a task starts, is blocked, or is completed. A task is
 | AUTH-0-T03 | Partial | Added `auth_sessions` migration/store, hash-only opaque cookie sessions, expiry/revocation, `/api/auth/me`, logout, and cookie-backed route identity; 44 auth tests pass. PostgreSQL session integration and IdP refresh policy still need verification. |
 | AUTH-0-T04 | Complete | Exact-origin credentialed CORS, session-bound CSRF, production Secure/SameSite cookie policy, configured-API-only credentials, and allowlisted post-login return paths implemented; 49 auth tests, full UI CI, Ruff, and editor diagnostics pass |
 | AUTH-0-T05 | Complete | Header fallback is disabled by default and rejected in production/OIDC; test harness opts in explicitly; spoofed-header and config tests pass; non-integration suite: 560 passed, 6 skipped, 3 deselected; Ruff passes |
-| AUTH-0-T06 | Not started | |
+| AUTH-0-T06 | Complete | Audited all API routes; added missing FEATURE_READ permission dependency to /api/dashboard and /api/traceability; verified role-by-route permissions, tenant/resource ownership, and actor attribution; added tests/unit/test_route_security_matrix.py (567 non-integration tests pass) |
 | AUTH-0-T07 | Partial | Authentik recommended after review; supported version, preview/GA status, asymmetric signing configuration, and repeatable protocol conformance remain to be verified |
 | AUTH-0-T08 | Not started | |
 | AUTH-1-T01 | Not started | |
