@@ -29,3 +29,8 @@ def test_adr013_seed_and_compose_contract(tmp_path, monkeypatch):
     assert ".:/app:Z" in services["app-http"]["volumes"]
     assert ".:/app:Z" in services["app-mcp"]["volumes"]
     assert services["app-http"]["depends_on"]["local-seed"]["condition"] == "service_completed_successfully"
+    assert "build" in services["app-http"]
+    assert all("build" not in services[name] for name in ("app-mcp", "local-seed", "local-migrate"))
+    assert services["db"]["image"].startswith("docker.io/")
+    assert services["grafana"]["profiles"] == ["observability"]
+    assert services["prometheus"]["profiles"] == ["observability"]

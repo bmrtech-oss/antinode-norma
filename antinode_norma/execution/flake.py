@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from typing import Dict, List, Optional
 from pydantic import BaseModel
@@ -14,10 +15,16 @@ class FlakeRecord(BaseModel):
 
 
 class FlakeDetector:
-    def __init__(self, storage_path: Optional[Path] = None):
+    def __init__(self, storage_path: Optional[Path] = None, database_url: Optional[str] = None):
+        self.database_url = database_url or os.getenv("DATABASE_URL")
         self.storage_path = storage_path or Path("build/flake_history.json")
         self.history: Dict[str, Dict[str, int]] = {}
-        if self.storage_path.exists():
+        if self.database_url:
+            from antinode_norma.database import load_flake_history, migrate
+
+            migrate(self.database_url)
+            self.history = load_flake_history(self.database_url)
+        elif self.storage_path.exists():
             self._load_history()
 
     def _load_history(self) -> None:
@@ -28,11 +35,20 @@ class FlakeDetector:
             self.history = {}
 
     def _save_history(self) -> None:
+        if self.database_url:
+            return
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         with open(self.storage_path, "w", encoding="utf-8") as f:
             json.dump(self.history, f, indent=2)
 
     def record_run_result(self, test_id: str, passed: bool) -> None:
+        if self.database_url:
+            from antinode_norma.database import load_flake_history, record_flake_run
+
+            record_flake_run(self.database_url, test_id, passed)
+            self.history = load_flake_history(self.database_url)
+            return
+
         if test_id not in self.history:
             self.history[test_id] = {"passed": 0, "failed": 0}
 

@@ -1,4 +1,5 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
 .env
@@ -6,6 +7,8 @@ __pycache__/
 .gitignore
 *.log
 .pytest_cache/
+.ruff_cache/
+.tmp/
 .coverage
 htmlcov/
 dist/

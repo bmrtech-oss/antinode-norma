@@ -45,6 +45,7 @@ To exercise MCP separately, stop the local stack or use a second checkout
 terminal and run:
 
 ```bash
+podman compose --profile http build app-http  # only needed before first MCP-only run
 podman compose --profile mcp run --rm app-mcp
 ```
 
@@ -108,14 +109,18 @@ The local profile contains:
 - `local-seed`: deterministic, mock-provider seed data;
 - `app-http`: FastAPI and the compiled UI on port `8000`;
 - `app-mcp`: the MCP stdio server;
-- optional observability services from `docker-compose.yml`.
+- optional services from the `observability` profile.
 
 For one interface only:
 
 ```bash
 podman compose --profile http up --build
+podman compose --profile http build app-http  # first MCP-only run from a clean checkout
 podman compose --profile mcp run --rm app-mcp
 ```
+
+Start observability separately with `podman compose --profile observability
+up -d`.
 
 Check HTTP readiness:
 
@@ -134,11 +139,13 @@ python3 -m antinode_norma.cli seed-local --database-url sqlite:///.runtime/norma
 ```
 
 Seed output is written beneath `.runtime/local-seed/`, which is ignored by Git.
-The current repository seed remains file-backed because the application
-database adapter/migration work is not yet complete; `DATABASE_URL` is supplied
-to the services so the future adapter can use the same Compose contract.
-It includes synthetic users, tenant/role records, approvals, feature fixtures, traceability,
-audit, analytics, execution, plugin, and notification examples.
+When `DATABASE_URL` is supplied, seed records, users/roles, audit events,
+approvals, comments, execution history, costs, import/generation jobs, and flake
+history use the shared SQLite/PostgreSQL schema. Fixture files and generated or
+binary execution artifacts still live in `.runtime/` or their configured output
+directories; PostgreSQL does not store those files. The seed includes synthetic
+users, tenant/role records, approvals, feature fixtures, traceability, audit,
+analytics, execution, plugin, and notification examples.
 
 ## Runtime Modes
 

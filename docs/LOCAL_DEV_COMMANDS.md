@@ -74,6 +74,16 @@ podman compose --profile mcp run --rm app-mcp
 podman compose --profile local down
 ```
 
+For an MCP-only first run from a clean checkout, build the shared image first:
+
+```bash
+podman compose --profile http build app-http
+podman compose --profile mcp run --rm app-mcp
+```
+
+Observability containers are excluded from the normal local stack. Start them
+only when needed with `podman compose --profile observability up -d`.
+
 To delete the local PostgreSQL volume as well as stop the stack, use
 `podman compose --profile local down -v`. This removes all database data for
 this Compose project. For Docker, replace `podman compose` with `docker compose`.

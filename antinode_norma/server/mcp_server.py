@@ -1,5 +1,6 @@
 """MCP Server for Antinode Norma BDD Platform."""
 
+import asyncio
 import json
 import sys
 from pathlib import Path
@@ -160,26 +161,32 @@ async def main():
         from mcp.server.stdio import stdio_server
         import mcp.types as types
 
-        mcp = Server("antinode-norma")
-
-        @mcp.list_tools()
-        async def handle_list_tools() -> List[types.Tool]:
+        async def handle_list_tools(_context, _params) -> types.ListToolsResult:
             tools = await list_tools()
-            return [
-                types.Tool(
-                    name=t.name,
-                    description=t.description,
-                    inputSchema=t.inputSchema,
-                )
-                for t in tools
-            ]
+            return types.ListToolsResult(
+                tools=[
+                    types.Tool(
+                        name=t.name,
+                        description=t.description,
+                        inputSchema=t.inputSchema,
+                    )
+                    for t in tools
+                ]
+            )
 
-        @mcp.call_tool()
         async def handle_call_tool(
-            name: str, arguments: dict | None
-        ) -> List[types.TextContent]:
-            results = await call_tool(name, arguments or {})
-            return [types.TextContent(type="text", text=r.text) for r in results]
+            _context, params: types.CallToolRequestParams
+        ) -> types.CallToolResult:
+            results = await call_tool(params.name, params.arguments or {})
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=result.text) for result in results]
+            )
+
+        mcp = Server(
+            "antinode-norma",
+            on_list_tools=handle_list_tools,
+            on_call_tool=handle_call_tool,
+        )
 
         async with stdio_server() as (read_stream, write_stream):
             await mcp.run(
@@ -190,3 +197,7 @@ async def main():
     except Exception as e:
         sys.stderr.write(f"MCP server execution warning: {e}\n")
         sys.stderr.flush()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -180,21 +180,22 @@ services so health, logs, restart policy, and stdio transport remain explicit.
 | Task | Deliverable | Owner | Approval | Verification |
 |---|---|---|---|---|
 | P13-BOOT-01 | `anorm seed-local` with stable fixture IDs and reset/upsert behavior | QA Architect | Yes | **Implemented:** `tests/unit/test_local_seed.py`; Fedora smoke command |
-| P13-BOOT-02 | Compose profiles/services for HTTP, MCP, DB, migration, and complete local mode | Engineering Lead | Yes | **Partial:** Podman Compose profiles parse; PostgreSQL health and migration/seed ordering are wired, full container smoke remains |
-| P13-BOOT-03 | Configurable Docker/Podman runtime command/mode | Engineering Lead | Yes | **Partial:** HTTP/MCP entrypoint and profile commands implemented; image build needs full Fedora completion |
+| P13-BOOT-02 | Compose profiles/services for HTTP, MCP, DB, migration, and complete local mode | Engineering Lead | Yes | **Implemented:** Fedora 44/Podman local-profile build, PostgreSQL health, migration, seed, HTTP health, and MCP stdio handshake verified; observability is opt-in |
+| P13-BOOT-03 | Configurable Docker/Podman runtime command/mode | Engineering Lead | Yes | **Implemented:** shared image built on Fedora/Podman; HTTP and MCP modes verified, including MCP initialize/tools/list over stdio |
 | P13-BOOT-04 | Complete synthetic fixture catalog, four users, and example config | QA Architect | No | **Implemented:** `examples/seed/manifest.yml`, `norma.config.example.yml`, `tests/unit/test_local_seed.py` |
 | P13-BOOT-05 | New-engineer runbook and container-runtime guide | QA Architect | No | **Implemented:** `docs/CONTAINER_RUNTIME.md`; Fedora/Podman onboarding and smoke commands |
 | P13-BOOT-06 | CI/local bootstrap regression | QA Architect | No | **Implemented:** `tests/integration/test_adr013_bootstrap.py`; seed and Compose contract checks |
-| P13-BOOT-07 | Database migration and seed persistence adapter | Engineering Lead | Yes | **Partial:** SQLite/PostgreSQL-compatible schema, migration command, seed upserts, and import/generation persistence are implemented; remaining artifact stores and Fedora image smoke remain |
+| P13-BOOT-07 | Database migration and seed persistence adapter | Engineering Lead | Yes | **Partial:** SQLite/PostgreSQL-compatible schema, migration command, seed upserts, import/generation, governance, cost, flake history, and artifact metadata persistence are implemented; other artifact stores need migration |
 
 The first database-backed slice is now implemented for seed records, tenants,
 users/roles, audit events, approval requests, comments, execution history, and
 LLM cost events. `antinode_norma.database` creates those tables, and Compose
 orders `db -> local-migrate -> local-seed -> app-http/app-mcp`. Import and
 generation jobs now use the shared SQLite/PostgreSQL boundary, including
-portable result upserts and SQLite WAL initialization. Codegen feedback,
-failure analysis, and remaining artifact stores remain mixed
-file-backed/SQLite/in-memory until their own adapter migrations are completed.
+portable result upserts and SQLite WAL initialization. Execution-artifact
+metadata is indexed in the shared database while binary payloads remain on the
+filesystem. Codegen feedback, failure analysis, generated fixture files, and
+other remaining stores still use mixed file-backed/SQLite/in-memory persistence.
 
 ## 8. Security and Data Boundaries
 
@@ -268,8 +269,9 @@ file-backed/SQLite/in-memory until their own adapter migrations are completed.
 ---
 
 **Status:** Proposed for approval. P13-BOOT-01 through P13-BOOT-06 are
-implemented or partial as marked above; database migrations and a completed
-Fedora image build remain explicit follow-up work before production use.
+implemented as marked above. P13-BOOT-07 remains partial while remaining
+artifact stores are migrated; local Fedora/Podman build and runtime smoke checks
+are complete. This local bootstrap is for development and QA, not production.
 
 ## 14. Revision History
 
@@ -277,3 +279,5 @@ Fedora image build remain explicit follow-up work before production use.
 |---|---|---|
 | v1.0 | 2026-09-25 | Initial bootstrap and runtime-mode proposal |
 | **v1.1** | **2026-09-25** | **Corrected ADR references; aligned database/migration assumptions with ADR-002; added Docker/Podman and SELinux requirements; expanded Compose topology, fixture users, risks, DoD, and release gates.** |
+| **v1.2** | **2026-09-25** | **Recorded Fedora 44/Podman profile smoke verification and MCP stdio compatibility fix; made observability opt-in and documented remaining persistence scope.** |
+| **v1.3** | **2026-09-26** | **Added shared-database execution-artifact metadata persistence while retaining filesystem binary payloads; verified SQLite and PostgreSQL round trips.** |

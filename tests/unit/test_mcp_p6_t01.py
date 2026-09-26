@@ -1,5 +1,7 @@
 import pytest
 import json
+import subprocess
+import sys
 from antinode_norma.server.mcp_server import list_tools, call_tool
 
 
@@ -12,6 +14,45 @@ async def test_mcp_list_tools_registered():
     assert "generate_from_xlsx" in tool_names
     assert "run_quality_gates" in tool_names
     assert "assess_story" in tool_names
+
+
+def test_mcp_module_serves_stdio_requests():
+    requests = "\n".join(
+        [
+            json.dumps({
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "test-client", "version": "1.0"},
+                },
+            }),
+            json.dumps({
+                "jsonrpc": "2.0",
+                "method": "notifications/initialized",
+                "params": {},
+            }),
+            json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
+        ]
+    ) + "\n"
+    completed = subprocess.run(
+        [sys.executable, "-m", "antinode_norma.server.mcp_server"],
+        input=requests,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=10,
+    )
+
+    responses = [json.loads(line) for line in completed.stdout.splitlines()]
+    assert responses[0]["id"] == 1
+    assert responses[1]["id"] == 2
+    assert {tool["name"] for tool in responses[1]["result"]["tools"]} >= {
+        "generate_from_csv",
+        "assess_story",
+    }
 
 
 @pytest.mark.asyncio

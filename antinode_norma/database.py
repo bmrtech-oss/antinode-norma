@@ -61,6 +61,23 @@ CREATE TABLE IF NOT EXISTS execution_history (
     skipped_scenarios INTEGER NOT NULL,
     metadata_json TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS execution_flake_history (
+    test_id TEXT PRIMARY KEY,
+    passed_runs INTEGER NOT NULL DEFAULT 0,
+    failed_runs INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS execution_artifacts (
+    id TEXT PRIMARY KEY,
+    storage_root TEXT NOT NULL,
+    execution_id TEXT NOT NULL,
+    artifact_type TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    content_type TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_execution_artifacts_root_execution
+    ON execution_artifacts(storage_root, execution_id);
 CREATE TABLE IF NOT EXISTS llm_cost_events (
     id TEXT PRIMARY KEY,
     timestamp REAL NOT NULL,
@@ -346,6 +363,91 @@ def load_execution_history(database_url: str) -> list[dict[str, Any]]:
         }
         for row in rows
     ]
+
+
+def load_flake_history(database_url: str) -> dict[str, dict[str, int]]:
+    rows = execute(
+        database_url,
+        "SELECT test_id, passed_runs, failed_runs FROM execution_flake_history ORDER BY test_id",
+    )
+    return {
+        test_id: {"passed": passed_runs, "failed": failed_runs}
+        for test_id, passed_runs, failed_runs in rows
+    }
+
+
+def record_flake_run(database_url: str, test_id: str, passed: bool) -> None:
+    connection, backend = _connect(database_url)
+    try:
+        placeholder = "%s" if backend == "postgres" else "?"
+        connection.execute(
+            "INSERT INTO execution_flake_history(test_id, passed_runs, failed_runs) "
+            f"VALUES ({placeholder}, {placeholder}, {placeholder}) "
+            "ON CONFLICT(test_id) DO UPDATE SET "
+            "passed_runs = execution_flake_history.passed_runs + excluded.passed_runs, "
+            "failed_runs = execution_flake_history.failed_runs + excluded.failed_runs",
+            (test_id, int(passed), int(not passed)),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def save_execution_artifact(database_url: str, storage_root: str, artifact: dict[str, Any]) -> None:
+    connection, backend = _connect(database_url)
+    try:
+        placeholder = "%s" if backend == "postgres" else "?"
+        connection.execute(
+            "INSERT INTO execution_artifacts(id, storage_root, execution_id, artifact_type, file_path, content_type, created_at, size_bytes) "
+            f"VALUES ({', '.join([placeholder] * 8)}) ON CONFLICT(id) DO UPDATE SET "
+            "storage_root=excluded.storage_root, execution_id=excluded.execution_id, "
+            "artifact_type=excluded.artifact_type, file_path=excluded.file_path, "
+            "content_type=excluded.content_type, created_at=excluded.created_at, size_bytes=excluded.size_bytes",
+            (
+                artifact["id"], storage_root, artifact["execution_id"], artifact["artifact_type"],
+                artifact["file_path"], artifact["content_type"], artifact["created_at"],
+                artifact["size_bytes"],
+            ),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def load_execution_artifacts(database_url: str, storage_root: str) -> list[dict[str, Any]]:
+    rows = execute(
+        database_url,
+        "SELECT id, execution_id, artifact_type, file_path, content_type, created_at, size_bytes "
+        "FROM execution_artifacts WHERE storage_root = ? ORDER BY created_at, id"
+        if not database_url.startswith(("postgres://", "postgresql://"))
+        else "SELECT id, execution_id, artifact_type, file_path, content_type, created_at, size_bytes "
+        "FROM execution_artifacts WHERE storage_root = %s ORDER BY created_at, id",
+        (storage_root,),
+    )
+    fields = ("id", "execution_id", "artifact_type", "file_path", "content_type", "created_at", "size_bytes")
+    return [dict(zip(fields, row)) for row in rows]
+
+
+def delete_execution_artifacts(
+    database_url: str, storage_root: str, execution_id: str | None = None
+) -> None:
+    connection, backend = _connect(database_url)
+    try:
+        placeholder = "%s" if backend == "postgres" else "?"
+        if execution_id is None:
+            connection.execute(
+                f"DELETE FROM execution_artifacts WHERE storage_root = {placeholder}",
+                (storage_root,),
+            )
+        else:
+            connection.execute(
+                "DELETE FROM execution_artifacts WHERE storage_root = "
+                f"{placeholder} AND execution_id = {placeholder}",
+                (storage_root, execution_id),
+            )
+        connection.commit()
+    finally:
+        connection.close()
 
 
 def save_cost_event(database_url: str, event: dict[str, Any]) -> None:

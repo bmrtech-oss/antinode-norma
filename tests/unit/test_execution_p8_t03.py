@@ -39,3 +39,23 @@ def test_artifact_manager_clear(tmp_path):
     # Clear all
     manager.clear_artifacts()
     assert len(manager.get_artifacts()) == 0
+
+
+def test_artifact_metadata_persists_and_clears_by_storage_root(tmp_path):
+    database_url = f"sqlite:///{tmp_path / 'norma.db'}"
+    artifact_root = tmp_path / "artifacts"
+    manager = ArtifactManager(output_dir=artifact_root, database_url=database_url)
+    artifact = manager.save_artifact(
+        "EXEC-3", ArtifactType.TRACE, b"trace payload", "trace.zip", "application/zip"
+    )
+
+    restored = ArtifactManager(output_dir=artifact_root, database_url=database_url)
+    assert restored.get_artifacts() == [artifact]
+    assert Path(artifact.file_path).read_bytes() == b"trace payload"
+
+    other_root = ArtifactManager(output_dir=tmp_path / "other", database_url=database_url)
+    other = other_root.save_artifact("EXEC-3", ArtifactType.LOG, b"log", "run.log")
+    restored.clear_artifacts(execution_id="EXEC-3")
+    assert restored.get_artifacts() == []
+    assert Path(artifact.file_path).exists() is False
+    assert other_root.get_artifacts() == [other]
