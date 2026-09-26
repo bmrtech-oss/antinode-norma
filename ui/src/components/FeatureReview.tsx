@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FileText } from 'lucide-react'
 import { getJson, postJson } from '../lib/api'
+import { useAuth } from '../lib/AuthContext'
 import { EmptyState, ErrorState, LoadingState } from './ui/AsyncState'
 import { Badge } from './ui/Badge'
 import { Button } from './ui/Button'
@@ -28,6 +29,8 @@ export default function FeatureReview() {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'name'>('newest')
   const [actionLoading, setActionLoading] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const { hasPermission } = useAuth()
+  const canApprove = hasPermission('approval:action')
 
   const fetchFeatures = () => {
     setLoading(true)
@@ -82,7 +85,6 @@ export default function FeatureReview() {
     setFeedback(null)
     try {
       await postJson(`/api/approvals/${selectedFeature.approval_id}/${action}`, {
-        reviewer: 'feature-reviewer',
         reason: action === 'approve' ? 'Approved from Feature Review' : 'Requires revision',
       })
       setFeedback(`Feature ${action === 'approve' ? 'approved' : 'rejected'} successfully.`)
@@ -205,8 +207,8 @@ export default function FeatureReview() {
                     <Badge variant={selectedFeature.status === 'PENDING' ? 'warning' : 'success'}>{selectedFeature.status}</Badge>
                     {selectedFeature.approval_id && selectedFeature.status === 'PENDING' && (
                       <>
-                        <Button size="sm" onClick={() => void updateApproval('approve')} disabled={actionLoading}>Approve</Button>
-                        <Button variant="destructive" size="sm" onClick={() => void updateApproval('reject')} disabled={actionLoading}>Reject</Button>
+                        <Button size="sm" onClick={() => void updateApproval('approve')} disabled={actionLoading || !canApprove} title={canApprove ? undefined : 'Requires approval:action permission'}>Approve</Button>
+                        <Button variant="destructive" size="sm" onClick={() => void updateApproval('reject')} disabled={actionLoading || !canApprove} title={canApprove ? undefined : 'Requires approval:action permission'}>Reject</Button>
                       </>
                     )}
                   </div>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertCircle, CheckCircle2, Loader2, ShieldCheck, XCircle } from 'lucide-react'
 import { getJson, postJson } from '../lib/api'
+import { useAuth } from '../lib/AuthContext'
 import { EmptyState, ErrorState, LoadingState } from './ui/AsyncState'
 import { Alert } from './ui/Alert'
 import { Button } from './ui/Button'
@@ -20,6 +21,8 @@ interface ApprovalRequest {
 
 export default function ApprovalQueue() {
   const [requests, setRequests] = useState<ApprovalRequest[]>([])
+  const { hasPermission } = useAuth()
+  const canActionApproval = hasPermission('approval:action')
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [mutation, setMutation] = useState<{ id: string; action: 'approve' | 'reject' } | null>(null)
@@ -50,9 +53,9 @@ export default function ApprovalQueue() {
     setPendingAction(null)
     setMutation({ id: request.id, action })
     setFeedback(null)
-    postJson<ApprovalRequest, { reviewer: string; reason: string }>(
+    postJson<ApprovalRequest, { reason: string }>(
       `/api/approvals/${request.id}/${action}`,
-      { reviewer: 'lead_reviewer', reason },
+      { reason },
     )
       .then(() => {
         setFeedback({
@@ -163,7 +166,8 @@ export default function ApprovalQueue() {
                   <Button
                     variant="default"
                     size="sm"
-                    disabled={mutation !== null}
+                    disabled={mutation !== null || !canActionApproval}
+                    title={canActionApproval ? undefined : 'Requires approval:action permission'}
                     onClick={() => setPendingAction({ request: req, action: 'approve' })}
                   >
                     {mutation?.id === req.id && mutation.action === 'approve' && (
@@ -174,7 +178,8 @@ export default function ApprovalQueue() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    disabled={mutation !== null}
+                    disabled={mutation !== null || !canActionApproval}
+                    title={canActionApproval ? undefined : 'Requires approval:action permission'}
                     onClick={() => setPendingAction({ request: req, action: 'reject' })}
                   >
                     {mutation?.id === req.id && mutation.action === 'reject' && (
@@ -201,7 +206,7 @@ export default function ApprovalQueue() {
     <ConfirmationDialog
       open={pendingAction !== null}
       title={pendingAction?.action === 'approve' ? 'Approve feature?' : 'Reject feature?'}
-      description={pendingAction ? <>This will {pendingAction.action} <strong>{pendingAction.request.feature_id}</strong> as <strong>lead_reviewer</strong>.</> : ''}
+      description={pendingAction ? <>This will {pendingAction.action} <strong>{pendingAction.request.feature_id}</strong>.</> : ''}
       confirmLabel={pendingAction?.action === 'approve' ? 'Approve feature' : 'Reject feature'}
       confirmVariant={pendingAction?.action === 'reject' ? 'destructive' : 'default'}
       onCancel={() => setPendingAction(null)}

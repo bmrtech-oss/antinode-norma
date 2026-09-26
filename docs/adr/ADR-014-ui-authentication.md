@@ -148,10 +148,10 @@ Update this table whenever a task starts, is blocked, or is completed. A task is
 | AUTH-2-T02 | Complete | Integrated server-managed OIDC redirect and callback flow; restores allowlisted local return route across same and separate origins |
 | AUTH-2-T03 | Complete | Implemented UserMenu in ui/src/components/UserMenu.tsx integrated into AppShell header; displays user name, email, roles, and provides logout clearing server session and cookie |
 | AUTH-2-T04 | Complete | Implemented session-expiry recovery in AuthGuard and AuthContext, preserving workflow return paths across re-login; verified by Playwright e2e tests |
-| AUTH-3-T01 | Not started | |
-| AUTH-3-T02 | Not started | |
-| AUTH-3-T03 | Not started | |
-| AUTH-3-T04 | Not started | |
+| AUTH-3-T01 | Complete | Updated AppShell.tsx navigation items to filter by user permissions (feature:read, feature:write, approval:action, audit:read); unit tests in ui/src/components/AppShell.test.tsx verify tab filtering across roles |
+| AUTH-3-T02 | Complete | Updated Generation.tsx, FeatureReview.tsx, and ApprovalQueue.tsx to check user write/approval permissions and disable action controls when unpermitted; verified with Vitest and Playwright e2e tests |
+| AUTH-3-T03 | Complete | Added requiredPermission and requiredRole props to AuthGuard and configured active tab permissions in App.tsx; unpermitted views render AccessDenied while retaining session; verified in AuthGuard.test.tsx |
+| AUTH-3-T04 | Complete | Removed client-supplied reviewer overrides in FeatureReview.tsx and ApprovalQueue.tsx; all mutation calls rely on server-derived authenticated actor attribution |
 | AUTH-4-T01 | Not started | |
 | AUTH-4-T02 | Not started | |
 | AUTH-4-T03 | Not started | |

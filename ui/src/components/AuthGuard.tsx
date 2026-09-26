@@ -1,14 +1,21 @@
 import React from 'react'
 import { useAuth } from '../lib/AuthContext'
 import { LoginPage } from './LoginPage'
+import { AccessDenied } from './AccessDenied'
 import { Button } from './ui/Button'
 
 export interface AuthGuardProps {
+  requiredPermission?: string
+  requiredRole?: string
   children: React.ReactNode
 }
 
-export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const { status, error, refetch } = useAuth()
+export const AuthGuard: React.FC<AuthGuardProps> = ({
+  requiredPermission,
+  requiredRole,
+  children,
+}) => {
+  const { status, error, refetch, hasPermission, hasRole } = useAuth()
 
   if (status === 'loading') {
     return (
@@ -55,6 +62,14 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         </div>
       </div>
     )
+  }
+
+  if (requiredPermission && !hasPermission(requiredPermission)) {
+    return <AccessDenied message={`You do not have the required permission (${requiredPermission}) to access this view.`} />
+  }
+
+  if (requiredRole && !hasRole(requiredRole)) {
+    return <AccessDenied message={`You do not have the required role (${requiredRole}) to access this view.`} />
   }
 
   return <>{children}</>

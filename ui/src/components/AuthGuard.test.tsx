@@ -135,4 +135,34 @@ describe('AuthGuard Component', () => {
       expect(screen.getByText('Protected Dashboard Content')).toBeInTheDocument()
     })
   })
+
+  it('renders AccessDenied when user lacks required permission', async () => {
+    vi.mocked(authClient.fetchCurrentUser).mockResolvedValueOnce({
+      user: {
+        id: 'u1',
+        username: 'alice',
+        email: 'alice@norma.local',
+        roles: ['viewer'],
+        is_active: true,
+        created_at: '2026-01-01',
+        updated_at: '2026-01-01',
+      },
+      permissions: ['feature:read'],
+      session_expires_at: '2026-12-31T23:59:59Z',
+    })
+
+    render(
+      <AuthProvider>
+        <AuthGuard requiredPermission="approval:action">
+          <div>Protected Content</div>
+        </AuthGuard>
+      </AuthProvider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText(/Access Denied/i)).toBeInTheDocument()
+    })
+
+    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument()
+  })
 })

@@ -21,6 +21,15 @@ export default function App() {
   const [loading, setLoading] = useState<boolean>(true)
   const [activeTab, setActiveTab] = useState<AppTab>('dashboard')
   const [apiBaseUrl, setApiBaseUrlState] = useState(getApiBaseUrl)
+
+  const tabPermissions: Record<AppTab, string | undefined> = {
+    dashboard: 'feature:read',
+    generation: 'feature:write',
+    review: 'feature:read',
+    approvals: 'approval:action',
+    traceability: 'feature:read',
+    audit: 'audit:read',
+  }
   const checkHealth = useCallback(() => {
     setLoading(true)
     return getJson<HealthStatus>('/health')
@@ -51,7 +60,7 @@ export default function App() {
         onHealthCheck={checkHealth}
         onTabChange={setActiveTab}
       >
-        <AuthGuard>
+        <AuthGuard requiredPermission={tabPermissions[activeTab]}>
           <div key={apiBaseUrl}>
             <h1 className="sr-only">Antinode Norma BDD Platform</h1>
             <p className="sr-only">Traceability and Audit Log views are available from the primary navigation.</p>
