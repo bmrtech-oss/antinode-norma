@@ -1,7 +1,11 @@
-import pytest
 import json
 import subprocess
 import sys
+from queue import Queue
+from threading import Thread
+
+import pytest
+
 from antinode_norma.server.mcp_server import list_tools, call_tool
 
 
@@ -17,39 +21,63 @@ async def test_mcp_list_tools_registered():
 
 
 def test_mcp_module_serves_stdio_requests():
-    requests = "\n".join(
-        [
-            json.dumps({
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": "initialize",
-                "params": {
-                    "protocolVersion": "2024-11-05",
-                    "capabilities": {},
-                    "clientInfo": {"name": "test-client", "version": "1.0"},
-                },
-            }),
-            json.dumps({
-                "jsonrpc": "2.0",
-                "method": "notifications/initialized",
-                "params": {},
-            }),
-            json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
-        ]
-    ) + "\n"
-    completed = subprocess.run(
-        [sys.executable, "-m", "antinode_norma.server.mcp_server"],
-        input=requests,
-        capture_output=True,
-        text=True,
-        check=True,
-        timeout=10,
+    initialize_request = json.dumps({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": {"name": "test-client", "version": "1.0"},
+        },
+    })
+    initialized_notification = json.dumps({
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized",
+        "params": {},
+    })
+    list_tools_request = json.dumps(
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}
     )
+    process = subprocess.Popen(
+        [sys.executable, "-m", "antinode_norma.server.mcp_server"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    assert process.stdin is not None
+    assert process.stdout is not None
+    responses = Queue()
 
-    responses = [json.loads(line) for line in completed.stdout.splitlines()]
-    assert responses[0]["id"] == 1
-    assert responses[1]["id"] == 2
-    assert {tool["name"] for tool in responses[1]["result"]["tools"]} >= {
+    def collect_stdout():
+        for line in process.stdout:
+            responses.put(line)
+
+    stdout_reader = Thread(target=collect_stdout, daemon=True)
+    stdout_reader.start()
+
+    try:
+        process.stdin.write(initialize_request + "\n")
+        process.stdin.flush()
+        initialize_response = json.loads(responses.get(timeout=10))
+        assert initialize_response["id"] == 1
+
+        process.stdin.write(initialized_notification + "\n" + list_tools_request + "\n")
+        process.stdin.flush()
+        list_response = json.loads(responses.get(timeout=10))
+        assert list_response["id"] == 2
+
+        process.stdin.close()
+        return_code = process.wait(timeout=10)
+    except BaseException:
+        process.kill()
+        process.wait()
+        raise
+
+    stderr = process.stderr.read() if process.stderr else ""
+    assert return_code == 0, stderr
+    assert {tool["name"] for tool in list_response["result"]["tools"]} >= {
         "generate_from_csv",
         "assess_story",
     }
