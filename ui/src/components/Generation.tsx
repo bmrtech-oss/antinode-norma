@@ -497,7 +497,7 @@ export default function Generation() {
             )}
 
             {preview && (
-              <Card>
+              <Card className="col-span-full">
                 <CardHeader><CardTitle>Import preview</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
                   {preview.worksheet_names.length > 0 && (
