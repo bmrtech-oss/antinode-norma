@@ -98,7 +98,7 @@ def test_identity_headers_are_denied_without_explicit_test_opt_in(monkeypatch):
         return {"status": "ok"}
 
     response = TestClient(app_headers).get("/admin", headers={"X-User-ID": "admin"})
-    assert response.status_code == 401
+    assert response.status_code == 403
 
 
 def test_identity_headers_work_only_with_explicit_local_test_opt_in(monkeypatch):

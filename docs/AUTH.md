@@ -137,9 +137,11 @@ Norma parses claims from `groups`, `roles`, `norma_roles`, or `realm_access.role
 For local offline development, set in `.env`:
 ```env
 NORMA_AUTH_MODE=disabled
-NORMA_AUTH_ALLOW_IDENTITY_HEADERS=true
+NORMA_ENVIRONMENT=development
+NORMA_AUTH_ALLOW_IDENTITY_HEADERS=false
 ```
-- In `NORMA_AUTH_MODE=disabled`, authentication dependencies inject a default viewer identity or accept simulated `X-User-ID` / `X-Tenant-ID` headers.
+- In disabled mode with identity headers off, the API provides a synthetic least-privileged local viewer for the UI and read-only routes. This identity is not a browser session and has no write/admin permissions.
+- Test-only `X-User-ID` / `X-Tenant-ID` simulation is a separate opt-in: set `NORMA_AUTH_ALLOW_IDENTITY_HEADERS=true` only in non-production tests. It is disabled by default.
 - **Production Safety Gate**: Production mode (`NORMA_ENVIRONMENT=production`) strictly rejects `NORMA_AUTH_MODE=disabled` and `NORMA_AUTH_ALLOW_IDENTITY_HEADERS=true` at startup.
 
 ### Session & Recovery Runbook

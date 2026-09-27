@@ -26,6 +26,34 @@ def test_identity_header_mode_requires_explicit_local_opt_in():
     assert settings.allow_identity_headers is True
 
 
+def test_disabled_auth_provides_local_viewer_for_ui_without_session(monkeypatch):
+    monkeypatch.setenv("NORMA_ENVIRONMENT", "development")
+    monkeypatch.setenv("NORMA_AUTH_MODE", "disabled")
+    monkeypatch.setenv("NORMA_AUTH_ALLOW_IDENTITY_HEADERS", "false")
+
+    with TestClient(app) as client:
+        me = client.get("/api/auth/me")
+        assert me.status_code == 200
+        assert me.json()["user"]["id"] == "local-development-viewer"
+        assert me.json()["user"]["roles"] == ["viewer"]
+        assert client.get("/api/dashboard").status_code == 200
+        assert client.get("/api/admin/settings").status_code == 403
+
+
+def test_oidc_auth_still_requires_a_session(monkeypatch):
+    monkeypatch.setenv("NORMA_ENVIRONMENT", "development")
+    monkeypatch.setenv("NORMA_AUTH_MODE", "oidc")
+    monkeypatch.setenv("NORMA_AUTH_ALLOW_IDENTITY_HEADERS", "false")
+    monkeypatch.setenv("NORMA_OIDC_ISSUER", "https://identity.example.test")
+    monkeypatch.setenv("NORMA_OIDC_CLIENT_ID", "norma-web")
+    monkeypatch.setenv("NORMA_OIDC_CLIENT_SECRET", "test-secret")
+    monkeypatch.setenv("NORMA_OIDC_REDIRECT_URI", "http://localhost:8000/api/auth/oidc/callback")
+    monkeypatch.setenv("NORMA_AUTH_ALLOWED_ORIGINS", "http://localhost:3000")
+
+    with TestClient(app) as client:
+        assert client.get("/api/auth/me").status_code == 401
+
+
 def test_identity_header_mode_is_rejected_for_production_and_oidc():
     with pytest.raises(AuthConfigurationError, match="cannot be enabled in production"):
         AuthSettings.from_environment(

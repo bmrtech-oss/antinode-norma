@@ -3,14 +3,25 @@
 import hashlib
 import os
 import secrets
-import httpx
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 from urllib.parse import urlsplit, urlunsplit
+
+import httpx
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from pydantic import BaseModel
 from starlette.responses import RedirectResponse
 
+from antinode_norma import database as auth_database
+from antinode_norma.auth.config import (
+    CSRF_COOKIE_NAME,
+    SESSION_COOKIE_NAME,
+    AuthSettings,
+    canonical_origin,
+    load_auth_settings,
+)
+from antinode_norma.auth.middleware import local_development_user
+from antinode_norma.auth.models import User
 from antinode_norma.auth.oidc import (
     OIDCProviderError,
     OIDCTransactionStore,
@@ -20,23 +31,14 @@ from antinode_norma.auth.oidc import (
     generate_pkce_pair,
     map_claims_to_user,
 )
+from antinode_norma.auth.roles import get_user_permissions
 from antinode_norma.auth.saml import (
     SAMLConfig,
     build_authn_request,
     generate_sp_metadata,
     parse_saml_response_claims,
 )
-from antinode_norma.auth.models import User
-from antinode_norma.auth.roles import get_user_permissions
-from antinode_norma.auth.config import (
-    CSRF_COOKIE_NAME,
-    SESSION_COOKIE_NAME,
-    AuthSettings,
-    canonical_origin,
-    load_auth_settings,
-)
 from antinode_norma.core.features import FeatureFlagResolver
-from antinode_norma import database as auth_database
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -231,6 +233,21 @@ def _load_session(request: Request) -> dict:
 @router.get("/me", response_model=AuthMeResponse)
 async def auth_me(request: Request):
     """Return the user and permissions bound to the active server session."""
+    settings = load_auth_settings()
+    if (
+        not request.cookies.get(SESSION_COOKIE_NAME)
+        and settings.mode == "disabled"
+        and not settings.is_production
+        and not settings.allow_identity_headers
+    ):
+        user = local_development_user()
+        expires_at = datetime.now(timezone.utc) + timedelta(days=1)
+        return AuthMeResponse(
+            user=user,
+            permissions=sorted(get_user_permissions(user)),
+            session_expires_at=expires_at.isoformat(),
+        )
+
     session = _load_session(request)
     user = User.model_validate(session["user"])
     return AuthMeResponse(

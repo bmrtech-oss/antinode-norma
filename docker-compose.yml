@@ -24,14 +24,16 @@ services:
     container_name: antinode-norma-http
     working_dir: /app
     profiles: [http, local]
+    env_file:
+      - .env
     volumes:
       - .:/app:Z
       - /app/node_modules
     environment:
       - PYTHONUNBUFFERED=1
-      - LLM_PROVIDER=mock
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
       - NORMA_RUNTIME_MODE=http
-      - DATABASE_URL=postgresql://norma:norma-local-only@db:5432/norma
+      - DATABASE_URL=${DATABASE_URL:-postgresql://norma:norma-local-only@db:5432/norma}
     ports:
       - "8000:8000"
     depends_on:
@@ -50,14 +52,16 @@ services:
     container_name: antinode-norma-mcp
     working_dir: /app
     profiles: [mcp, local]
+    env_file:
+      - .env
     volumes:
       - .:/app:Z
       - /app/node_modules
     environment:
       - PYTHONUNBUFFERED=1
-      - LLM_PROVIDER=mock
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
       - NORMA_RUNTIME_MODE=mcp
-      - DATABASE_URL=postgresql://norma:norma-local-only@db:5432/norma
+      - DATABASE_URL=${DATABASE_URL:-postgresql://norma:norma-local-only@db:5432/norma}
     depends_on:
       db:
         condition: service_healthy

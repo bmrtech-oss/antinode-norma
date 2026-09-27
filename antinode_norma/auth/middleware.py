@@ -20,6 +20,17 @@ from antinode_norma.auth.models import Role, User
 from antinode_norma.auth.roles import has_permission
 
 
+def local_development_user() -> User:
+    """Return the least-privileged identity used by explicit local no-auth mode."""
+    return User(
+        id="local-development-viewer",
+        username="local-viewer",
+        email="local-viewer@norma.local",
+        roles=[Role.VIEWER],
+        tenant_id="local",
+    )
+
+
 class AuthCSRFMiddleware(BaseHTTPMiddleware):
     """Require origin and session-bound CSRF proof on cookie-authenticated writes."""
 
@@ -83,16 +94,12 @@ async def get_current_user(
         return User.model_validate(session["user"]) if session else None
 
     settings = load_auth_settings()
-    if (
-        not settings.allow_identity_headers
-        or settings.is_production
-        or settings.mode != "disabled"
-    ):
+    if settings.is_production or settings.mode != "disabled":
         return None
 
-    # Header identity is a local/test fixture only, never a production credential.
     header_val = request.headers.get("x-user-id") or (x_user_id if isinstance(x_user_id, str) else None)
-    if header_val:
+    if settings.allow_identity_headers and header_val:
+        # Header identity is a local/test fixture only, never a production credential.
         roles = [Role.ADMIN] if "admin" in header_val.lower() else [Role.VIEWER]
         return User(
             id=header_val,
@@ -104,7 +111,9 @@ async def get_current_user(
             or request.headers.get("x-tenant-id") or "default",
         )
 
-    # Return default active viewer user for dev/unauthenticated requests unless overridden
+    if not settings.allow_identity_headers:
+        return local_development_user()
+
     return getattr(request.state, "default_user", None)
 
 
