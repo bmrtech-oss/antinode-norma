@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const devPort = process.env.PLAYWRIGHT_DEV_PORT ?? '3000'
+const baseURL = `http://localhost:${devPort}`
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -8,7 +11,7 @@ export default defineConfig({
   reporter: process.env.CI ? 'html' : 'list',
   snapshotPathTemplate: '{testDir}/../../docs/ui-baseline/{testFilePath}/{arg}{ext}',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL,
     trace: 'on-first-retry',
   },
   projects: [
@@ -18,8 +21,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    command: `npm run dev -- --port ${devPort}`,
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
   },
 })
