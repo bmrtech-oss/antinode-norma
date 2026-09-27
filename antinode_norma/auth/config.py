@@ -1,7 +1,7 @@
 """Validated deployment configuration for browser authentication."""
 
-from dataclasses import dataclass, field
 import os
+from dataclasses import dataclass, field
 from typing import Mapping, Optional
 from urllib.parse import urlsplit
 
@@ -141,8 +141,12 @@ class AuthSettings:
             redirect_uri = _validate_url(
                 "NORMA_OIDC_REDIRECT_URI", redirect_uri, production=production
             )
-        allowed_origins = _parse_allowed_origins(
-            values.get("NORMA_AUTH_ALLOWED_ORIGINS", ""), production=production
+        allowed_origins = (
+            _parse_allowed_origins(
+                values.get("NORMA_AUTH_ALLOWED_ORIGINS", ""), production=production
+            )
+            if mode == "oidc"
+            else ()
         )
 
         settings = cls(

@@ -15,6 +15,17 @@ def test_auth_settings_default_to_auth_disabled_for_development():
     assert settings.to_oidc_config().client_id == "norma-client"
 
 
+def test_disabled_auth_ignores_unused_wildcard_allowed_origins():
+    settings = AuthSettings.from_environment(
+        {
+            "NORMA_AUTH_MODE": "disabled",
+            "NORMA_AUTH_ALLOWED_ORIGINS": "*",
+        }
+    )
+
+    assert settings.allowed_origins == ()
+
+
 def test_identity_header_mode_requires_explicit_local_opt_in():
     settings = AuthSettings.from_environment(
         {
@@ -168,6 +179,18 @@ def test_allowed_origins_reject_paths_and_wildcard():
                 "NORMA_OIDC_CLIENT_SECRET": "deployment-secret",
                 "NORMA_OIDC_REDIRECT_URI": "http://localhost:8000/api/auth/oidc/callback",
                 "NORMA_AUTH_ALLOWED_ORIGINS": "https://norma.example.test/app",
+            }
+        )
+
+    with pytest.raises(AuthConfigurationError, match=r"absolute HTTP\(S\) URL"):
+        AuthSettings.from_environment(
+            {
+                "NORMA_AUTH_MODE": "oidc",
+                "NORMA_OIDC_ISSUER": "https://identity.example.test",
+                "NORMA_OIDC_CLIENT_ID": "norma-web",
+                "NORMA_OIDC_CLIENT_SECRET": "deployment-secret",
+                "NORMA_OIDC_REDIRECT_URI": "http://localhost:8000/api/auth/oidc/callback",
+                "NORMA_AUTH_ALLOWED_ORIGINS": "*",
             }
         )
 
