@@ -240,7 +240,7 @@ async def auth_me(request: Request):
         and not settings.is_production
         and not settings.allow_identity_headers
     ):
-        user = local_development_user()
+        user = local_development_user(settings.local_role)
         expires_at = datetime.now(timezone.utc) + timedelta(days=1)
         return AuthMeResponse(
             user=user,

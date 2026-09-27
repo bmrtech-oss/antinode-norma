@@ -11,6 +11,7 @@ def test_auth_settings_default_to_auth_disabled_for_development():
     assert settings.environment == "development"
     assert settings.mode == "disabled"
     assert settings.allow_identity_headers is False
+    assert settings.local_role.value == "viewer"
     assert settings.allowed_origins == ()
     assert settings.to_oidc_config().client_id == "norma-client"
 
@@ -24,6 +25,38 @@ def test_disabled_auth_ignores_unused_wildcard_allowed_origins():
     )
 
     assert settings.allowed_origins == ()
+
+
+@pytest.mark.parametrize("role", ["viewer", "generator", "reviewer", "admin"])
+def test_disabled_auth_accepts_configured_local_roles(role):
+    settings = AuthSettings.from_environment(
+        {
+            "NORMA_AUTH_MODE": "disabled",
+            "NORMA_AUTH_LOCAL_ROLE": role,
+        }
+    )
+
+    assert settings.local_role.value == role
+
+
+def test_local_admin_role_is_rejected_outside_disabled_development():
+    with pytest.raises(AuthConfigurationError, match="requires disabled auth"):
+        AuthSettings.from_environment(
+            {
+                "NORMA_AUTH_MODE": "oidc",
+                "NORMA_AUTH_LOCAL_ROLE": "admin",
+            }
+        )
+
+
+def test_invalid_local_role_is_rejected():
+    with pytest.raises(AuthConfigurationError, match="NORMA_AUTH_LOCAL_ROLE"):
+        AuthSettings.from_environment(
+            {
+                "NORMA_AUTH_MODE": "disabled",
+                "NORMA_AUTH_LOCAL_ROLE": "owner",
+            }
+        )
 
 
 def test_identity_header_mode_requires_explicit_local_opt_in():
@@ -41,6 +74,7 @@ def test_disabled_auth_provides_local_viewer_for_ui_without_session(monkeypatch)
     monkeypatch.setenv("NORMA_ENVIRONMENT", "development")
     monkeypatch.setenv("NORMA_AUTH_MODE", "disabled")
     monkeypatch.setenv("NORMA_AUTH_ALLOW_IDENTITY_HEADERS", "false")
+    monkeypatch.setenv("NORMA_AUTH_LOCAL_ROLE", "viewer")
 
     with TestClient(app) as client:
         me = client.get("/api/auth/me")
@@ -49,6 +83,21 @@ def test_disabled_auth_provides_local_viewer_for_ui_without_session(monkeypatch)
         assert me.json()["user"]["roles"] == ["viewer"]
         assert client.get("/api/dashboard").status_code == 200
         assert client.get("/api/admin/settings").status_code == 403
+
+
+def test_disabled_auth_uses_configured_admin_role(monkeypatch):
+    monkeypatch.setenv("NORMA_ENVIRONMENT", "development")
+    monkeypatch.setenv("NORMA_AUTH_MODE", "disabled")
+    monkeypatch.setenv("NORMA_AUTH_ALLOW_IDENTITY_HEADERS", "false")
+    monkeypatch.setenv("NORMA_AUTH_LOCAL_ROLE", "admin")
+
+    with TestClient(app) as client:
+        me = client.get("/api/auth/me")
+        assert me.status_code == 200
+        assert me.json()["user"]["id"] == "local-development-admin"
+        assert me.json()["user"]["roles"] == ["admin"]
+        assert "admin:write" in me.json()["permissions"]
+        assert client.get("/api/admin/settings").status_code == 200
 
 
 def test_oidc_auth_still_requires_a_session(monkeypatch):

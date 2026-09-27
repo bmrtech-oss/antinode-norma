@@ -20,13 +20,13 @@ from antinode_norma.auth.models import Role, User
 from antinode_norma.auth.roles import has_permission
 
 
-def local_development_user() -> User:
-    """Return the least-privileged identity used by explicit local no-auth mode."""
+def local_development_user(role: Role) -> User:
+    """Return the configured local identity used by explicit no-auth mode."""
     return User(
-        id="local-development-viewer",
-        username="local-viewer",
-        email="local-viewer@norma.local",
-        roles=[Role.VIEWER],
+        id=f"local-development-{role.value}",
+        username=f"local-{role.value}",
+        email=f"local-{role.value}@norma.local",
+        roles=[role],
         tenant_id="local",
     )
 
@@ -112,7 +112,7 @@ async def get_current_user(
         )
 
     if not settings.allow_identity_headers:
-        return local_development_user()
+        return local_development_user(settings.local_role)
 
     return getattr(request.state, "default_user", None)
 

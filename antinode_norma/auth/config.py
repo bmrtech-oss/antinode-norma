@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from typing import Mapping, Optional
 from urllib.parse import urlsplit
 
+from antinode_norma.auth.models import Role
+
 
 class AuthConfigurationError(ValueError):
     """Raised when authentication deployment settings are incomplete or unsafe."""
@@ -74,6 +76,7 @@ class AuthSettings:
     environment: str
     mode: str
     allow_identity_headers: bool
+    local_role: Role
     oidc_issuer: Optional[str]
     oidc_discovery_url: Optional[str]
     oidc_client_id: Optional[str]
@@ -116,12 +119,20 @@ class AuthSettings:
         identity_header_setting = values.get(
             "NORMA_AUTH_ALLOW_IDENTITY_HEADERS", "false"
         ).strip().lower()
+        local_role_setting = values.get("NORMA_AUTH_LOCAL_ROLE", Role.VIEWER.value).strip().lower()
         if mode not in {"disabled", "oidc"}:
             raise AuthConfigurationError("NORMA_AUTH_MODE must be 'disabled' or 'oidc'")
         if identity_header_setting not in {"true", "false"}:
             raise AuthConfigurationError(
                 "NORMA_AUTH_ALLOW_IDENTITY_HEADERS must be 'true' or 'false'"
             )
+        try:
+            local_role = Role(local_role_setting)
+        except ValueError as exc:
+            allowed_roles = ", ".join(role.value for role in Role)
+            raise AuthConfigurationError(
+                f"NORMA_AUTH_LOCAL_ROLE must be one of: {allowed_roles}"
+            ) from exc
 
         production = environment in {"prod", "production"}
         allow_identity_headers = identity_header_setting == "true"
@@ -153,6 +164,7 @@ class AuthSettings:
             environment=environment,
             mode=mode,
             allow_identity_headers=allow_identity_headers,
+            local_role=local_role,
             oidc_issuer=issuer,
             oidc_discovery_url=discovery_url,
             oidc_client_id=client_id,
@@ -172,6 +184,10 @@ class AuthSettings:
         if allow_identity_headers and mode != "disabled":
             raise AuthConfigurationError(
                 "NORMA_AUTH_ALLOW_IDENTITY_HEADERS requires NORMA_AUTH_MODE=disabled"
+            )
+        if local_role != Role.VIEWER and (production or mode != "disabled"):
+            raise AuthConfigurationError(
+                "NORMA_AUTH_LOCAL_ROLE other than 'viewer' requires disabled auth in a non-production environment"
             )
         if mode == "oidc":
             missing = []

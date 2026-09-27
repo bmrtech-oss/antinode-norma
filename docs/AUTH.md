@@ -139,8 +139,10 @@ For local offline development, set in `.env`:
 NORMA_AUTH_MODE=disabled
 NORMA_ENVIRONMENT=development
 NORMA_AUTH_ALLOW_IDENTITY_HEADERS=false
+NORMA_AUTH_LOCAL_ROLE=viewer
 ```
 - In disabled mode with identity headers off, the API provides a synthetic least-privileged local viewer for the UI and read-only routes. This identity is not a browser session and has no write/admin permissions.
+- Set `NORMA_AUTH_LOCAL_ROLE` to `viewer`, `generator`, `reviewer`, or `admin` to select the local synthetic identity's role. The default is `viewer`; elevated roles are restricted to non-production disabled-auth mode and should only be used on an isolated local instance.
 - Test-only `X-User-ID` / `X-Tenant-ID` simulation is a separate opt-in: set `NORMA_AUTH_ALLOW_IDENTITY_HEADERS=true` only in non-production tests. It is disabled by default.
 - **Production Safety Gate**: Production mode (`NORMA_ENVIRONMENT=production`) strictly rejects `NORMA_AUTH_MODE=disabled` and `NORMA_AUTH_ALLOW_IDENTITY_HEADERS=true` at startup.
 

@@ -19,9 +19,12 @@ LLM_PROVIDER=mock
 NORMA_ENVIRONMENT=development
 NORMA_AUTH_MODE=disabled
 NORMA_AUTH_ALLOW_IDENTITY_HEADERS=false
+NORMA_AUTH_LOCAL_ROLE=viewer
 NORMA_AUTH_ALLOWED_ORIGINS=
 DATABASE_URL=postgresql://norma:norma-local-only@db:5432/norma
 ```
+
+To change the local UI permissions, set `NORMA_AUTH_LOCAL_ROLE` to `viewer`, `generator`, `reviewer`, or `admin`. `viewer` is the default; `generator` adds feature-write access, `reviewer` adds approval actions, and `admin` grants all application permissions. Higher-privilege roles are intended only for an isolated local instance: anyone who can reach that no-auth API receives the configured role. The API rejects elevated local roles when auth is OIDC or the environment is production.
 
 Start the complete local profile. On the first run, build the image:
 
