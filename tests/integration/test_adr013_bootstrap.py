@@ -24,7 +24,12 @@ def test_adr013_seed_and_compose_contract(tmp_path, monkeypatch):
     services = compose["services"]
     assert {"db", "local-seed", "app-http", "app-mcp"} <= services.keys()
     assert services["db"]["healthcheck"]["test"]
-    assert any(item.startswith("DATABASE_URL=") for item in services["app-http"]["environment"])
+    assert services["app-http"]["env_file"] == [".env"]
+    assert services["app-mcp"]["env_file"] == [".env"]
+    assert any(
+        item.startswith("DATABASE_URL=${DATABASE_URL:-")
+        for item in services["app-http"]["environment"]
+    )
     assert "NORMA_RUNTIME_MODE=mcp" in services["app-mcp"]["environment"]
     assert ".:/app:Z" in services["app-http"]["volumes"]
     assert ".:/app:Z" in services["app-mcp"]["volumes"]

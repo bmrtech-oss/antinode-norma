@@ -81,7 +81,6 @@ export default function Generation() {
   const inputRef = useRef<HTMLInputElement>(null)
   const { hasPermission } = useAuth()
   const canWriteFeature = hasPermission('feature:write')
-  const canActionApproval = hasPermission('approval:action')
   const [file, setFile] = useState<File | null>(null)
   const [importJob, setImportJob] = useState<ImportResponse | null>(null)
   const [validation, setValidation] = useState<ValidationResponse | null>(null)
@@ -497,7 +496,7 @@ export default function Generation() {
             )}
 
             {preview && (
-              <Card>
+              <Card className="col-span-full">
                 <CardHeader><CardTitle>Import preview</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
                   {preview.worksheet_names.length > 0 && (
@@ -681,8 +680,8 @@ export default function Generation() {
                     variant="outline"
                     size="sm"
                     onClick={() => void submitSelectedForApproval()}
-                    disabled={loading || selectedResults.size === 0 || !canActionApproval}
-                    title={canActionApproval ? undefined : 'Requires approval:action permission'}
+                    disabled={loading || selectedResults.size === 0 || !canWriteFeature}
+                    title={canWriteFeature ? undefined : 'Requires feature:write permission'}
                   >
                     Submit selected ({selectedResults.size})
                   </Button>
@@ -723,8 +722,8 @@ export default function Generation() {
                           variant="outline"
                           size="sm"
                           onClick={() => void submitForApproval(result)}
-                          disabled={loading || submittedResults.has(result.id) || !canActionApproval}
-                          title={canActionApproval ? undefined : 'Requires approval:action permission'}
+                          disabled={loading || submittedResults.has(result.id) || !canWriteFeature}
+                          title={canWriteFeature ? undefined : 'Requires feature:write permission'}
                         >
                           {result.approval_status || (submittedResults.has(result.id) ? 'PENDING' : 'Submit for approval')}
                         </Button>

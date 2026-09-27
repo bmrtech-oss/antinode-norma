@@ -118,6 +118,26 @@ test('confirms and completes an approval action', async ({ page }) => {
 })
 
 test('uploads a CSV and downloads a generated artifact', async ({ page }) => {
+  await page.unroute('**/api/auth/me')
+  await page.route('**/api/auth/me', async (route) => {
+    await route.fulfill({
+      json: {
+        user: {
+          id: 'e2e-generator',
+          username: 'e2e_generator',
+          email: 'generator@norma.local',
+          roles: ['generator'],
+          is_active: true,
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+        },
+        permissions: ['feature:read', 'feature:write', 'audit:read'],
+        session_expires_at: '2026-12-31T23:59:59Z',
+      },
+    })
+  })
+  await page.reload()
+
   let generated = false
   const job = {
     id: 'generation-1',
@@ -211,6 +231,10 @@ test('uploads a CSV and downloads a generated artifact', async ({ page }) => {
       })
       return
     }
+    if (url.endsWith('/submit-approval')) {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ status: 'PENDING' }) })
+      return
+    }
     if (url.endsWith('/results')) {
       await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ job_id: job.id, results: [artifact], count: 1 }) })
       return
@@ -234,11 +258,22 @@ test('uploads a CSV and downloads a generated artifact', async ({ page }) => {
   })
   await page.getByRole('button', { name: 'Upload and validate' }).click()
   await expect(page.getByText('Import validation')).toBeVisible()
+  const validationPanel = page.getByRole('heading', { name: 'Import validation' }).locator('xpath=../..')
+  const previewPanel = page.getByRole('heading', { name: 'Import preview' }).locator('xpath=../..')
+  const validationBounds = await validationPanel.boundingBox()
+  const previewBounds = await previewPanel.boundingBox()
+  expect(validationBounds).not.toBeNull()
+  expect(previewBounds).not.toBeNull()
+  expect(previewBounds!.width).toBeGreaterThan(validationBounds!.width * 0.9)
   await page.getByRole('button', { name: 'Validate import' }).click()
   await expect(page.getByText('Passed')).toBeVisible()
   await page.getByRole('button', { name: 'Start generation' }).click()
   await expect(page.getByRole('heading', { name: 'Generation job' })).toBeVisible()
   await expect(page.getByText('TC-1 · row 1')).toBeVisible()
+  const submitForApproval = page.getByRole('button', { name: 'Submit for approval' })
+  await expect(submitForApproval).toBeEnabled()
+  await submitForApproval.click()
+  await expect(page.getByText('PENDING', { exact: true })).toBeVisible()
 
   await page.getByRole('button', { name: 'Preview' }).click()
   await expect(page.getByText('Feature: Login')).toBeVisible()
