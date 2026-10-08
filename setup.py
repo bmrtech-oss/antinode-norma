@@ -21,7 +21,7 @@ setup(
         "httpx>=0.24.0",
         "PyJWT[crypto]>=2.8.0",
         "openpyxl>=3.1.0",
-        "anyio>=4.0.0,<4.15.0",
+        "anyio>=4.0.0,<4.16.0",
     ],
     entry_points={
         "console_scripts": [
